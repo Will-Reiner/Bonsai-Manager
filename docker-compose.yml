@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # Serviço do Banco de Dados PostgreSQL
   db:
@@ -28,6 +26,7 @@ services:
       - db # Garante que o banco de dados inicie antes da API
     ports:
       - '3000:3000'
+      - '5555:5555'
     volumes:
       # Mapeia nosso código local para dentro do container para hot-reloading
       - ./server:/app

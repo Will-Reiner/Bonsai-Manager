@@ -11,6 +11,11 @@ datasource db {
 
 // --- Enumerações para Tipos de Dados ---
 
+enum Role {
+  USER
+  ADMIN
+}
+
 enum AgendaStatus {
   PENDENTE
   CONCLUIDO
@@ -32,6 +37,8 @@ model Usuario {
   senhaHash String
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
+
+  role      Role      @default(USER)
 
   plantas  Planta[]
   recursos Recurso[]

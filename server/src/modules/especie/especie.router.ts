@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { especieController } from './especie.controller';
+import { adminMiddleware } from '../../middlewares/admin.middleware';
 import { authMiddleware } from '../../middlewares/auth.middleware';
 
 const especieRouter = Router();
