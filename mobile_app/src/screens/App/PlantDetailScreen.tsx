@@ -1,91 +1,155 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator, ScrollView, Alert } from 'react-native';
-import { RouteProp, useRoute } from '@react-navigation/native';
+import React, { useState, useEffect, useCallback } from 'react';
+import { View, Text, StyleSheet, ActivityIndicator, FlatList, Alert, TouchableOpacity } from 'react-native';
+import { RouteProp, useRoute, useFocusEffect, useNavigation } from '@react-navigation/native';
 import { plantaService } from '../../services/plantaService';
-import { Planta } from '../../types';
-import { RootStackParamList } from '../../navigation/AppNavigator'; // Vamos criar este tipo no próximo passo
+import { historicoService } from '../../services/historicoService';
+import { Planta, RegistroHistorico } from '../../types';
+import { RootStackParamList } from '../../navigation/AppNavigator';
+import HistoryListItem from '../../components/HistoryListItem';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
-// Define o tipo dos parâmetros que esta tela espera receber
 type PlantDetailScreenRouteProp = RouteProp<RootStackParamList, 'PlantDetail'>;
+type PlantDetailNavigationProp = NativeStackNavigationProp<RootStackParamList, 'PlantDetail'>;
 
 const PlantDetailScreen = () => {
   const route = useRoute<PlantDetailScreenRouteProp>();
+  const navigation = useNavigation<PlantDetailNavigationProp>();
   const { plantaId } = route.params;
 
   const [planta, setPlanta] = useState<Planta | null>(null);
+  const [historico, setHistorico] = useState<RegistroHistorico[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const carregarDetalhesPlanta = async () => {
-      if (!plantaId) return;
-      
-      setIsLoading(true);
-      setError(null);
-      try {
-        const data = await plantaService.getPlantaById(plantaId);
-        setPlanta(data);
-      } catch (err) {
-        setError('Erro ao carregar os detalhes da planta.');
-        Alert.alert('Erro', 'Não foi possível carregar os detalhes da planta.');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    carregarDetalhesPlanta();
+  const carregarDados = useCallback(async () => {
+    if (!plantaId) return;
+    
+    setIsLoading(true);
+    setError(null);
+    try {
+      const [dataPlanta, dataHistorico] = await Promise.all([
+        plantaService.getPlantaById(plantaId),
+        historicoService.getHistoricoPorPlanta(plantaId)
+      ]);
+      setPlanta(dataPlanta);
+      setHistorico(dataHistorico);
+    } catch (err) {
+      setError('Erro ao carregar os dados da planta.');
+      Alert.alert('Erro', 'Não foi possível carregar os dados completos da planta.');
+    } finally {
+      setIsLoading(false);
+    }
   }, [plantaId]);
 
-  if (isLoading) {
-    return (
-      <View style={styles.centered}>
-        <ActivityIndicator size="large" />
-      </View>
+  useFocusEffect(
+    useCallback(() => {
+      carregarDados();
+    }, [carregarDados])
+  );
+
+  const handleDelete = () => {
+    Alert.alert(
+      "Confirmar Exclusão",
+      "Tem a certeza de que deseja apagar esta planta? Esta ação não pode ser desfeita.",
+      [
+        {
+          text: "Cancelar",
+          style: "cancel"
+        },
+        { 
+          text: "Apagar", 
+          onPress: async () => {
+            try {
+              await plantaService.deletePlanta(plantaId);
+              Alert.alert("Sucesso", "A planta foi apagada.");
+              navigation.goBack();
+            } catch (error) {
+              Alert.alert("Erro", "Não foi possível apagar a planta.");
+              console.error("Erro ao apagar planta:", error);
+            }
+          },
+          style: "destructive" 
+        }
+      ]
     );
+  };
+  
+  const handleEdit = () => {
+    navigation.navigate('EditPlant', { plantaId: plantaId });
+  };
+
+
+  if (isLoading) {
+    return <View style={styles.centered}><ActivityIndicator size="large" /></View>;
   }
 
   if (error || !planta) {
-    return (
-      <View style={styles.centered}>
-        <Text style={styles.errorText}>{error || 'Planta não encontrada.'}</Text>
-      </View>
-    );
+    return <View style={styles.centered}><Text style={styles.errorText}>{error || 'Planta não encontrada.'}</Text></View>;
   }
 
-  // Função auxiliar para renderizar uma linha de detalhe
   const renderDetailRow = (label: string, value?: string | null | Date) => {
     if (!value) return null;
-
     const displayValue = value instanceof Date ? value.toLocaleDateString('pt-BR') : value;
-    
     return (
-        <View style={styles.detailRow}>
-            <Text style={styles.detailLabel}>{label}</Text>
-            <Text style={styles.detailValue}>{displayValue}</Text>
-        </View>
+      <View style={styles.detailRow}>
+        <Text style={styles.detailLabel}>{label}</Text>
+        <Text style={styles.detailValue}>{displayValue}</Text>
+      </View>
     );
-  }
+  };
+
+  const ListHeader = () => (
+    <>
+      <View style={styles.header}>
+        <Text style={styles.mainTitle}>{planta.nome || planta.especie.nomeComum}</Text>
+        <Text style={styles.subtitle}>{planta.especie.nomeCientifico}</Text>
+      </View>
+      <View style={styles.card}>
+        {renderDetailRow('Status Atual', planta.statusAtual)}
+        {renderDetailRow('Data de Aquisição', planta.dataAquisicao ? new Date(planta.dataAquisicao) : null)}
+        {renderDetailRow('Próximo Transplante', planta.dataProximoTransplante ? new Date(planta.dataProximoTransplante) : null)}
+      </View>
+      <View style={styles.card}>
+        <Text style={styles.cardTitle}>Notas e Objetivos</Text>
+        {renderDetailRow('Visão de Futuro', planta.visao)}
+        {renderDetailRow('Objetivo do Ano', planta.objetivoAno)}
+        {renderDetailRow('Observações', planta.observacoes)}
+      </View>
+    </>
+  );
+  
+  const ListFooter = () => (
+    <View style={styles.actionsContainer}>
+        <TouchableOpacity style={styles.actionButton} onPress={handleEdit}>
+            <Text style={styles.actionButtonText}>Editar</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={[styles.actionButton, styles.deleteButton]} onPress={handleDelete}>
+            <Text style={styles.actionButtonText}>Apagar</Text>
+        </TouchableOpacity>
+    </View>
+  )
 
   return (
-    <ScrollView style={styles.container}>
-        <View style={styles.header}>
-            <Text style={styles.mainTitle}>{planta.nome || planta.especie.nomeComum}</Text>
-            <Text style={styles.subtitle}>{planta.especie.nomeCientifico}</Text>
-        </View>
-
-        <View style={styles.card}>
-            {renderDetailRow('Status Atual', planta.statusAtual)}
-            {renderDetailRow('Data de Aquisição', planta.dataAquisicao ? new Date(planta.dataAquisicao) : null)}
-            {renderDetailRow('Próximo Transplante', planta.dataProximoTransplante ? new Date(planta.dataProximoTransplante) : null)}
-        </View>
-        
-        <View style={styles.card}>
-            <Text style={styles.cardTitle}>Notas e Objetivos</Text>
-            {renderDetailRow('Visão de Futuro', planta.visao)}
-            {renderDetailRow('Objetivo do Ano', planta.objetivoAno)}
-            {renderDetailRow('Observações', planta.observacoes)}
-        </View>
-    </ScrollView>
+    <FlatList
+        style={styles.container}
+        data={historico}
+        keyExtractor={(item) => item.id}
+        renderItem={({ item }) => <HistoryListItem item={item} />}
+        ListHeaderComponent={
+            <>
+                <ListHeader />
+                <View style={styles.historyHeader}>
+                    <Text style={styles.cardTitle}>Histórico de Cuidados</Text>
+                </View>
+            </>
+        }
+        ListFooterComponent={ListFooter}
+        ListEmptyComponent={
+            <View style={styles.centeredEmpty}>
+                <Text>Nenhum registo de histórico para esta planta.</Text>
+            </View>
+        }
+    />
   );
 };
 
@@ -98,6 +162,10 @@ const styles = StyleSheet.create({
     centered: {
         flex: 1,
         justifyContent: 'center',
+        alignItems: 'center',
+    },
+    centeredEmpty: {
+        padding: 20,
         alignItems: 'center',
     },
     header: {
@@ -119,19 +187,23 @@ const styles = StyleSheet.create({
     },
     card: {
         backgroundColor: '#fff',
-        borderRadius: 8,
         padding: 20,
-        margin: 15,
-        marginBottom: 0,
+        marginHorizontal: 15,
+        marginTop: 15,
+        borderRadius: 8,
+    },
+    historyHeader: {
+        marginTop: 20,
+        paddingHorizontal: 20,
+        paddingBottom: 10,
     },
     cardTitle: {
         fontSize: 18,
         fontWeight: 'bold',
-        marginBottom: 15,
         color: '#444',
     },
     detailRow: {
-        marginBottom: 15,
+        marginBottom: 10,
     },
     detailLabel: {
         fontSize: 14,
@@ -146,7 +218,26 @@ const styles = StyleSheet.create({
         fontSize: 16,
         color: 'red',
     },
+    actionsContainer: {
+        flexDirection: 'row',
+        justifyContent: 'space-around',
+        padding: 20,
+        marginTop: 10,
+    },
+    actionButton: {
+        backgroundColor: '#007bff',
+        paddingVertical: 12,
+        paddingHorizontal: 40,
+        borderRadius: 8,
+    },
+    deleteButton: {
+        backgroundColor: '#dc3545',
+    },
+    actionButtonText: {
+        color: '#fff',
+        fontSize: 16,
+        fontWeight: 'bold',
+    },
 });
-
 
 export default PlantDetailScreen;

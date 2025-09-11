@@ -20,6 +20,7 @@ export interface Usuario {
   nome: string;
   email: string;
   createdAt: string;
+  role: 'USER' | 'ADMIN';
 }
 
 /**

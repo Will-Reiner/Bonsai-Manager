@@ -5,29 +5,27 @@ Uma aplicação full-stack desenhada para ajudar entusiastas de bonsai a gerir a
 ## ✨ Funcionalidades
 
 * **Backend (API RESTful):**
-    * Autenticação de utilizadores com JWT (registo e login por email/senha).
-    * CRUD completo para gestão de **Espécies** de plantas (ex: *Pitanga*, *Caliandra*).
-    * CRUD completo e seguro para a Coleção de **Plantas** de cada utilizador.
-    * CRUD para um catálogo de **Atividades** de cuidado (ex: *Transplante*, *Poda de Raízes*, *Aramagem*).
-    * CRUD para a **Agenda** de cuidados, permitindo agendar atividades para plantas específicas.
-    * Sistema de Histórico, Recursos, Fotos e mais, conforme o plano inicial.
+    * Autenticação Segura: Registo e login de utilizadores com JWT e sistema de papéis (USER / ADMIN).
+    * Gestão de Coleção Pessoal: CRUD completo e seguro para as Plantas de cada utilizador.
+    * Catálogo Global: CRUD completo para a gestão de Espécies, Atividades e Tipos de Recurso (protegido por administradores).
+    * Tracking Detalhado: CRUD para a Agenda de cuidados, Histórico de atividades, Fotos e Recursos (inventário) de cada utilizador.
+    * Relações Complexas: Suporte para relações muitos-para-muitos, como múltiplos recursos necessários para uma atividade.
 * **Frontend (React Native):**
-    * Aplicação mobile multiplataforma construída com Expo e TypeScript.
-    * Fluxo de autenticação com ecrã de login, logout e gestão de estado global.
-    * Visualização da coleção de plantas pessoal, com dados obtidos da API.
-    * Navegação entre ecrãs (Lista da Coleção, Detalhes da Planta, Adicionar Planta).
-    * Formulário para adicionar novas plantas à coleção, com seleção de espécies.
+    * Aplicação Multiplataforma: Construída com Expo e TypeScript para Android e iOS.
+    * Fluxo de Autenticação: Ecrãs de login/registo, gestão de estado global com React Context e persistência de sessão.
+    * Visualização e Gestão: Telas para listar a coleção, ver detalhes da planta (com histórico), adicionar, editar e apagar plantas.
+    * Painel Administrativo: Uma área exclusiva para utilizadores ADMIN gerirem os dados globais da aplicação (Espécies, Atividades, etc.).
 
 ## 💻 Tecnologias Utilizadas
 
-| Backend                 | Frontend                  |
-| ----------------------- | ------------------------- |
-| Node.js                 | React Native              |
-| TypeScript              | Expo SDK                  |
-| Express.js              | TypeScript                |
-| Prisma (ORM)            | React Navigation          |
-| PostgreSQL              | Axios                     |
-| Docker & Docker Compose | React Context API         |
+| Backend                 | Frontend                  | Banco de Dados           |
+| ----------------------- | ------------------------- | ------------------------ |
+| Node.js                 | React Native              | PostgreSQL               |
+| TypeScript              | Expo SDK                  | Prisma (ORM)             |
+| Express.js              | TypeScript                | Docker & Docker Compose  |
+| Zod (Validação)         | React Navigation          | JWT (Autenticação)       |
+| Helmet (Segurança)      | Axios                     |                          |
+| BcryptJS                | React Context API         |                          |
 
 ## 🚦 Pré-requisitos
 
@@ -95,14 +93,30 @@ npx expo start
 
 Isto irá iniciar o Metro Bundler e abrir uma página no seu navegador com um QR Code. Use a aplicação **Expo Go** no seu telemóvel para ler o QR Code e carregar a aplicação. Certifique-se de que o seu telemóvel e o computador estão na mesma rede Wi-Fi.
 
+### 3. (Opcional) Tornar-se Administrador
+
+Para aceder ao Painel Administrativo, precisa de promover o seu utilizador a ADMIN.
+
+1. Registe um utilizador normalmente através da aplicação.
+2. Abra um novo terminal na pasta server.
+3. Execute o Prisma Studio com o seguinte comando:
+
+```bash
+docker compose exec api npx prisma studio
+```
+
+4. No seu navegador, vá ao modelo **Usuario**, encontre o seu utilizador e altere o campo **role** de **USER** para **ADMIN**.
+
 ## **📝 Endpoints Principais da API (Referência Rápida)**
 
-* POST /api/auth/register: Registar um novo utilizador.  
-* POST /api/auth/login: Fazer login.  
-* GET /api/auth/me: Obter dados do utilizador logado (requer token).  
-* GET /api/especies: Listar todas as espécies.  
-* POST /api/especies: Criar uma nova espécie (requer token).  
-* GET /api/plantas: Listar todas as plantas do utilizador logado (requer token).  
-* POST /api/plantas: Adicionar uma nova planta à coleção (requer token).  
-* GET /api/atividades: Listar todas as atividades.  
-* GET /api/agenda: Listar a agenda do utilizador logado (requer token).
+
+* POST /api/auth/register: Registar um novo utilizador.
+* POST /api/auth/login: Fazer login e obter um token JWT
+* GET /api/auth/me: Obter dados do utilizador logado (requer token).
+* GET /api/plantas: Listar todas as plantas do utilizador logado (requer token).
+* POST /api/plantas: Adicionar uma nova planta (requer token).
+* GET /api/especies: Listar todas as espécies (público).
+* POST /api/especies: Criar uma nova espécie (requer token de Admin).
+* GET /api/atividades: Listar todas as atividades (público).
+* POST /api/atividades: Criar uma nova atividade (requer token de Admin).
+* ... e muitos mais para agendas, historicos, fotos e recursos.

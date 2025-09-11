@@ -21,7 +21,7 @@ type CollectionScreenNavigationProp = NativeStackNavigationProp<RootStackParamLi
 
 const CollectionScreen = () => {
   const navigation = useNavigation<CollectionScreenNavigationProp>();
-  const { logout } = useAuth();
+  const { user, logout } = useAuth();
   const [plantas, setPlantas] = useState<Planta[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -112,7 +112,22 @@ const CollectionScreen = () => {
             <Text style={styles.addButtonText}>+</Text>
         </TouchableOpacity>
       </View>
+
       {renderContent()}
+
+      <View style={styles.footerButtons}>
+        {user?.role === 'ADMIN' && (
+            <TouchableOpacity 
+                style={[styles.button, styles.adminButton]} 
+                onPress={() => navigation.navigate('Admin')}
+            >
+                <Text style={styles.buttonText}>Painel Admin</Text>
+            </TouchableOpacity>
+        )}
+        <TouchableOpacity style={[styles.button, styles.logoutButton]} onPress={logout}>
+            <Text style={styles.buttonText}>Deslogar</Text>
+        </TouchableOpacity>
+      </View>
     </SafeAreaView>
   );
 };
@@ -191,6 +206,18 @@ const styles = StyleSheet.create({
         fontSize: 24,
         lineHeight: 30,
         fontWeight: 'bold',
+    },
+    footerButtons: {
+        padding: 10,
+        flexDirection: 'row',
+        justifyContent: 'space-around',
+        alignItems: 'center',
+    },
+    adminButton: {
+        backgroundColor: '#ffc107', // Cor de aviso/admin
+    },
+    logoutButton: {
+        backgroundColor: '#dc3545',
     },
 });
 

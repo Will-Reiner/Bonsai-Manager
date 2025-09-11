@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { atividadeController } from './atividade.controller';
+import { adminMiddleware } from '../../middlewares/admin.middleware';
 import { authMiddleware } from '../../middlewares/auth.middleware';
 
 const atividadeRouter = Router();

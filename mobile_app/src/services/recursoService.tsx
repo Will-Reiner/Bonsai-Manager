@@ -15,6 +15,10 @@ export interface CreateRecursoDTO {
   observacoes?: string;
 }
 
+export interface CreateTipoRecursoDTO {
+    nome: string;
+}
+
 /**
  * DTO para a atualização de um recurso existente.
  * Reflete o `updateRecursoSchema` do backend.
@@ -72,6 +76,11 @@ const getAllTiposRecurso = async (): Promise<TipoRecurso[]> => {
     return response.data;
 }
 
+const createTipoRecurso = async (data: CreateTipoRecursoDTO): Promise<TipoRecurso> => {
+    const response = await api.post('/tipos-recurso', data);
+    return response.data;
+}
+
 
 export const recursoService = {
   getMeusRecursos,
@@ -79,4 +88,5 @@ export const recursoService = {
   updateRecurso,
   deleteRecurso,
   getAllTiposRecurso,
+  createTipoRecurso,
 };
