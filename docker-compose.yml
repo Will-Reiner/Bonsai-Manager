@@ -1,0 +1,41 @@
+version: '3.8'
+
+services:
+  # Serviço do Banco de Dados PostgreSQL
+  db:
+    image: postgres:14-alpine
+    container_name: bonsai_db
+    restart: always
+    environment:
+      POSTGRES_USER: bonsai_user
+      POSTGRES_PASSWORD: bonsai_pass
+      POSTGRES_DB: bonsai_db
+    ports:
+      # Expõe a porta do banco para podermos acessá-lo localmente se necessário
+      - '5432:5432'
+    volumes:
+      # Garante que os dados do banco persistam mesmo se o container for recriado
+      - postgres_data:/var/lib/postgresql/data
+
+  # Serviço da nossa API Node.js
+  api:
+    build:
+      context: ./server # O Docker vai procurar o Dockerfile na pasta ./server
+      dockerfile: Dockerfile
+    container_name: bonsai_api
+    restart: always
+    depends_on:
+      - db # Garante que o banco de dados inicie antes da API
+    ports:
+      - '3000:3000'
+    volumes:
+      # Mapeia nosso código local para dentro do container para hot-reloading
+      - ./server:/app
+      # Volume anônimo para evitar que o node_modules local sobrescreva o do container
+      - /app/node_modules
+    env_file:
+      # Carrega as variáveis de ambiente do arquivo .env
+      - ./server/.env
+
+volumes:
+  postgres_data:

@@ -1,0 +1,156 @@
+// Este é o gerador do Prisma Client, que nos dará um ORM type-safe
+generator client {
+  provider = "prisma-client-js"
+}
+
+// Esta é a configuração da nossa conexão com o banco de dados
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// --- Enumerações para Tipos de Dados ---
+
+enum AgendaStatus {
+  PENDENTE
+  CONCLUIDO
+  CANCELADO
+}
+
+enum RecursoStatus {
+  DISPONIVEL
+  EM_FALTA
+  ENCOMENDADO
+}
+
+// --- Modelos (Tabelas) ---
+
+model Usuario {
+  id        String    @id @default(uuid())
+  nome      String
+  email     String    @unique
+  senhaHash String
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  plantas  Planta[]
+  recursos Recurso[]
+}
+
+model Especie {
+  id                String   @id @default(uuid())
+  nomeCientifico    String   @unique
+  nomeComum         String?
+  informacoesGerais String?  @db.Text
+
+  plantas Planta[]
+}
+
+model Planta {
+  id                       String    @id @default(uuid())
+  nome                     String?
+  dataAquisicao            DateTime?
+  statusAtual              String?
+  visao                    String?   @db.Text
+  objetivoAno              String?   @db.Text
+  dataProximoTransplante   DateTime?
+  prioridadeTransplante    Int?
+  observacoes              String?   @db.Text
+  createdAt                DateTime  @default(now())
+  updatedAt                DateTime  @updatedAt
+
+  usuario    Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  usuarioId  String
+
+  especie    Especie @relation(fields: [especieId], references: [id])
+  especieId  String
+
+  agenda      Agenda[]
+  historico   RegistroAtividadeHistorico[]
+  fotos       Foto[]
+}
+
+model Atividade {
+  id          String   @id @default(uuid())
+  nome        String   @unique @map("nome_atividade")
+  descricao   String?  @db.Text
+  createdAt   DateTime @default(now())
+
+  recursosNecessarios AtividadeRecursoNecessario[]
+  agendas             Agenda[]
+}
+
+model TipoRecurso {
+  id   String @id @default(uuid())
+  nome String @unique
+
+  recursos            Recurso[]
+  atividadesQueUsam   AtividadeRecursoNecessario[]
+}
+
+// Tabela de junção explícita para relacionamento Muitos-para-Muitos
+model AtividadeRecursoNecessario {
+  atividade   Atividade   @relation(fields: [atividadeId], references: [id], onDelete: Cascade)
+  atividadeId String
+
+  tipoRecurso   TipoRecurso @relation(fields: [tipoRecursoId], references: [id])
+  tipoRecursoId String
+
+  @@id([atividadeId, tipoRecursoId])
+}
+
+model Agenda {
+  id            String       @id @default(uuid())
+  dataAgendada  DateTime
+  dataConcluida DateTime?
+  status        AgendaStatus @default(PENDENTE)
+  observacoes   String?      @db.Text
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  planta      Planta    @relation(fields: [plantaId], references: [id], onDelete: Cascade)
+  plantaId    String
+
+  atividade   Atividade @relation(fields: [atividadeId], references: [id])
+  atividadeId String
+}
+
+model Recurso {
+  id                   String         @id @default(uuid())
+  quantidadeDisponivel Int
+  unidadeMedida        String? // Ex: "un", "kg", "L"
+  status               RecursoStatus  @default(DISPONIVEL)
+  observacoes          String?        @db.Text
+  createdAt            DateTime       @default(now())
+  updatedAt            DateTime       @updatedAt
+
+  usuario       Usuario     @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  usuarioId     String
+
+  tipoRecurso   TipoRecurso @relation(fields: [tipoRecursoId], references: [id])
+  tipoRecursoId String
+}
+
+model RegistroAtividadeHistorico {
+  id                 String    @id @default(uuid())
+  dataRealizacao     DateTime
+  atividadeRealizada String
+  recursosUtilizados String?   @db.Text
+  detalhes           String?   @db.Text
+  observacaoFutura   String?   @db.Text
+  createdAt          DateTime  @default(now())
+
+  planta     Planta @relation(fields: [plantaId], references: [id], onDelete: Cascade)
+  plantaId   String
+}
+
+model Foto {
+  id             String   @id @default(uuid())
+  caminhoArquivo String
+  dataUpload     DateTime @default(now())
+  descricao      String?
+  createdAt      DateTime @default(now())
+
+  planta     Planta @relation(fields: [plantaId], references: [id], onDelete: Cascade)
+  plantaId   String
+}
