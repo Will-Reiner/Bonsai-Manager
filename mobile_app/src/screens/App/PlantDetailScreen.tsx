@@ -78,6 +78,10 @@ const PlantDetailScreen = () => {
     navigation.navigate('EditPlant', { plantaId: plantaId });
   };
 
+  const handleSchedule = () => {
+    navigation.navigate('ScheduleCare', { plantaId: plantaId });
+};
+
 
   if (isLoading) {
     return <View style={styles.centered}><ActivityIndicator size="large" /></View>;
@@ -122,6 +126,9 @@ const PlantDetailScreen = () => {
     <View style={styles.actionsContainer}>
         <TouchableOpacity style={styles.actionButton} onPress={handleEdit}>
             <Text style={styles.actionButtonText}>Editar</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={[styles.actionButton, styles.scheduleButton]} onPress={handleSchedule}>
+            <Text style={styles.actionButtonText}>Agendar</Text>
         </TouchableOpacity>
         <TouchableOpacity style={[styles.actionButton, styles.deleteButton]} onPress={handleDelete}>
             <Text style={styles.actionButtonText}>Apagar</Text>
@@ -227,8 +234,14 @@ const styles = StyleSheet.create({
     actionButton: {
         backgroundColor: '#007bff',
         paddingVertical: 12,
-        paddingHorizontal: 40,
+        paddingHorizontal: 20, // Ajuste para caber 3 botões
         borderRadius: 8,
+        alignItems: 'center',
+        flex: 1, // Faz os botões dividirem o espaço
+        marginHorizontal: 5, // Adiciona espaçamento
+    },
+    scheduleButton: {
+        backgroundColor: '#17a2b8', // Uma cor diferente para destaque
     },
     deleteButton: {
         backgroundColor: '#dc3545',

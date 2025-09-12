@@ -10,17 +10,21 @@ import {
   Platform,
 } from 'react-native';
 import { useAuth } from '../../context/AuthContext';
+import { useNavigation } from '@react-navigation/native'; // 1. Importar useNavigation
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { RootStackParamList } from '../../navigation/AppNavigator';
+
+// 2. Definir o tipo para a propriedade de navegação
+type LoginScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Login'>;
 
 const LoginScreen = () => {
-  // 1. Integração com o Contexto de Autenticação
   const { login } = useAuth();
+  const navigation = useNavigation<LoginScreenNavigationProp>(); // 3. Inicializar a navegação
 
-  // 2. Estados para controlar os inputs e o loading
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  // 3. Função para lidar com o clique no botão de login
   const handleLogin = async () => {
     if (!email || !password) {
       alert('Por favor, preencha o email e a senha.');
@@ -29,16 +33,13 @@ const LoginScreen = () => {
     setIsLoading(true);
     try {
       await login(email, password);
-      // A navegação ocorrerá automaticamente pelo AuthContext/AppNavigator
     } catch (error) {
-      // O AuthContext já mostra um Alert em caso de erro, mas poderíamos tratar outros casos aqui.
       console.error('Falha no handleLogin:', error);
     } finally {
       setIsLoading(false);
     }
   };
 
-  // 4. Renderização da UI
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -47,23 +48,8 @@ const LoginScreen = () => {
       <Text style={styles.title}>Bonsai Manager</Text>
       <Text style={styles.subtitle}>Acesse sua coleção</Text>
 
-      <TextInput
-        style={styles.input}
-        placeholder="Email"
-        value={email}
-        onChangeText={setEmail}
-        keyboardType="email-address"
-        autoCapitalize="none"
-        autoCorrect={false}
-      />
-
-      <TextInput
-        style={styles.input}
-        placeholder="Senha"
-        value={password}
-        onChangeText={setPassword}
-        secureTextEntry
-      />
+      <TextInput style={styles.input} placeholder="Email" value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" autoCorrect={false} />
+      <TextInput style={styles.input} placeholder="Senha" value={password} onChangeText={setPassword} secureTextEntry />
 
       <TouchableOpacity
         style={[styles.button, isLoading && styles.buttonDisabled]}
@@ -76,11 +62,15 @@ const LoginScreen = () => {
           <Text style={styles.buttonText}>Entrar</Text>
         )}
       </TouchableOpacity>
+      
+      {/* 4. Adicionar o botão para navegar para a tela de registo */}
+      <TouchableOpacity onPress={() => navigation.navigate('Register')} style={styles.registerButton}>
+        <Text style={styles.registerButtonText}>Não tem uma conta? Crie uma agora</Text>
+      </TouchableOpacity>
     </KeyboardAvoidingView>
   );
 };
 
-// 5. Estilos para os componentes
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -128,6 +118,15 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
   },
+  // 5. Adicionar estilos para o novo botão
+  registerButton: {
+      marginTop: 25,
+  },
+  registerButtonText: {
+      color: '#007bff',
+      fontSize: 16,
+      fontWeight: '600'
+  }
 });
 
 export default LoginScreen;
