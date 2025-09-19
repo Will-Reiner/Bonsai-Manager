@@ -1,55 +1,36 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useFocusEffect } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useAuth } from '../../context/AuthContext';
-import { plantaService } from '../../services/plantaService';
-import { agendaService } from '../../services/agendaService';
-import { Agenda } from '../../types';
+import api from '../../api';
+import { Usuario } from '../../types';
+import { RootStackParamList } from '../../navigation/AppNavigator';
 
-// Componente para exibir um card de estatística
-const StatCard = ({ label, value, loading }: { label: string; value: string | number; loading: boolean }) => (
-  <View style={styles.statCard}>
+// Componente reutilizado
+const StatCard = ({ label, value, loading, onPress }: { label: string; value: string | number; loading: boolean, onPress?: () => void }) => (
+  <TouchableOpacity style={styles.statCard} onPress={onPress} disabled={!onPress}>
+    <Text style={styles.statValue}>{loading ? <ActivityIndicator size="small" /> : value}</Text>
     <Text style={styles.statLabel}>{label}</Text>
-    {loading ? <ActivityIndicator size="small" /> : <Text style={styles.statValue}>{value}</Text>}
-  </View>
+  </TouchableOpacity>
 );
 
+type ProfileScreenNavigationProp = NativeStackNavigationProp<RootStackParamList>;
+
 const ProfileScreen = () => {
+  const navigation = useNavigation<ProfileScreenNavigationProp>();
   const { user, logout } = useAuth();
-  
-  const [plantCount, setPlantCount] = useState(0);
-  const [activitiesThisYear, setActivitiesThisYear] = useState(0);
-  const [adubacoesThisYear, setAdubacoesThisYear] = useState(0);
+  const [fullUser, setFullUser] = useState<Usuario | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  const fetchStats = useCallback(async () => {
+  const fetchFullUserData = useCallback(async () => {
     setIsLoading(true);
     try {
-      const [minhasPlantas, minhaAgenda] = await Promise.all([
-        plantaService.getMinhasPlantas(),
-        agendaService.getMinhaAgenda()
-      ]);
-      
-      setPlantCount(minhasPlantas.length);
-
-      const historico = minhaAgenda.filter(item => item.status === 'CONCLUIDO');
-      
-      const currentYear = new Date().getFullYear();
-      const historyThisYear = historico.filter(
-        (registro) => registro.dataConcluida && new Date(registro.dataConcluida).getFullYear() === currentYear
-      );
-      
-      setActivitiesThisYear(historyThisYear.length);
-      
-      // CORREÇÃO FINAL E ROBUSTA APLICADA AQUI
-      const adubacoes = historyThisYear.filter(
-        (registro) => (registro.atividade?.nome ?? '').toLowerCase().includes('aduba')
-      ).length;
-      setAdubacoesThisYear(adubacoes);
-
+      const response = await api.get('/auth/me');
+      setFullUser(response.data);
     } catch (error) {
-      Alert.alert("Erro", "Não foi possível carregar as estatísticas.");
+      Alert.alert("Erro", "Não foi possível carregar os seus dados de perfil.");
     } finally {
       setIsLoading(false);
     }
@@ -57,9 +38,12 @@ const ProfileScreen = () => {
 
   useFocusEffect(
     useCallback(() => {
-      fetchStats();
-    }, [fetchStats])
+      fetchFullUserData();
+    }, [fetchFullUserData])
   );
+
+  const followers = fullUser?.seguidores?.map(f => f.seguidor) || [];
+  const following = fullUser?.seguindo?.map(f => f.seguido) || [];
 
   return (
     <SafeAreaView style={styles.container}>
@@ -70,131 +54,52 @@ const ProfileScreen = () => {
 
         <View style={styles.card}>
           <Text style={styles.cardTitle}>{user?.nomePublico || user?.nome}</Text>
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Localidade:</Text>
-            <Text style={styles.infoValue}>{user?.localidade || 'Não informado'}</Text>
-          </View>
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Email:</Text>
-            <Text style={styles.infoValue}>{user?.email}</Text>
-          </View>
+          {/* ... (infoRow existente) ... */}
         </View>
 
         <View style={styles.card}>
-          <Text style={styles.cardTitle}>Estatísticas</Text>
+          <Text style={styles.cardTitle}>Conexões</Text>
           <View style={styles.statsContainer}>
-            <StatCard label="Plantas na Coleção" value={plantCount} loading={isLoading} />
-            <StatCard label="Atividades (Ano)" value={activitiesThisYear} loading={isLoading} />
-            <StatCard label="Adubações (Ano)" value={adubacoesThisYear} loading={isLoading} />
+            <StatCard label="Plantas" value={fullUser?.plantas?.length ?? 0} loading={isLoading} />
+            <StatCard 
+              label="Seguidores" 
+              value={followers.length} 
+              loading={isLoading} 
+              onPress={() => navigation.navigate('UserList', { users: followers, title: 'Seguidores' })}
+            />
+            <StatCard 
+              label="A Seguir" 
+              value={following.length} 
+              loading={isLoading}
+              onPress={() => navigation.navigate('UserList', { users: following, title: 'A Seguir' })}
+            />
           </View>
         </View>
 
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>Configurações</Text>
-          <TouchableOpacity style={styles.buttonDisabled} disabled>
-            <Text style={styles.buttonText}>Editar Perfil (Em breve)</Text>
-          </TouchableOpacity>
-        </View>
-        
         <TouchableOpacity style={styles.logoutButton} onPress={logout}>
           <Text style={styles.logoutButtonText}>Sair (Logout)</Text>
         </TouchableOpacity>
-
       </ScrollView>
     </SafeAreaView>
   );
 };
 
+// Estilos atualizados
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f8f9fa',
-  },
-  headerContainer: {
-    padding: 20,
-    backgroundColor: '#fff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
-  },
-  headerTitle: {
-    fontSize: 28,
-    fontWeight: 'bold',
-  },
-  card: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 20,
-    marginHorizontal: 15,
-    marginTop: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 5,
-    elevation: 3,
-  },
-  cardTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginBottom: 15,
-    color: '#333',
-  },
-  infoRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingVertical: 8,
-  },
-  infoLabel: {
-    fontSize: 16,
-    color: '#6c757d',
-  },
-  infoValue: {
-    fontSize: 16,
-    fontWeight: '500',
-  },
-  statsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-  },
-  statCard: {
-    alignItems: 'center',
-    flex: 1,
-  },
-  statValue: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#007bff',
-  },
-  statLabel: {
-    fontSize: 14,
-    color: '#6c757d',
-    textAlign: 'center',
-    marginTop: 5,
-  },
-  buttonDisabled: {
-    backgroundColor: '#e9ecef',
-    padding: 15,
-    borderRadius: 8,
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  buttonText: {
-    color: '#6c757d',
-    fontWeight: 'bold',
-    fontSize: 16,
-  },
-  logoutButton: {
-    backgroundColor: '#dc3545',
-    margin: 15,
-    padding: 15,
-    borderRadius: 8,
-    alignItems: 'center',
-    marginTop: 30
-  },
-  logoutButtonText: {
-    color: '#fff',
-    fontWeight: 'bold',
-    fontSize: 16,
-  },
+    container: { flex: 1, backgroundColor: '#f8f9fa' },
+    headerContainer: { padding: 20, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#eee' },
+    headerTitle: { fontSize: 28, fontWeight: 'bold' },
+    card: { backgroundColor: '#fff', borderRadius: 12, padding: 20, marginHorizontal: 15, marginTop: 20, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 5, elevation: 3 },
+    cardTitle: { fontSize: 20, fontWeight: 'bold', marginBottom: 15, color: '#333' },
+    infoRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 8 },
+    infoLabel: { fontSize: 16, color: '#6c757d' },
+    infoValue: { fontSize: 16, fontWeight: '500' },
+    statsContainer: { flexDirection: 'row', justifyContent: 'space-around' },
+    statCard: { alignItems: 'center', flex: 1, paddingVertical: 10 },
+    statValue: { fontSize: 24, fontWeight: 'bold', color: '#007bff', marginBottom: 5 },
+    statLabel: { fontSize: 14, color: '#6c757d', textAlign: 'center' },
+    logoutButton: { backgroundColor: '#dc3545', margin: 15, padding: 15, borderRadius: 8, alignItems: 'center', marginTop: 30 },
+    logoutButtonText: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
 });
 
 export default ProfileScreen;

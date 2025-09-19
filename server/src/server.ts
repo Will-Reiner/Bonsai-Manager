@@ -16,6 +16,7 @@ import inspiracaoRouter from './modules/inspiracao/inspiracao.router';
 import atividadeFerramentaSugeridaRouter from './modules/atividade-ferramenta-sugerida/atividade-ferramenta-sugerida.router';
 import guiaDeTecnicasRouter from './modules/guia-de-tecnicas/guia-de-tecnicas.router';
 import atividadeRecursoSugeridoRouter from './modules/atividade-recurso-sugerido/atividade-recurso-sugerido.router';
+import userRouter from './modules/user/user.router';
 
 
 const app = express();
@@ -44,6 +45,7 @@ app.use('/api/inspiracoes', inspiracaoRouter);
 app.use('/api/atividades-ferramentas-sugeridas', atividadeFerramentaSugeridaRouter);
 app.use('/api/guias-de-tecnicas', guiaDeTecnicasRouter);
 app.use('/api/atividades-recursos-sugeridos', atividadeRecursoSugeridoRouter);
+app.use('/api/users', userRouter);
 
 app.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);

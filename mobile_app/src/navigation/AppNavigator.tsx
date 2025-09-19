@@ -4,7 +4,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { View, ActivityIndicator } from 'react-native';
 
-// Importar todas as telas
+// Import all screens
 import LoginScreen from '../screens/Auth/LoginScreen';
 import RegisterScreen from '../screens/Auth/RegisterScreen';
 import CollectionScreen from '../screens/App/CollectionScreen';
@@ -21,10 +21,14 @@ import SpeciesDetailScreen from '../screens/App/SpeciesDetailScreen';
 import TechniquesListScreen from '../screens/App/TechniquesListScreen';
 import TechniqueDetailScreen from '../screens/App/TechniqueDetailScreen';
 import ProfileScreen from '../screens/App/ProfileScreen';
+import CommunityScreen from '../screens/App/CommunityScreen';
+import PublicProfileScreen from '../screens/App/PublicProfileScreen';
+import UserListScreen from '../screens/App/UserListScreen';
 
 import { useAuth } from '../context/AuthContext';
+import { Usuario } from '../types';
 
-// Tipagem para o Stack Navigator (telas que empilham)
+// Tipos para o navegador principal (Stack)
 export type RootStackParamList = {
   MainTabs: undefined;
   Login: undefined;
@@ -35,24 +39,27 @@ export type RootStackParamList = {
   Admin: undefined;
   ScheduleCare: { plantaId: string };
   SpeciesList: undefined;
-  SpeciesDetail: { especieId: string };
+  SpeciesDetail: { especieId: string; title: string };
   TechniquesList: undefined;
   TechniqueDetail: { atividadeId: string; title: string };
+  PublicProfile: { userId: string }; // 'Community' foi removido daqui
+  UserList: { users: Partial<Usuario>[], title: string };
 };
 
-// Tipagem para o Tab Navigator (abas principais)
+// Tipos para a navegação por abas (Tabs)
 export type MainTabParamList = {
   Collection: undefined;
   Agenda: undefined;
   Inventory: undefined;
   Encyclopedia: undefined;
+  Community: undefined; // Este é o lugar correto para a rota 'Community'
   Profile: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator<MainTabParamList>();
 
-// Componente que renderiza a navegação por abas
+// Componente para a Navegação por Abas
 const MainTabs = () => {
   return (
     <Tab.Navigator
@@ -67,16 +74,15 @@ const MainTabs = () => {
       <Tab.Screen name="Agenda" component={AgendaScreen} options={{ title: 'Agenda' }} />
       <Tab.Screen name="Inventory" component={InventoryScreen} options={{ title: 'Inventário' }} />
       <Tab.Screen name="Encyclopedia" component={EncyclopediaScreen} options={{ title: 'Enciclopédia' }} />
+      <Tab.Screen name="Community" component={CommunityScreen} options={{ title: 'Comunidade' }} />
       <Tab.Screen name="Profile" component={ProfileScreen} options={{ title: 'Perfil' }} />
     </Tab.Navigator>
   );
 };
 
-// Componente principal do navegador do aplicativo
 const AppNavigator = () => {
   const { authState } = useAuth();
 
-  // Mostra um indicador de carregamento enquanto verifica o estado de autenticação
   if (authState.isLoading) {
     return (
       <View style={{ flex: 1, justifyContent: 'center' }}>
@@ -89,7 +95,6 @@ const AppNavigator = () => {
     <NavigationContainer>
       <Stack.Navigator>
         {authState.isAuthenticated ? (
-          // Telas disponíveis para usuários autenticados
           <>
             <Stack.Screen name="MainTabs" component={MainTabs} options={{ headerShown: false }} />
             <Stack.Screen name="PlantDetail" component={PlantDetailScreen} options={{ title: 'Detalhes da Planta' }} />
@@ -98,15 +103,16 @@ const AppNavigator = () => {
             <Stack.Screen name="Admin" component={AdminScreen} options={{ title: 'Painel Admin' }} />
             <Stack.Screen name="ScheduleCare" component={ScheduleCareScreen} options={{ title: 'Agendar Cuidado' }} />
             <Stack.Screen name="SpeciesList" component={SpeciesListScreen} options={{ title: 'Guia de Espécies' }} />
-            <Stack.Screen name="SpeciesDetail" component={SpeciesDetailScreen} options={{ title: 'Detalhes da Espécie' }} />
+            <Stack.Screen name="SpeciesDetail" component={SpeciesDetailScreen} options={({ route }) => ({ title: route.params.title })} />
             <Stack.Screen name="TechniquesList" component={TechniquesListScreen} options={{ title: 'Guia de Técnicas' }} />
             <Stack.Screen name="TechniqueDetail" component={TechniqueDetailScreen} options={({ route }) => ({ title: route.params.title })} />
+            <Stack.Screen name="PublicProfile" component={PublicProfileScreen} options={{ title: 'Perfil Público' }} />
+            <Stack.Screen name="UserList" component={UserListScreen} options={({ route }) => ({ title: route.params.title })} />
           </>
         ) : (
-          // Telas disponíveis para usuários não autenticados
           <>
             <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
-            <Stack.Screen name="Register" component={RegisterScreen} options={{ headerShown: false }} />
+            <Stack.Screen name="Register" component={RegisterScreen} options={{ title: 'Criar Conta' }} />
           </>
         )}
       </Stack.Navigator>

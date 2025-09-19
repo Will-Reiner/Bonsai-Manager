@@ -67,32 +67,29 @@ export const authController = {
   getMe: async (req: Request, res: Response) => {
     const userId = req.user?.userId;
     if (!userId) {
-      return res.status(400).json({ message: 'ID do usuário não encontrado no token.' });
+      return res.status(400).json({ message: 'ID do utilizador não encontrado no token.' });
     }
     try {
       const user = await prisma.usuario.findUnique({
         where: { id: userId },
-        // Excluímos o senhaHash do retorno
-        select: {
-          id: true,
-          nome: true,
-          nomePublico: true,
-          email: true,
-          localidade: true,
-          fotoPerfilUrl: true,
-          bio: true,
-          perfilPublico: true,
-          recursosHabilitado: true,
-          createdAt: true,
-          role: true,
-        },
+        include: {
+          // Incluímos as relações sociais
+          seguindo: { select: { seguido: { select: { id: true, nomePublico: true, fotoPerfilUrl: true } } } },
+          seguidores: { select: { seguidor: { select: { id: true, nomePublico: true, fotoPerfilUrl: true } } } },
+          // E AGORA INCLUÍMOS AS PLANTAS TAMBÉM
+          plantas: { select: { id: true } } // Só precisamos do ID para fazer a contagem
+        }
       });
+
       if (!user) {
-        return res.status(404).json({ message: 'Usuário não encontrado.' });
+        return res.status(404).json({ message: 'Utilizador não encontrado.' });
       }
-      return res.status(200).json(user);
+
+      const { senhaHash, ...userWithoutPassword } = user;
+      return res.status(200).json(userWithoutPassword);
+      
     } catch (error) {
-      return res.status(500).json({ message: 'Erro ao buscar dados do usuário.' });
+      return res.status(500).json({ message: 'Erro ao buscar dados do utilizador.' });
     }
   },
   

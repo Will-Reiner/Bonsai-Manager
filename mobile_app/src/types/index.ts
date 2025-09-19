@@ -24,6 +24,9 @@ export interface Usuario {
   recursosHabilitado: boolean;
   createdAt: string;
   role: Role;
+  seguindo?: { seguido: Partial<Usuario> }[];
+  seguidores?: { seguidor: Partial<Usuario> }[];
+  plantas?: Partial<Planta>[];
 }
 
 export interface Especie {
