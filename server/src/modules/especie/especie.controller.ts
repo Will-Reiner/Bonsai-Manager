@@ -9,13 +9,10 @@ import {
 export const especieController = {
   create: async (req: Request, res: Response) => {
     try {
-      const { nomeCientifico, nomeComum, informacoesGerais } =
-        createEspecieSchema.parse(req).body;
-
+      const data = createEspecieSchema.parse(req).body;
       const novaEspecie = await prisma.especie.create({
-        data: { nomeCientifico, nomeComum, informacoesGerais },
+        data,
       });
-
       return res.status(201).json(novaEspecie);
     } catch (error) {
       console.error('ERRO AO CRIAR ESPÉCIE:', error);
@@ -25,7 +22,9 @@ export const especieController = {
 
   getAll: async (_req: Request, res: Response) => {
     try {
-      const especies = await prisma.especie.findMany();
+      const especies = await prisma.especie.findMany({
+        orderBy: { nomeComum: 'asc' } // Ordenar alfabeticamente
+      });
       return res.status(200).json(especies);
     } catch (error) {
       console.error('ERRO AO BUSCAR ESPÉCIES:', error);
@@ -36,7 +35,22 @@ export const especieController = {
   getById: async (req: Request, res: Response) => {
     try {
       const { id } = especieIdSchema.parse(req).params;
-      const especie = await prisma.especie.findUnique({ where: { id } });
+      const especie = await prisma.especie.findUnique({ 
+        where: { id },
+        // Agora, incluímos os dados relacionados dos guias!
+        include: {
+          guiasDeTecnicas: {
+            include: {
+              atividade: true, // Traz os detalhes da atividade
+            }
+          },
+          guiasSazonais: {
+            include: {
+              atividade: true, // Traz os detalhes da atividade
+            }
+          }
+        }
+      });
 
       if (!especie) {
         return res.status(404).json({ message: 'Espécie não encontrada.' });

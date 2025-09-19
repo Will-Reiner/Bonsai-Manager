@@ -13,14 +13,16 @@ import { useNavigation } from '@react-navigation/native';
 import { Picker } from '@react-native-picker/picker';
 import { especieService } from '../../services/especieService';
 import { plantaService, CreatePlantaDTO } from '../../services/plantaService';
-import { Especie } from '../../types';
+import { Especie, ModoAquisicao } from '../../types';
 
 const AddPlantScreen = () => {
   const navigation = useNavigation();
   
-  // Estados do formulário
+  // Estados do formulário alinhados com o novo DTO
   const [nome, setNome] = useState('');
   const [especieId, setEspecieId] = useState<string | undefined>();
+  const [modoAquisicao, setModoAquisicao] = useState<ModoAquisicao | undefined>();
+  const [visao, setVisao] = useState('');
   const [observacoes, setObservacoes] = useState('');
   
   // Estados de controlo
@@ -28,7 +30,6 @@ const AddPlantScreen = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isFetchingEspecies, setIsFetchingEspecies] = useState(true);
 
-  // Busca as espécies disponíveis quando a tela é montada
   useEffect(() => {
     const fetchEspecies = async () => {
       try {
@@ -52,15 +53,17 @@ const AddPlantScreen = () => {
     setIsLoading(true);
     const plantaData: CreatePlantaDTO = {
       especieId,
-      nome: nome || undefined, // Envia undefined se o campo estiver vazio
+      nome: nome || undefined,
+      modoAquisicao: modoAquisicao || undefined,
+      visao: visao || undefined,
       observacoes: observacoes || undefined,
-      // TODO: Adicionar campos de data aqui (ex: dataAquisicao)
+      // dataAquisicao pode ser adicionado aqui com um DatePicker no futuro
     };
 
     try {
       await plantaService.createPlanta(plantaData);
       Alert.alert('Sucesso', 'Planta adicionada à sua coleção!');
-      navigation.goBack(); // Volta para a tela da coleção
+      navigation.goBack();
     } catch (error) {
       Alert.alert('Erro', 'Não foi possível adicionar a planta.');
       console.error(error);
@@ -92,15 +95,39 @@ const AddPlantScreen = () => {
             {especies.map((especie) => (
               <Picker.Item
                 key={especie.id}
-                label={`${especie.nomeComum} (${especie.nomeCientifico})`}
+                label={especie.nomeComum || especie.nomeCientifico}
                 value={especie.id}
               />
             ))}
           </Picker>
         )}
       </View>
+
+      <Text style={styles.label}>Como foi Adquirido</Text>
+      <View style={styles.pickerContainer}>
+        <Picker
+          selectedValue={modoAquisicao}
+          onValueChange={(itemValue) => setModoAquisicao(itemValue)}
+        >
+          <Picker.Item label="Selecione o modo..." value={undefined} />
+          <Picker.Item label="Semente" value="SEMENTE" />
+          <Picker.Item label="Estaca" value="ESTACA" />
+          <Picker.Item label="Alporquia" value="ALPORQUIA" />
+          <Picker.Item label="Yamadori" value="YAMADORI" />
+          <Picker.Item label="Compra" value="COMPRA" />
+        </Picker>
+      </View>
       
-      <Text style={styles.label}>Observações</Text>
+      <Text style={styles.label}>Visão de Futuro</Text>
+      <TextInput
+        style={[styles.input, styles.textArea]}
+        placeholder="Descreva como imagina esta planta no futuro"
+        value={visao}
+        onChangeText={setVisao}
+        multiline
+      />
+      
+      <Text style={styles.label}>Observações Gerais</Text>
       <TextInput
         style={[styles.input, styles.textArea]}
         placeholder="Detalhes sobre a aquisição, estado inicial, etc."
@@ -149,7 +176,7 @@ const styles = StyleSheet.create({
         borderColor: '#ddd',
     },
     textArea: {
-        height: 120,
+        height: 100,
         textAlignVertical: 'top',
         paddingTop: 15,
     },

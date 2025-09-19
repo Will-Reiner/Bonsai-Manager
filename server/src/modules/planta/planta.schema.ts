@@ -1,32 +1,33 @@
 import { z } from 'zod';
 
-// Todos os campos são opcionais, exceto o ID da espécie
+// Criamos um Zod Enum que corresponde ao Enum do Prisma
+const ModoAquisicaoEnum = z.enum(['SEMENTE', 'ESTACA', 'ALPORQUIA', 'YAMADORI', 'COMPRA']);
+
+// Schema para criar uma nova planta com os campos atualizados
 export const createPlantaSchema = z.object({
   body: z.object({
     especieId: z.string().uuid({ message: 'O ID da espécie é obrigatório.' }),
     nome: z.string().optional(),
-    dataAquisicao: z.string().datetime().optional(),
-    statusAtual: z.string().optional(),
+    dataAquisicao: z.string().datetime().optional().nullable(),
+    modoAquisicao: ModoAquisicaoEnum.optional().nullable(),
     visao: z.string().optional(),
-    objetivoAno: z.string().optional(),
-    dataProximoTransplante: z.string().datetime().optional(),
-    prioridadeTransplante: z.number().int().optional(),
     observacoes: z.string().optional(),
+    plantaPublica: z.boolean().optional(),
+    historicoPublico: z.boolean().optional(),
   }),
 });
 
-// Para atualização, todos os campos, incluindo o ID da espécie, são opcionais
+// Schema para atualizar uma planta com os campos atualizados
 export const updatePlantaSchema = z.object({
   body: z.object({
     especieId: z.string().uuid().optional(),
     nome: z.string().optional(),
-    dataAquisicao: z.string().datetime().optional(),
-    statusAtual: z.string().optional(),
+    dataAquisicao: z.string().datetime().optional().nullable(),
+    modoAquisicao: ModoAquisicaoEnum.optional().nullable(),
     visao: z.string().optional(),
-    objetivoAno: z.string().optional(),
-    dataProximoTransplante: z.string().datetime().optional(),
-    prioridadeTransplante: z.number().int().optional(),
     observacoes: z.string().optional(),
+    plantaPublica: z.boolean().optional(),
+    historicoPublico: z.boolean().optional(),
   }),
   params: z.object({
     id: z.string().uuid({ message: 'ID da planta inválido.' }),

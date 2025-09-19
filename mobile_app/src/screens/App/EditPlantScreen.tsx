@@ -13,7 +13,7 @@ import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { Picker } from '@react-native-picker/picker';
 import { especieService } from '../../services/especieService';
 import { plantaService, UpdatePlantaDTO } from '../../services/plantaService';
-import { Especie } from '../../types';
+import { Especie, ModoAquisicao, Planta } from '../../types';
 import { RootStackParamList } from '../../navigation/AppNavigator';
 
 type EditPlantScreenRouteProp = RouteProp<RootStackParamList, 'EditPlant'>;
@@ -23,8 +23,11 @@ const EditPlantScreen = () => {
   const route = useRoute<EditPlantScreenRouteProp>();
   const { plantaId } = route.params;
   
+  // Estados do formulário alinhados com a nova estrutura
   const [nome, setNome] = useState('');
   const [especieId, setEspecieId] = useState<string | undefined>();
+  const [modoAquisicao, setModoAquisicao] = useState<ModoAquisicao | null | undefined>();
+  const [visao, setVisao] = useState('');
   const [observacoes, setObservacoes] = useState('');
   
   const [especies, setEspecies] = useState<Especie[]>([]);
@@ -39,8 +42,11 @@ const EditPlantScreen = () => {
           especieService.getAllEspecies(),
         ]);
 
+        // Popula o formulário com os dados da planta
         setNome(plantaData.nome || '');
         setEspecieId(plantaData.especieId);
+        setModoAquisicao(plantaData.modoAquisicao);
+        setVisao(plantaData.visao || '');
         setObservacoes(plantaData.observacoes || '');
         setEspecies(especiesData);
 
@@ -64,6 +70,8 @@ const EditPlantScreen = () => {
     const plantaData: UpdatePlantaDTO = {
       especieId,
       nome,
+      modoAquisicao,
+      visao,
       observacoes,
     };
 
@@ -107,14 +115,38 @@ const EditPlantScreen = () => {
             {especies.map((especie) => (
               <Picker.Item
                 key={especie.id}
-                label={`${especie.nomeComum || especie.nomeCientifico} (${especie.nomeCientifico})`}
+                label={especie.nomeComum || especie.nomeCientifico}
                 value={especie.id}
               />
             ))}
           </Picker>
       </View>
       
-      <Text style={styles.label}>Observações</Text>
+      <Text style={styles.label}>Como foi Adquirido</Text>
+      <View style={styles.pickerContainer}>
+        <Picker
+          selectedValue={modoAquisicao}
+          onValueChange={(itemValue) => setModoAquisicao(itemValue)}
+        >
+          <Picker.Item label="Não especificado" value={undefined} />
+          <Picker.Item label="Semente" value="SEMENTE" />
+          <Picker.Item label="Estaca" value="ESTACA" />
+          <Picker.Item label="Alporquia" value="ALPORQUIA" />
+          <Picker.Item label="Yamadori" value="YAMADORI" />
+          <Picker.Item label="Compra" value="COMPRA" />
+        </Picker>
+      </View>
+
+      <Text style={styles.label}>Visão de Futuro</Text>
+      <TextInput
+        style={[styles.input, styles.textArea]}
+        placeholder="Descreva como imagina esta planta no futuro"
+        value={visao}
+        onChangeText={setVisao}
+        multiline
+      />
+      
+      <Text style={styles.label}>Observações Gerais</Text>
       <TextInput
         style={[styles.input, styles.textArea]}
         placeholder="Detalhes sobre a aquisição, estado inicial, etc."
@@ -168,7 +200,7 @@ const styles = StyleSheet.create({
         borderColor: '#ddd',
     },
     textArea: {
-        height: 120,
+        height: 100,
         textAlignVertical: 'top',
         paddingTop: 15,
     },

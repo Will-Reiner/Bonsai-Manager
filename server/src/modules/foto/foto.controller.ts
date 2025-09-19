@@ -3,23 +3,27 @@ import { prisma } from '../../lib/prisma';
 import { createFotoSchema, updateFotoSchema, fotoIdSchema, plantaIdSchema } from './foto.schema';
 
 export const fotoController = {
-  // Criar uma nova foto
+  // Criar uma nova foto para o usuário logado
   create: async (req: Request, res: Response) => {
     try {
       const usuarioId = req.user!.userId;
       const data = createFotoSchema.parse(req).body;
 
-      // Verificar se a planta pertence ao usuário logado
-      const planta = await prisma.planta.findFirst({
-        where: { id: data.plantaId, usuarioId },
-      });
-
-      if (!planta) {
-        return res.status(404).json({ message: 'Planta não encontrada ou não pertence a si.' });
+      // Se um plantaId for fornecido, verifique se a planta pertence ao usuário
+      if (data.plantaId) {
+        const planta = await prisma.planta.findFirst({
+          where: { id: data.plantaId, usuarioId },
+        });
+        if (!planta) {
+          return res.status(404).json({ message: 'Planta não encontrada ou não pertence a si.' });
+        }
       }
 
       const novaFoto = await prisma.foto.create({
-        data,
+        data: {
+          ...data,
+          usuarioId, // Associa a foto ao usuário logado
+        },
       });
 
       return res.status(201).json(novaFoto);
@@ -34,18 +38,17 @@ export const fotoController = {
       const usuarioId = req.user!.userId;
       const { plantaId } = plantaIdSchema.parse(req).params;
 
-      // Verificar se a planta pertence ao usuário logado
+      // Verificar se a planta pertence ao usuário para permitir o acesso
       const planta = await prisma.planta.findFirst({
         where: { id: plantaId, usuarioId },
       });
-
       if (!planta) {
         return res.status(404).json({ message: 'Planta não encontrada ou não pertence a si.' });
       }
 
       const fotos = await prisma.foto.findMany({
         where: { plantaId },
-        orderBy: { dataUpload: 'desc' },
+        orderBy: { createdAt: 'desc' },
       });
 
       return res.status(200).json(fotos);
@@ -54,24 +57,18 @@ export const fotoController = {
     }
   },
 
-  // Obter uma foto específica
+  // Obter uma foto específica (verificando a posse da foto)
   getById: async (req: Request, res: Response) => {
     try {
       const usuarioId = req.user!.userId;
       const { id } = fotoIdSchema.parse(req).params;
 
-      const foto = await prisma.foto.findUnique({
-        where: { id },
-        include: { planta: true },
+      const foto = await prisma.foto.findFirst({
+        where: { id, usuarioId }, // Verifica se a foto pertence ao usuário
       });
 
       if (!foto) {
-        return res.status(404).json({ message: 'Foto não encontrada.' });
-      }
-
-      // Verificar se a planta da foto pertence ao usuário logado
-      if (foto.planta.usuarioId !== usuarioId) {
-        return res.status(403).json({ message: 'Acesso negado a esta foto.' });
+        return res.status(404).json({ message: 'Foto não encontrada ou não pertence a si.' });
       }
 
       return res.status(200).json(foto);
@@ -80,36 +77,17 @@ export const fotoController = {
     }
   },
 
-  // Atualizar uma foto
+  // Atualizar uma foto (verificando a posse da foto)
   update: async (req: Request, res: Response) => {
     try {
       const usuarioId = req.user!.userId;
       const { id } = updateFotoSchema.parse(req).params;
       const dataToUpdate = updateFotoSchema.parse(req).body;
 
-      // Buscar a foto e verificar se a planta pertence ao usuário
-      const foto = await prisma.foto.findUnique({
-        where: { id },
-        include: { planta: true },
-      });
-
-      if (!foto) {
-        return res.status(404).json({ message: 'Foto não encontrada.' });
-      }
-
-      if (foto.planta.usuarioId !== usuarioId) {
-        return res.status(403).json({ message: 'Acesso negado a esta foto.' });
-      }
-
-      // Se estiver atualizando a plantaId, verificar se a nova planta também pertence ao usuário
-      if (dataToUpdate.plantaId && dataToUpdate.plantaId !== foto.plantaId) {
-        const novaPlanta = await prisma.planta.findFirst({
-          where: { id: dataToUpdate.plantaId, usuarioId },
-        });
-
-        if (!novaPlanta) {
-          return res.status(404).json({ message: 'Nova planta não encontrada ou não pertence a si.' });
-        }
+      // Verifica se a foto existe e pertence ao usuário
+      const fotoExistente = await prisma.foto.findFirst({ where: { id, usuarioId } });
+      if (!fotoExistente) {
+        return res.status(404).json({ message: 'Foto não encontrada ou não pertence a si.' });
       }
 
       const fotoAtualizada = await prisma.foto.update({
@@ -123,24 +101,15 @@ export const fotoController = {
     }
   },
 
-  // Apagar uma foto
+  // Apagar uma foto (verificando a posse da foto)
   delete: async (req: Request, res: Response) => {
     try {
       const usuarioId = req.user!.userId;
       const { id } = fotoIdSchema.parse(req).params;
 
-      // Buscar a foto e verificar se a planta pertence ao usuário
-      const foto = await prisma.foto.findUnique({
-        where: { id },
-        include: { planta: true },
-      });
-
-      if (!foto) {
-        return res.status(404).json({ message: 'Foto não encontrada.' });
-      }
-
-      if (foto.planta.usuarioId !== usuarioId) {
-        return res.status(403).json({ message: 'Acesso negado a esta foto.' });
+      const fotoExistente = await prisma.foto.findFirst({ where: { id, usuarioId } });
+      if (!fotoExistente) {
+        return res.status(404).json({ message: 'Foto não encontrada ou não pertence a si.' });
       }
 
       await prisma.foto.delete({ where: { id } });

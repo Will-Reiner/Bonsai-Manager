@@ -9,24 +9,26 @@ import {
   KeyboardAvoidingView,
   Platform,
   Alert,
+  ScrollView,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import api from '../../api'; // Usaremos a instância do axios diretamente
+import api from '../../api';
 
 const RegisterScreen = () => {
   const navigation = useNavigation();
 
-  // Estados para o formulário e controlo de loading
+  // Estados para o formulário, incluindo os novos campos
   const [nome, setNome] = useState('');
+  const [nomePublico, setNomePublico] = useState('');
+  const [localidade, setLocalidade] = useState('');
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
   const [confirmarSenha, setConfirmarSenha] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
   const handleRegister = async () => {
-    // Validações básicas no frontend
     if (!nome || !email || !senha || !confirmarSenha) {
-      Alert.alert('Erro', 'Por favor, preencha todos os campos.');
+      Alert.alert('Erro', 'Por favor, preencha os campos obrigatórios (Nome, Email, Senha).');
       return;
     }
     if (senha !== confirmarSenha) {
@@ -36,20 +38,21 @@ const RegisterScreen = () => {
 
     setIsLoading(true);
     try {
-      // Chamada à API para registar o novo utilizador
+      // Enviamos os novos campos na chamada da API
       await api.post('/auth/register', {
         nome,
         email,
         senha,
+        nomePublico: nomePublico || undefined, // Envia undefined se o campo estiver vazio
+        localidade: localidade || undefined,
       });
 
       Alert.alert(
         'Sucesso!',
         'A sua conta foi criada. Agora pode fazer o login.',
-        [{ text: 'OK', onPress: () => navigation.goBack() }] // Volta para a tela de login
+        [{ text: 'OK', onPress: () => navigation.goBack() }]
       );
     } catch (error: any) {
-      // Trata erros comuns da API, como email já existente
       if (error.response && error.response.data && error.response.data.message) {
         Alert.alert('Erro de Registo', error.response.data.message);
       } else {
@@ -65,42 +68,58 @@ const RegisterScreen = () => {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       style={styles.container}
     >
-      <Text style={styles.title}>Criar Conta</Text>
-      <Text style={styles.subtitle}>Comece a gerir a sua coleção</Text>
+      <ScrollView contentContainerStyle={styles.scrollContent}>
+        <Text style={styles.title}>Criar Conta</Text>
+        <Text style={styles.subtitle}>Comece a gerir a sua coleção</Text>
 
-      <TextInput style={styles.input} placeholder="Nome Completo" value={nome} onChangeText={setNome} />
-      <TextInput style={styles.input} placeholder="Email" value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" />
-      <TextInput style={styles.input} placeholder="Senha (mínimo 6 caracteres)" value={senha} onChangeText={setSenha} secureTextEntry />
-      <TextInput style={styles.input} placeholder="Confirmar Senha" value={confirmarSenha} onChangeText={setConfirmarSenha} secureTextEntry />
+        <Text style={styles.label}>Nome Completo *</Text>
+        <TextInput style={styles.input} placeholder="Seu nome real" value={nome} onChangeText={setNome} />
 
-      <TouchableOpacity
-        style={[styles.button, isLoading && styles.buttonDisabled]}
-        onPress={handleRegister}
-        disabled={isLoading}
-      >
-        {isLoading ? (
-          <ActivityIndicator size="small" color="#ffffff" />
-        ) : (
-          <Text style={styles.buttonText}>Registar</Text>
-        )}
-      </TouchableOpacity>
-      
-      <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-        <Text style={styles.backButtonText}>Já tenho uma conta. Voltar para o Login.</Text>
-      </TouchableOpacity>
+        <Text style={styles.label}>Nome Público (Apelido)</Text>
+        <TextInput style={styles.input} placeholder="Ex: O Rancho do Bonsai" value={nomePublico} onChangeText={setNomePublico} />
+        
+        <Text style={styles.label}>Localidade</Text>
+        <TextInput style={styles.input} placeholder="Ex: Brasília - DF" value={localidade} onChangeText={setLocalidade} />
+        
+        <Text style={styles.label}>Email *</Text>
+        <TextInput style={styles.input} placeholder="seuemail@exemplo.com" value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" />
+        
+        <Text style={styles.label}>Senha *</Text>
+        <TextInput style={styles.input} placeholder="Mínimo 6 caracteres" value={senha} onChangeText={setSenha} secureTextEntry />
+        
+        <Text style={styles.label}>Confirmar Senha *</Text>
+        <TextInput style={styles.input} placeholder="Repita a senha" value={confirmarSenha} onChangeText={setConfirmarSenha} secureTextEntry />
 
+        <TouchableOpacity
+          style={[styles.button, isLoading && styles.buttonDisabled]}
+          onPress={handleRegister}
+          disabled={isLoading}
+        >
+          {isLoading ? (
+            <ActivityIndicator size="small" color="#ffffff" />
+          ) : (
+            <Text style={styles.buttonText}>Registar</Text>
+          )}
+        </TouchableOpacity>
+        
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+          <Text style={styles.backButtonText}>Já tenho uma conta. Voltar para o Login.</Text>
+        </TouchableOpacity>
+      </ScrollView>
     </KeyboardAvoidingView>
   );
 };
 
-// Estilos semelhantes aos da tela de Login
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#f5f5f5',
+  },
+  scrollContent: {
+    flexGrow: 1,
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
-    backgroundColor: '#f5f5f5',
   },
   title: {
     fontSize: 32,
@@ -112,6 +131,14 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#666',
     marginBottom: 30,
+  },
+  label: {
+    width: '100%',
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 5,
+    textAlign: 'left',
   },
   input: {
     width: '100%',

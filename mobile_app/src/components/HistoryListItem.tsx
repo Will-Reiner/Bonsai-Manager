@@ -1,13 +1,15 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { RegistroHistorico } from '../types';
+import { Agenda } from '../types'; // Agora usamos o tipo Agenda
 
+// A propriedade agora espera um item do tipo Agenda
 interface HistoryListItemProps {
-  item: RegistroHistorico;
+  item: Agenda;
 }
 
 const HistoryListItem: React.FC<HistoryListItemProps> = ({ item }) => {
-  const dataRealizacao = new Date(item.dataRealizacao).toLocaleDateString('pt-BR', {
+  // A data de realização agora é a data de conclusão
+  const dataRealizacao = new Date(item.dataConcluida!).toLocaleDateString('pt-BR', {
     day: '2-digit',
     month: 'long',
     year: 'numeric',
@@ -17,8 +19,10 @@ const HistoryListItem: React.FC<HistoryListItemProps> = ({ item }) => {
     <View style={styles.container}>
       <View style={styles.timelineDot} />
       <View style={styles.content}>
-        <Text style={styles.activity}>{item.atividadeRealizada}</Text>
+        {/* O nome da atividade vem da relação aninhada */}
+        <Text style={styles.activity}>{item.atividade?.nome}</Text>
         <Text style={styles.date}>{dataRealizacao}</Text>
+        {/* Os detalhes vêm diretamente do item da agenda */}
         {item.detalhes && <Text style={styles.details}>{item.detalhes}</Text>}
       </View>
     </View>
@@ -32,12 +36,13 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#eee',
     marginLeft: 10,
+    marginHorizontal: 15,
   },
   timelineDot: {
     width: 12,
     height: 12,
     borderRadius: 6,
-    backgroundColor: '#007bff',
+    backgroundColor: '#28a745', // Verde para indicar sucesso
     marginRight: 15,
     marginTop: 5,
   },

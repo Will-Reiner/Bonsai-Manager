@@ -7,9 +7,16 @@ import atividadeRouter from './modules/atividade/atividade.router';
 import agendaRouter from './modules/agenda/agenda.router';
 import tipoRecursoRouter from './modules/tipo-recurso/tipo-recurso.router';
 import recursoRouter from './modules/recurso/recurso.router';
-import historicoRouter from './modules/historico/historico.router';
 import fotoRouter from './modules/foto/foto.router';
 import { atividadeRecursoRouter } from './modules/atividade-recurso/atividade-recurso.router';
+import ferramentaRouter from './modules/ferramenta/ferramenta.router';
+import guiaSazonalRouter from './modules/guia-sazonal/guia-sazonal.router';
+import amizadeRouter from './modules/amizade/amizade.router';
+import inspiracaoRouter from './modules/inspiracao/inspiracao.router';
+import atividadeFerramentaSugeridaRouter from './modules/atividade-ferramenta-sugerida/atividade-ferramenta-sugerida.router';
+import guiaDeTecnicasRouter from './modules/guia-de-tecnicas/guia-de-tecnicas.router';
+import atividadeRecursoSugeridoRouter from './modules/atividade-recurso-sugerido/atividade-recurso-sugerido.router';
+
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -28,9 +35,15 @@ app.use('/api/atividades', atividadeRouter);
 app.use('/api/agendas', agendaRouter);
 app.use('/api/tipos-recurso', tipoRecursoRouter);
 app.use('/api/recursos', recursoRouter);
-app.use('/api/historicos', historicoRouter);
 app.use('/api/fotos', fotoRouter);
 app.use('/api/atividades-recursos', atividadeRecursoRouter);
+app.use('/api/ferramentas', ferramentaRouter);
+app.use('/api/guias-sazonais', guiaSazonalRouter);
+app.use('/api/amizades', amizadeRouter);
+app.use('/api/inspiracoes', inspiracaoRouter);
+app.use('/api/atividades-ferramentas-sugeridas', atividadeFerramentaSugeridaRouter);
+app.use('/api/guias-de-tecnicas', guiaDeTecnicasRouter);
+app.use('/api/atividades-recursos-sugeridos', atividadeRecursoSugeridoRouter);
 
 app.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);

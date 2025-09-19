@@ -4,8 +4,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { useAuth } from '../../context/AuthContext';
 import { plantaService } from '../../services/plantaService';
-import { historicoService } from '../../services/historicoService';
-import { Planta, RegistroHistorico } from '../../types';
+import { agendaService } from '../../services/agendaService';
+import { Agenda } from '../../types';
 
 // Componente para exibir um card de estatística
 const StatCard = ({ label, value, loading }: { label: string; value: string | number; loading: boolean }) => (
@@ -18,7 +18,6 @@ const StatCard = ({ label, value, loading }: { label: string; value: string | nu
 const ProfileScreen = () => {
   const { user, logout } = useAuth();
   
-  // Estados para as estatísticas
   const [plantCount, setPlantCount] = useState(0);
   const [activitiesThisYear, setActivitiesThisYear] = useState(0);
   const [adubacoesThisYear, setAdubacoesThisYear] = useState(0);
@@ -27,27 +26,25 @@ const ProfileScreen = () => {
   const fetchStats = useCallback(async () => {
     setIsLoading(true);
     try {
-      // 1. Buscar todas as plantas para obter a contagem
-      const minhasPlantas = await plantaService.getMinhasPlantas();
+      const [minhasPlantas, minhaAgenda] = await Promise.all([
+        plantaService.getMinhasPlantas(),
+        agendaService.getMinhaAgenda()
+      ]);
+      
       setPlantCount(minhasPlantas.length);
 
-      // 2. Buscar o histórico de cada planta para calcular as outras estatísticas
-      let allHistory: RegistroHistorico[] = [];
-      for (const planta of minhasPlantas) {
-        const history = await historicoService.getHistoricoPorPlanta(planta.id);
-        allHistory.push(...history);
-      }
+      const historico = minhaAgenda.filter(item => item.status === 'CONCLUIDO');
       
-      // 3. Filtrar e calcular as estatísticas do ano corrente
       const currentYear = new Date().getFullYear();
-      const historyThisYear = allHistory.filter(
-        (registro) => new Date(registro.dataRealizacao).getFullYear() === currentYear
+      const historyThisYear = historico.filter(
+        (registro) => registro.dataConcluida && new Date(registro.dataConcluida).getFullYear() === currentYear
       );
       
       setActivitiesThisYear(historyThisYear.length);
       
+      // CORREÇÃO FINAL E ROBUSTA APLICADA AQUI
       const adubacoes = historyThisYear.filter(
-        (registro) => registro.atividadeRealizada.toLowerCase().includes('aduba')
+        (registro) => (registro.atividade?.nome ?? '').toLowerCase().includes('aduba')
       ).length;
       setAdubacoesThisYear(adubacoes);
 
@@ -71,12 +68,11 @@ const ProfileScreen = () => {
           <Text style={styles.headerTitle}>Meu Perfil</Text>
         </View>
 
-        {/* Card de Informações do Usuário */}
         <View style={styles.card}>
-          <Text style={styles.cardTitle}>Informações</Text>
+          <Text style={styles.cardTitle}>{user?.nomePublico || user?.nome}</Text>
           <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Nome:</Text>
-            <Text style={styles.infoValue}>{user?.nome}</Text>
+            <Text style={styles.infoLabel}>Localidade:</Text>
+            <Text style={styles.infoValue}>{user?.localidade || 'Não informado'}</Text>
           </View>
           <View style={styles.infoRow}>
             <Text style={styles.infoLabel}>Email:</Text>
@@ -84,7 +80,6 @@ const ProfileScreen = () => {
           </View>
         </View>
 
-        {/* Card de Estatísticas */}
         <View style={styles.card}>
           <Text style={styles.cardTitle}>Estatísticas</Text>
           <View style={styles.statsContainer}>
@@ -94,18 +89,13 @@ const ProfileScreen = () => {
           </View>
         </View>
 
-        {/* Card de Configurações */}
         <View style={styles.card}>
           <Text style={styles.cardTitle}>Configurações</Text>
           <TouchableOpacity style={styles.buttonDisabled} disabled>
-            <Text style={styles.buttonText}>Alterar Nome (Em breve)</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.buttonDisabled} disabled>
-            <Text style={styles.buttonText}>Alterar Senha (Em breve)</Text>
+            <Text style={styles.buttonText}>Editar Perfil (Em breve)</Text>
           </TouchableOpacity>
         </View>
         
-        {/* Botão de Logout */}
         <TouchableOpacity style={styles.logoutButton} onPress={logout}>
           <Text style={styles.logoutButtonText}>Sair (Logout)</Text>
         </TouchableOpacity>

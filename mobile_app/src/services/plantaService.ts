@@ -1,25 +1,24 @@
 import api from '../api';
-import { Planta } from '../types';
+import { Planta, ModoAquisicao } from '../types';
 
 /**
  * DTO (Data Transfer Object) para a criação de uma nova planta.
- * Reflete o schema `createPlantaSchema` do backend.
+ * Reflete a nova estrutura do `createPlantaSchema` do backend.
  */
 export interface CreatePlantaDTO {
   especieId: string;
   nome?: string;
-  dataAquisicao?: string; // Formato 'YYYY-MM-DDTHH:mm:ss.sssZ'
-  statusAtual?: string;
+  dataAquisicao?: string | null; // Formato 'YYYY-MM-DDTHH:mm:ss.sssZ'
+  modoAquisicao?: ModoAquisicao | null;
   visao?: string;
-  objetivoAno?: string;
-  dataProximoTransplante?: string; // Formato 'YYYY-MM-DDTHH:mm:ss.sssZ'
-  prioridadeTransplante?: number;
   observacoes?: string;
+  plantaPublica?: boolean;
+  historicoPublico?: boolean;
 }
 
 /**
- * DTO (Data Transfer Object) para a atualização de uma planta existente.
- * Reflete o schema `updatePlantaSchema` do backend. Todos os campos são opcionais.
+ * DTO para a atualização de uma planta existente.
+ * Todos os campos são opcionais.
  */
 export type UpdatePlantaDTO = Partial<CreatePlantaDTO>;
 

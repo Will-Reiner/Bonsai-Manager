@@ -3,7 +3,6 @@ import { prisma } from '../../lib/prisma';
 import { createPlantaSchema, updatePlantaSchema, plantaIdSchema } from './planta.schema';
 
 export const plantaController = {
-  // Criar uma nova planta para o utilizador logado
   create: async (req: Request, res: Response) => {
     try {
       const usuarioId = req.user!.userId;
@@ -12,7 +11,7 @@ export const plantaController = {
       const novaPlanta = await prisma.planta.create({
         data: {
           ...data,
-          usuarioId, // Liga a planta ao utilizador logado
+          usuarioId,
         },
       });
 
@@ -22,13 +21,12 @@ export const plantaController = {
     }
   },
 
-  // Listar todas as plantas DO UTILIZADOR LOGADO
   getAllByUser: async (req: Request, res: Response) => {
     try {
       const usuarioId = req.user!.userId;
       const plantas = await prisma.planta.findMany({
         where: { usuarioId },
-        include: { especie: true }, // Inclui os dados da espécie na resposta
+        include: { especie: true },
       });
       return res.status(200).json(plantas);
     } catch (error) {
@@ -36,15 +34,18 @@ export const plantaController = {
     }
   },
 
-  // Obter uma planta específica, verificando se pertence ao utilizador
   getById: async (req: Request, res: Response) => {
     try {
       const usuarioId = req.user!.userId;
       const { id } = plantaIdSchema.parse(req).params;
 
       const planta = await prisma.planta.findFirst({
-        where: { id, usuarioId }, // A CONDIÇÃO DE SEGURANÇA!
-        include: { especie: true },
+        where: { id, usuarioId },
+        include: { 
+            especie: true,
+            // Podemos incluir inspirações no futuro, se necessário
+            // inspiracoes: { include: { foto: true } } 
+        },
       });
 
       if (!planta) {
@@ -57,14 +58,12 @@ export const plantaController = {
     }
   },
 
-  // Atualizar uma planta, verificando se pertence ao utilizador
   update: async (req: Request, res: Response) => {
     try {
       const usuarioId = req.user!.userId;
       const { id } = plantaIdSchema.parse(req).params;
       const dataToUpdate = updatePlantaSchema.parse(req).body;
 
-      // Primeiro, verifica se a planta existe e pertence ao utilizador
       const plantaExistente = await prisma.planta.findFirst({ where: { id, usuarioId } });
       if (!plantaExistente) {
         return res.status(404).json({ message: 'Planta não encontrada ou não pertence a si.' });
@@ -81,7 +80,6 @@ export const plantaController = {
     }
   },
 
-  // Apagar uma planta, verificando se pertence ao utilizador
   delete: async (req: Request, res: Response) => {
     try {
       const usuarioId = req.user!.userId;
