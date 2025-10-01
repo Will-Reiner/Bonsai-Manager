@@ -1,15 +1,17 @@
-// Este é o gerador do Prisma Client, que nos dará um ORM type-safe
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
 generator client {
   provider = "prisma-client-js"
 }
 
-// Esta é a configuração da nossa conexão com o banco de dados
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
-// --- Enumerações para Tipos de Dados ---
+// --- ENUMS ---
+// Define os valores permitidos para campos específicos
 
 enum Role {
   USER
@@ -22,142 +24,294 @@ enum AgendaStatus {
   CANCELADO
 }
 
-enum RecursoStatus {
-  DISPONIVEL
-  EM_FALTA
-  ENCOMENDADO
+enum UnidadeMedida {
+  UNIDADE
+  KG
+  G
+  L
+  ML
 }
 
-// --- Modelos (Tabelas) ---
+enum ModoAquisicao {
+  SEMENTE
+  ESTACA
+  ALPORQUIA
+  YAMADORI
+  COMPRA
+}
+
+enum Estacao {
+  PRIMAVERA
+  VERAO
+  OUTONO
+  INVERNO
+}
+
+enum MomentoIdeal {
+  DEVE_FAZER
+  PODE_FAZER
+  EVITAR
+}
+
+enum RecomendacaoTecnica {
+  RECOMENDADA
+  NAO_RECOMENDADA
+  COM_CUIDADO
+}
+
+enum TipoPlanta {
+  PERENE
+  CADUCIFOLIA
+  SEMI_CADUCA
+  ARVORE
+  ARBUSTO
+  CONIFERA
+}
+
+
+// --- TABELAS PRINCIPAIS ---
 
 model Usuario {
-  id        String    @id @default(uuid())
-  nome      String
-  email     String    @unique
-  senhaHash String
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  id                 String    @id @default(uuid())
+  nome               String
+  nomePublico        String?
+  email              String    @unique
+  senhaHash          String
+  localidade         String?
+  fotoPerfilUrl      String?
+  bio                String?   @db.Text
+  perfilPublico      Boolean   @default(true)
+  recursosHabilitado Boolean   @default(true)
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+  role               Role      @default(USER)
 
-  role      Role      @default(USER)
-
-  plantas  Planta[]
-  recursos Recurso[]
+  // Relacionamentos
+  plantas    Planta[]
+  recursos   Recurso[]
+  fotos      Foto[]
+  seguindo   Amizade[] @relation("Seguidor")
+  seguidores Amizade[] @relation("Seguido")
 }
 
 model Especie {
-  id                String   @id @default(uuid())
-  nomeCientifico    String   @unique
-  nomeComum         String?
-  informacoesGerais String?  @db.Text
+  id                 String   @id @default(uuid())
+  nomeCientifico     String   @unique
+  nomeComum          String?
+  familia            String?
+  origem             String?
+  tipoDePlanta       TipoPlanta?
+  folhas             String?  @db.Text
+  tronco             String?  @db.Text
+  flores             String?  @db.Text
+  frutos             String?  @db.Text
+  raizes             String?  @db.Text
+  luminosidade       String?  @db.Text
+  rega               String?  @db.Text
+  substratoIdeal     String?  @db.Text
+  adubacao           String?  @db.Text
+  clima              String?  @db.Text
+  problemasComuns    String?  @db.Text
+  pros               String?  @db.Text
+  contras            String?  @db.Text
+  linhasDeRaciocinio String?  @db.Text
+  observacoes        String?  @db.Text
 
-  plantas Planta[]
+  // Relacionamentos
+  plantas          Planta[]
+  guiasDeTecnicas  GuiaDeTecnicas[]
+  guiasSazonais    GuiaSazonal[]
 }
 
 model Planta {
-  id                       String    @id @default(uuid())
-  nome                     String?
-  dataAquisicao            DateTime?
-  statusAtual              String?
-  visao                    String?   @db.Text
-  objetivoAno              String?   @db.Text
-  dataProximoTransplante   DateTime?
-  prioridadeTransplante    Int?
-  observacoes              String?   @db.Text
-  createdAt                DateTime  @default(now())
-  updatedAt                DateTime  @updatedAt
+  id               String        @id @default(uuid())
+  nome             String?
+  dataAquisicao    DateTime?
+  modoAquisicao    ModoAquisicao?
+  visao            String?       @db.Text
+  observacoes      String?       @db.Text
+  plantaPublica    Boolean       @default(false)
+  historicoPublico Boolean       @default(false)
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
 
-  usuario    Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
-  usuarioId  String
+  usuarioId        String
+  usuario          Usuario       @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  
+  especieId        String
+  especie          Especie       @relation(fields: [especieId], references: [id])
 
-  especie    Especie @relation(fields: [especieId], references: [id])
-  especieId  String
-
-  agenda      Agenda[]
-  historico   RegistroAtividadeHistorico[]
+  // Relacionamentos
   fotos       Foto[]
+  agendas     Agenda[]
+  inspiracoes Inspiracao[]
 }
 
 model Atividade {
-  id          String   @id @default(uuid())
-  nome        String   @unique @map("nome_atividade")
-  descricao   String?  @db.Text
-  createdAt   DateTime @default(now())
+  id                      String   @id @default(uuid())
+  nome                    String   @unique
+  descricao               String?  @db.Text
+  objetivos               String?  @db.Text
+  preparacao              String?  @db.Text
+  execucao                String?  @db.Text
+  cuidadosPosProcedimento String?  @db.Text
+  createdAt               DateTime @default(now())
 
-  recursosNecessarios AtividadeRecursoNecessario[]
-  agendas             Agenda[]
+  // Relacionamentos
+  agendas                Agenda[]
+  guiasDeTecnicas        GuiaDeTecnicas[]
+  guiasSazonais          GuiaSazonal[]
+  recursosSugeridos      AtividadeRecursoSugerido[]
+  ferramentasSugeridas   AtividadeFerramentaSugerida[]
+}
+
+model Foto {
+  id             String   @id @default(uuid())
+  caminhoArquivo String
+  titulo         String?
+  tags           String?
+  createdAt      DateTime @default(now())
+
+  plantaId       String?
+  planta         Planta?  @relation(fields: [plantaId], references: [id], onDelete: Cascade)
+  
+  usuarioId      String
+  usuario        Usuario  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  // Relacionamentos
+  inspiracoes Inspiracao[]
+}
+
+model Agenda {
+  id               String       @id @default(uuid())
+  dataAgendada     DateTime
+  dataConcluida    DateTime?
+  status           AgendaStatus @default(PENDENTE)
+  detalhes         String?      @db.Text
+  observacaoFutura String?      @db.Text
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+
+  plantaId         String
+  planta           Planta       @relation(fields: [plantaId], references: [id], onDelete: Cascade)
+  
+  atividadeId      String
+  atividade        Atividade    @relation(fields: [atividadeId], references: [id])
+
+  // Relacionamentos
+  recursosUtilizados AgendaRecursoUtilizado[]
+}
+
+model Recurso {
+  id                   String        @id @default(uuid())
+  quantidadeDisponivel Int
+  unidadeMedida        UnidadeMedida?
+  observacoes          String?       @db.Text
+  createdAt            DateTime      @default(now())
+  updatedAt            DateTime      @updatedAt
+
+  usuarioId            String
+  usuario              Usuario       @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  
+  tipoRecursoId        String
+  tipoRecurso          TipoRecurso   @relation(fields: [tipoRecursoId], references: [id])
+
+  // Relacionamentos
+  agendasOndeFoiUtilizado AgendaRecursoUtilizado[]
 }
 
 model TipoRecurso {
   id   String @id @default(uuid())
   nome String @unique
 
-  recursos            Recurso[]
-  atividadesQueUsam   AtividadeRecursoNecessario[]
+  // Relacionamentos
+  recursos                Recurso[]
+  atividadesOndeESugerido AtividadeRecursoSugerido[]
 }
 
-// Tabela de junção explícita para relacionamento Muitos-para-Muitos
-model AtividadeRecursoNecessario {
-  atividade   Atividade   @relation(fields: [atividadeId], references: [id], onDelete: Cascade)
-  atividadeId String
+model Ferramenta {
+  id          String   @id @default(uuid())
+  nome        String   @unique
+  descricao   String?  @db.Text
+  
+  // Relacionamentos
+  atividadesOndeESugerida AtividadeFerramentaSugerida[]
+}
 
-  tipoRecurso   TipoRecurso @relation(fields: [tipoRecursoId], references: [id])
+// --- TABELAS DE JUNÇÃO (Muitos-para-Muitos) ---
+
+model Amizade {
+  seguidorId String
+  seguidoId  String
+  
+  seguidor   Usuario @relation("Seguidor", fields: [seguidorId], references: [id], onDelete: Cascade)
+  seguido    Usuario @relation("Seguido", fields: [seguidoId], references: [id], onDelete: Cascade)
+
+  @@id([seguidorId, seguidoId])
+}
+
+model GuiaDeTecnicas {
+  especieId    String
+  atividadeId  String
+  recomendacao RecomendacaoTecnica
+  observacoes  String?             @db.Text
+  
+  especie      Especie   @relation(fields: [especieId], references: [id], onDelete: Cascade)
+  atividade    Atividade @relation(fields: [atividadeId], references: [id], onDelete: Cascade)
+
+  @@id([especieId, atividadeId])
+}
+
+model GuiaSazonal {
+  especieId    String
+  atividadeId  String
+  estacao      Estacao
+  momentoIdeal MomentoIdeal
+  observacoes  String?      @db.Text
+  
+  especie      Especie   @relation(fields: [especieId], references: [id], onDelete: Cascade)
+  atividade    Atividade @relation(fields: [atividadeId], references: [id], onDelete: Cascade)
+
+  @@id([especieId, atividadeId, estacao])
+}
+
+model Inspiracao {
+  plantaId String
+  fotoId   String
+  
+  planta   Planta @relation(fields: [plantaId], references: [id], onDelete: Cascade)
+  foto     Foto   @relation(fields: [fotoId], references: [id], onDelete: Cascade)
+
+  @@id([plantaId, fotoId])
+}
+
+model AgendaRecursoUtilizado {
+  agendaId            String
+  recursoId           String
+  quantidadeUtilizada Float
+  
+  agenda              Agenda  @relation(fields: [agendaId], references: [id], onDelete: Cascade)
+  recurso             Recurso @relation(fields: [recursoId], references: [id], onDelete: Cascade)
+
+  @@id([agendaId, recursoId])
+}
+
+model AtividadeRecursoSugerido {
+  atividadeId   String
   tipoRecursoId String
+  
+  atividade     Atividade   @relation(fields: [atividadeId], references: [id], onDelete: Cascade)
+  tipoRecurso   TipoRecurso @relation(fields: [tipoRecursoId], references: [id], onDelete: Cascade)
 
   @@id([atividadeId, tipoRecursoId])
 }
 
-model Agenda {
-  id            String       @id @default(uuid())
-  dataAgendada  DateTime
-  dataConcluida DateTime?
-  status        AgendaStatus @default(PENDENTE)
-  observacoes   String?      @db.Text
-  createdAt     DateTime     @default(now())
-  updatedAt     DateTime     @updatedAt
+model AtividadeFerramentaSugerida {
+  atividadeId  String
+  ferramentaId String
+  
+  atividade    Atividade  @relation(fields: [atividadeId], references: [id], onDelete: Cascade)
+  ferramenta   Ferramenta @relation(fields: [ferramentaId], references: [id], onDelete: Cascade)
 
-  planta      Planta    @relation(fields: [plantaId], references: [id], onDelete: Cascade)
-  plantaId    String
-
-  atividade   Atividade @relation(fields: [atividadeId], references: [id])
-  atividadeId String
-}
-
-model Recurso {
-  id                   String         @id @default(uuid())
-  quantidadeDisponivel Int
-  unidadeMedida        String? // Ex: "un", "kg", "L"
-  status               RecursoStatus  @default(DISPONIVEL)
-  observacoes          String?        @db.Text
-  createdAt            DateTime       @default(now())
-  updatedAt            DateTime       @updatedAt
-
-  usuario       Usuario     @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
-  usuarioId     String
-
-  tipoRecurso   TipoRecurso @relation(fields: [tipoRecursoId], references: [id])
-  tipoRecursoId String
-}
-
-model RegistroAtividadeHistorico {
-  id                 String    @id @default(uuid())
-  dataRealizacao     DateTime
-  atividadeRealizada String
-  recursosUtilizados String?   @db.Text
-  detalhes           String?   @db.Text
-  observacaoFutura   String?   @db.Text
-  createdAt          DateTime  @default(now())
-
-  planta     Planta @relation(fields: [plantaId], references: [id], onDelete: Cascade)
-  plantaId   String
-}
-
-model Foto {
-  id             String   @id @default(uuid())
-  caminhoArquivo String
-  dataUpload     DateTime @default(now())
-  descricao      String?
-  createdAt      DateTime @default(now())
-
-  planta     Planta @relation(fields: [plantaId], references: [id], onDelete: Cascade)
-  plantaId   String
+  @@id([atividadeId, ferramentaId])
 }

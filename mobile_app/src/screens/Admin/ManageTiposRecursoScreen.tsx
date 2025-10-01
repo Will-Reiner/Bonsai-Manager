@@ -1,20 +1,62 @@
 import React, { useState, useCallback } from 'react';
 import { View, Text, TextInput, StyleSheet, FlatList, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
-import { recursoService } from '../../services/recursoService';
+import { recursoService, CreateTipoRecursoDTO } from '../../services/recursoService';
 import { TipoRecurso } from '../../types';
 
-const ManageTiposRecursoScreen = () => {
-  const [tiposRecurso, setTiposRecurso] = useState<TipoRecurso[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  
-  // Estados para o formulário de adição
+// O formulário para adicionar o Tipo de Recurso
+const AddTipoRecursoForm = React.memo(({ onTipoRecursoAdded }: { onTipoRecursoAdded: () => void }) => {
   const [nome, setNome] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const fetchTiposRecurso = useCallback(async () => {
+  const handleAdd = async () => {
+    if (!nome.trim()) {
+      Alert.alert('Erro', 'O nome do tipo de recurso é obrigatório.');
+      return;
+    }
+    setIsSubmitting(true);
     try {
-      // Usamos a função getAllTiposRecurso do nosso recursoService
+      const data: CreateTipoRecursoDTO = { nome };
+      await recursoService.createTipoRecurso(data);
+      Alert.alert('Sucesso', 'Novo tipo de recurso adicionado.');
+      setNome('');
+      onTipoRecursoAdded();
+    } catch (error) {
+      Alert.alert('Erro', 'Não foi possível adicionar o tipo de recurso.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <View style={styles.formContainer}>
+      <Text style={styles.formTitle}>Adicionar Novo Tipo de Recurso</Text>
+      <TextInput
+        style={styles.input}
+        placeholder="Nome (ex: Substrato, Vaso, Adubo)"
+        value={nome}
+        onChangeText={setNome}
+      />
+      <TouchableOpacity
+        style={[styles.button, isSubmitting && styles.buttonDisabled]}
+        onPress={handleAdd}
+        disabled={isSubmitting}
+      >
+        {isSubmitting ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Adicionar</Text>}
+      </TouchableOpacity>
+    </View>
+  );
+});
+
+
+// A tela principal que exibe a lista e o formulário
+const ManageTiposRecursoScreen = () => {
+  const [tiposRecurso, setTiposRecurso] = useState<TipoRecurso[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const fetchTiposRecurso = useCallback(async () => {
+    setIsLoading(true);
+    try {
       const data = await recursoService.getAllTiposRecurso();
       setTiposRecurso(data);
     } catch (error) {
@@ -30,65 +72,28 @@ const ManageTiposRecursoScreen = () => {
     }, [fetchTiposRecurso])
   );
 
-  const handleAddTipoRecurso = async () => {
-    if (!nome.trim()) {
-      Alert.alert('Erro', 'O nome do tipo de recurso é obrigatório.');
-      return;
-    }
-    setIsSubmitting(true);
-    try {
-      await recursoService.createTipoRecurso({ nome }); 
-      Alert.alert('Sucesso', 'Novo tipo de recurso adicionado.');
-      
-      setNome('');
-      fetchTiposRecurso(); // Recarrega a lista
-
-    } catch (error) {
-      Alert.alert('Erro', 'Não foi possível adicionar o tipo de recurso.');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-  
-
-  if (isLoading) {
-    return <ActivityIndicator style={{ marginTop: 20 }} size="large" />;
-  }
-
   return (
-    <View style={styles.container}>
-      <View style={styles.formContainer}>
-        <Text style={styles.formTitle}>Adicionar Novo Tipo de Recurso</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Nome (ex: Substrato, Vaso, Adubo)"
-          value={nome}
-          onChangeText={setNome}
-        />
-        <TouchableOpacity
-            style={[styles.button, isSubmitting && styles.buttonDisabled]}
-            onPress={handleAddTipoRecurso}
-            disabled={isSubmitting}
-        >
-            {isSubmitting ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Adicionar</Text>}
-        </TouchableOpacity>
-      </View>
-      
-      <FlatList
-        data={tiposRecurso}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <View style={styles.listItem}>
-            <Text style={styles.listItemTitle}>{item.nome}</Text>
-          </View>
-        )}
-        ListHeaderComponent={<Text style={styles.listHeader}>Tipos de Recurso Existentes</Text>}
-      />
-    </View>
+    <FlatList
+      style={styles.container}
+      data={tiposRecurso}
+      keyExtractor={(item) => item.id}
+      renderItem={({ item }) => (
+        <View style={styles.listItem}>
+          <Text style={styles.listItemTitle}>{item.nome}</Text>
+        </View>
+      )}
+      ListHeaderComponent={
+        <>
+          <AddTipoRecursoForm onTipoRecursoAdded={fetchTiposRecurso} />
+          <Text style={styles.listHeader}>Tipos de Recurso Existentes</Text>
+        </>
+      }
+      ListEmptyComponent={!isLoading ? <Text style={styles.emptyText}>Nenhum tipo de recurso cadastrado.</Text> : null}
+      keyboardShouldPersistTaps="handled"
+    />
   );
 };
 
-// Estilos semelhantes aos das outras telas de gestão
 const styles = StyleSheet.create({
     container: {
         flex: 1,
@@ -97,21 +102,20 @@ const styles = StyleSheet.create({
     formContainer: {
         padding: 15,
         backgroundColor: '#fff',
-        borderBottomWidth: 1,
-        borderBottomColor: '#ddd',
     },
     formTitle: {
         fontSize: 18,
         fontWeight: 'bold',
-        marginBottom: 10,
+        marginBottom: 15,
     },
     input: {
         borderWidth: 1,
         borderColor: '#ccc',
         borderRadius: 8,
         padding: 12,
-        marginBottom: 10,
+        marginBottom: 15,
         backgroundColor: '#fff',
+        fontSize: 16,
     },
     button: {
         backgroundColor: '#007bff',
@@ -132,6 +136,8 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         padding: 15,
         backgroundColor: '#f5f5f5',
+        borderTopWidth: 1,
+        borderTopColor: '#ddd'
     },
     listItem: {
         backgroundColor: '#fff',
@@ -143,6 +149,13 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: '500',
     },
+    // O estilo que estava em falta, agora adicionado
+    emptyText: {
+      textAlign: 'center',
+      marginTop: 20,
+      fontSize: 16,
+      color: '#666'
+    }
 });
 
 export default ManageTiposRecursoScreen;

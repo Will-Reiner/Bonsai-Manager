@@ -2,17 +2,19 @@ import { z } from 'zod';
 
 export const createFotoSchema = z.object({
   body: z.object({
-    plantaId: z.string().uuid({ message: 'O ID da planta é obrigatório.' }),
     caminhoArquivo: z.string().min(1, { message: 'O caminho do arquivo é obrigatório.' }),
-    descricao: z.string().optional(),
+    // plantaId agora é opcional, mas se vier, deve ser um UUID
+    plantaId: z.string().uuid({ message: 'ID da planta inválido.' }).optional().nullable(),
+    titulo: z.string().optional(),
+    tags: z.string().optional(),
   }),
 });
 
 export const updateFotoSchema = z.object({
   body: z.object({
-    plantaId: z.string().uuid().optional(),
-    caminhoArquivo: z.string().min(1).optional(),
-    descricao: z.string().optional(),
+    // Não permitimos mover a foto para outra planta, mas permitimos atualizar os outros campos
+    titulo: z.string().optional(),
+    tags: z.string().optional(),
   }),
   params: z.object({
     id: z.string().uuid({ message: 'ID da foto inválido.' }),

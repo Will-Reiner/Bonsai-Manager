@@ -6,6 +6,9 @@ const authRouter = Router();
 
 authRouter.post('/register', authController.register);
 authRouter.post('/login', authController.login);
+
+// Rotas que exigem que o usuário esteja autenticado
 authRouter.get('/me', authMiddleware, authController.getMe);
+authRouter.put('/me', authMiddleware, authController.updateMe); // <-- NOVA ROTA
 
 export default authRouter;

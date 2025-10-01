@@ -1,14 +1,15 @@
 import { Request, Response } from 'express';
 import { prisma } from '../../lib/prisma';
+import { Prisma } from '@prisma/client';
+import { createAgendaSchema, updateAgendaSchema, agendaIdSchema } from './agenda.schema';
 
 export const agendaController = {
   // Criar um novo evento na agenda
   create: async (req: Request, res: Response) => {
     try {
       const usuarioId = req.user!.userId;
-      const { plantaId, atividadeId, dataAgendada, observacoes } = req.body;
+      const { plantaId, atividadeId, dataAgendada, observacoes } = createAgendaSchema.parse(req).body;
 
-      // VERIFICAÇÃO DE SEGURANÇA: A planta pertence ao utilizador?
       const plantaPertenceAoUtilizador = await prisma.planta.findFirst({
         where: { id: plantaId, usuarioId },
       });
@@ -32,11 +33,12 @@ export const agendaController = {
       const usuarioId = req.user!.userId;
       const agendamentos = await prisma.agenda.findMany({
         where: {
-          planta: { usuarioId }, // Filtra pelos agendamentos das plantas do utilizador
+          planta: { usuarioId },
         },
         include: {
-          planta: { select: { id: true, nome: true } }, // Inclui info da planta
-          atividade: { select: { id: true, nome: true } }, // Inclui info da atividade
+          planta: { select: { id: true, nome: true, especie: true } },
+          atividade: { select: { id: true, nome: true } },
+          recursosUtilizados: { include: { recurso: { include: { tipoRecurso: true } } } },
         },
         orderBy: { dataAgendada: 'asc' },
       });
@@ -46,14 +48,13 @@ export const agendaController = {
     }
   },
 
-  // Atualizar um evento da agenda
+  // Atualizar um evento da agenda (agora também serve para "completar" a tarefa)
   update: async (req: Request, res: Response) => {
     try {
       const usuarioId = req.user!.userId;
-      const { id } = req.params;
-      const dataToUpdate = req.body;
+      const { id } = agendaIdSchema.parse(req).params;
+      const { recursosUtilizados, ...dataToUpdate } = updateAgendaSchema.parse(req).body;
 
-      // VERIFICAÇÃO DE SEGURANÇA: O evento a ser atualizado pertence ao utilizador?
       const agendamentoExistente = await prisma.agenda.findFirst({
         where: { id, planta: { usuarioId } },
       });
@@ -61,9 +62,28 @@ export const agendaController = {
         return res.status(403).json({ message: 'Acesso negado ou agendamento não encontrado.' });
       }
 
-      const agendamentoAtualizado = await prisma.agenda.update({
-        where: { id },
-        data: dataToUpdate,
+      // Usamos uma transação para garantir que ambas as operações (atualizar agenda e criar histórico de recursos)
+      // aconteçam com sucesso, ou nenhuma delas acontece.
+      const agendamentoAtualizado = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+        const updated = await tx.agenda.update({
+          where: { id },
+          data: dataToUpdate,
+        });
+
+        if (recursosUtilizados && recursosUtilizados.length > 0) {
+          // Apaga registros antigos para evitar duplicatas, caso seja uma re-edição
+          await tx.agendaRecursoUtilizado.deleteMany({ where: { agendaId: id } });
+
+          // Cria os novos registros de recursos utilizados
+          await tx.agendaRecursoUtilizado.createMany({
+            data: recursosUtilizados.map(r => ({
+              agendaId: id,
+              recursoId: r.recursoId,
+              quantidadeUtilizada: r.quantidadeUtilizada,
+            })),
+          });
+        }
+        return updated;
       });
 
       return res.status(200).json(agendamentoAtualizado);
@@ -72,11 +92,11 @@ export const agendaController = {
     }
   },
 
-  // Apagar um evento da agenda
+  // Apagar um evento da agenda (sem mudanças)
   delete: async (req: Request, res: Response) => {
     try {
       const usuarioId = req.user!.userId;
-      const { id } = req.params;
+      const { id } = agendaIdSchema.parse(req).params;
 
       const agendamentoExistente = await prisma.agenda.findFirst({
         where: { id, planta: { usuarioId } },

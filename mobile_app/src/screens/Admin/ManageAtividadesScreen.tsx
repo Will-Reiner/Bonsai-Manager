@@ -1,19 +1,83 @@
 import React, { useState, useCallback } from 'react';
 import { View, Text, TextInput, StyleSheet, FlatList, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
-import { atividadeService } from '../../services/atividadeService';
+import { atividadeService, CreateAtividadeDTO } from '../../services/atividadeService';
 import { Atividade } from '../../types';
 
+// O formulário para adicionar a atividade
+const AddAtividadeForm = React.memo(({ onAtividadeAdded }: { onAtividadeAdded: () => void }) => {
+  // Estados para todos os campos da atividade
+  const [nome, setNome] = useState('');
+  const [descricao, setDescricao] = useState('');
+  const [objetivos, setObjetivos] = useState('');
+  const [preparacao, setPreparacao] = useState('');
+  const [execucao, setExecucao] = useState('');
+  const [cuidadosPosProcedimento, setCuidadosPosProcedimento] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const clearForm = () => {
+    setNome('');
+    setDescricao('');
+    setObjetivos('');
+    setPreparacao('');
+    setExecucao('');
+    setCuidadosPosProcedimento('');
+  };
+
+  const handleAddAtividade = async () => {
+    if (!nome.trim()) {
+      Alert.alert('Erro', 'O nome da atividade é obrigatório.');
+      return;
+    }
+    setIsSubmitting(true);
+    try {
+      const data: CreateAtividadeDTO = {
+        nome,
+        descricao: descricao || undefined,
+        objetivos: objetivos || undefined,
+        preparacao: preparacao || undefined,
+        execucao: execucao || undefined,
+        cuidadosPosProcedimento: cuidadosPosProcedimento || undefined,
+      };
+      await atividadeService.createAtividade(data);
+      Alert.alert('Sucesso', 'Nova atividade adicionada.');
+      clearForm();
+      onAtividadeAdded();
+    } catch (error) {
+      Alert.alert('Erro', 'Não foi possível adicionar a atividade.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <View style={styles.formContainer}>
+      <Text style={styles.formTitle}>Adicionar Nova Atividade</Text>
+      <TextInput style={styles.input} placeholder="Nome da Atividade *" value={nome} onChangeText={setNome} />
+      <TextInput style={[styles.input, styles.textArea]} placeholder="Descrição Breve" value={descricao} onChangeText={setDescricao} multiline />
+      <TextInput style={[styles.input, styles.textArea]} placeholder="Objetivos" value={objetivos} onChangeText={setObjetivos} multiline />
+      <TextInput style={[styles.input, styles.textArea]} placeholder="Preparação" value={preparacao} onChangeText={setPreparacao} multiline />
+      <TextInput style={[styles.input, styles.textArea]} placeholder="Execução (Passo a Passo)" value={execucao} onChangeText={setExecucao} multiline />
+      <TextInput style={[styles.input, styles.textArea]} placeholder="Cuidados Pós-Procedimento" value={cuidadosPosProcedimento} onChangeText={setCuidadosPosProcedimento} multiline />
+      
+      <TouchableOpacity
+        style={[styles.button, isSubmitting && styles.buttonDisabled]}
+        onPress={handleAddAtividade}
+        disabled={isSubmitting}
+      >
+        {isSubmitting ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Adicionar Atividade</Text>}
+      </TouchableOpacity>
+    </View>
+  );
+});
+
+// A tela principal que exibe a lista e o formulário
 const ManageAtividadesScreen = () => {
   const [atividades, setAtividades] = useState<Atividade[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  
-  // Estados para o formulário de adição
-  const [nome, setNome] = useState('');
-  const [descricao, setDescricao] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const fetchAtividades = useCallback(async () => {
+    setIsLoading(true);
     try {
       const data = await atividadeService.getAllAtividades();
       setAtividades(data);
@@ -30,74 +94,30 @@ const ManageAtividadesScreen = () => {
     }, [fetchAtividades])
   );
 
-  const handleAddAtividade = async () => {
-    if (!nome.trim()) {
-      Alert.alert('Erro', 'O nome da atividade é obrigatório.');
-      return;
-    }
-    setIsSubmitting(true);
-    try {
-      await atividadeService.createAtividade({
-        nome,
-        descricao,
-      });
-      Alert.alert('Sucesso', 'Nova atividade adicionada.');
-      // Limpa os campos e recarrega a lista
-      setNome('');
-      setDescricao('');
-      fetchAtividades();
-    } catch (error) {
-      Alert.alert('Erro', 'Não foi possível adicionar a atividade.');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  if (isLoading) {
-    return <ActivityIndicator style={{ marginTop: 20 }} size="large" />;
-  }
-
   return (
-    <View style={styles.container}>
-      <View style={styles.formContainer}>
-        <Text style={styles.formTitle}>Adicionar Nova Atividade</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Nome da Atividade (ex: Poda de Raízes)"
-          value={nome}
-          onChangeText={setNome}
-        />
-        <TextInput
-          style={styles.input}
-          placeholder="Descrição (opcional)"
-          value={descricao}
-          onChangeText={setDescricao}
-        />
-        <TouchableOpacity
-            style={[styles.button, isSubmitting && styles.buttonDisabled]}
-            onPress={handleAddAtividade}
-            disabled={isSubmitting}
-        >
-            {isSubmitting ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Adicionar</Text>}
-        </TouchableOpacity>
-      </View>
-      
-      <FlatList
-        data={atividades}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <View style={styles.listItem}>
-            <Text style={styles.listItemTitle}>{item.nome}</Text>
-            {item.descricao && <Text style={styles.listItemSubtitle}>{item.descricao}</Text>}
-          </View>
-        )}
-        ListHeaderComponent={<Text style={styles.listHeader}>Atividades Existentes</Text>}
-      />
-    </View>
+    <FlatList
+      style={styles.container}
+      data={atividades}
+      keyExtractor={(item) => item.id}
+      renderItem={({ item }) => (
+        <View style={styles.listItem}>
+          <Text style={styles.listItemTitle}>{item.nome}</Text>
+          {item.descricao && <Text style={styles.listItemSubtitle}>{item.descricao}</Text>}
+        </View>
+      )}
+      ListHeaderComponent={
+        <>
+          <AddAtividadeForm onAtividadeAdded={fetchAtividades} />
+          <Text style={styles.listHeader}>Atividades Existentes</Text>
+        </>
+      }
+      ListEmptyComponent={!isLoading ? <Text style={styles.emptyText}>Nenhuma atividade cadastrada.</Text> : null}
+      keyboardShouldPersistTaps="handled"
+    />
   );
 };
 
-// Os estilos podem ser reutilizados da tela de espécies
+// Estilos reutilizados da tela de ManageEspeciesScreen
 const styles = StyleSheet.create({
     container: {
         flex: 1,
@@ -106,21 +126,24 @@ const styles = StyleSheet.create({
     formContainer: {
         padding: 15,
         backgroundColor: '#fff',
-        borderBottomWidth: 1,
-        borderBottomColor: '#ddd',
     },
     formTitle: {
         fontSize: 18,
         fontWeight: 'bold',
-        marginBottom: 10,
+        marginBottom: 15,
     },
     input: {
         borderWidth: 1,
         borderColor: '#ccc',
         borderRadius: 8,
         padding: 12,
-        marginBottom: 10,
+        marginBottom: 15,
         backgroundColor: '#fff',
+        fontSize: 16,
+    },
+    textArea: {
+        height: 80,
+        textAlignVertical: 'top',
     },
     button: {
         backgroundColor: '#007bff',
@@ -141,6 +164,8 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         padding: 15,
         backgroundColor: '#f5f5f5',
+        borderTopWidth: 1,
+        borderTopColor: '#ddd'
     },
     listItem: {
         backgroundColor: '#fff',
@@ -157,6 +182,12 @@ const styles = StyleSheet.create({
         color: '#666',
         marginTop: 4,
     },
+    emptyText: {
+      textAlign: 'center',
+      marginTop: 20,
+      fontSize: 16,
+      color: '#666'
+    }
 });
 
 
