@@ -35,6 +35,11 @@ services:
     env_file:
       # Carrega as variáveis de ambiente do arquivo .env
       - ./server/.env
+    environment:
+      SWAGGER_SERVER_URL: http://localhost:3000
+      PORT: 3000
+      JWT_SECRET: changeme_dev_secret
+      DATABASE_URL: postgresql://bonsai_user:bonsai_pass@db:5432/bonsai_db?schema=public
 
 volumes:
   postgres_data:
