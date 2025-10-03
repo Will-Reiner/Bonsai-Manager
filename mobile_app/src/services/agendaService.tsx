@@ -2,6 +2,9 @@ import api from '../api';
 // Agora importamos os DTOs, além dos tipos principais
 import { Agenda, CreateAgendaDTO, UpdateAgendaDTO } from '../types';
 
+// Re-exportamos os DTOs para facilitar o uso
+export type { CreateAgendaDTO, UpdateAgendaDTO };
+
 /**
  * Busca todos os agendamentos do utilizador autenticado.
  */

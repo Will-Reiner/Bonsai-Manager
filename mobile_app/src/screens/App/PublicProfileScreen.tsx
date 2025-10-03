@@ -6,6 +6,7 @@ import { RootStackParamList } from '../../navigation/AppNavigator';
 import PlantListItem from '../../components/PlantListItem';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../api'; // Importamos o api para buscar os dados do utilizador logado
+import { theme } from '../../constants/theme';
 
 type PublicProfileRouteProp = RouteProp<RootStackParamList, 'PublicProfile'>;
 
@@ -115,30 +116,74 @@ const PublicProfileScreen = () => {
 };
 
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: '#f8f9fa' },
-    centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-    header: { backgroundColor: '#fff', alignItems: 'center', padding: 20, borderBottomWidth: 1, borderBottomColor: '#eee' },
-    avatar: { width: 100, height: 100, borderRadius: 50, marginBottom: 10, backgroundColor: '#e9ecef' },
-    name: { fontSize: 22, fontWeight: 'bold' },
-    location: { fontSize: 16, color: '#6c757d', marginTop: 4 },
-    bio: { fontSize: 16, color: '#495057', textAlign: 'center', marginTop: 10, marginHorizontal: 20 },
+    container: { 
+        flex: 1, 
+        backgroundColor: theme.colors.background 
+    },
+    centered: { 
+        flex: 1, 
+        justifyContent: 'center', 
+        alignItems: 'center',
+        backgroundColor: theme.colors.background
+    },
+    header: { 
+        backgroundColor: theme.colors.card, 
+        alignItems: 'center', 
+        padding: theme.spacing.lg, 
+        borderBottomWidth: 1, 
+        borderBottomColor: theme.colors.lightGray 
+    },
+    avatar: { 
+        width: 100, 
+        height: 100, 
+        borderRadius: 50, 
+        marginBottom: theme.spacing.sm, 
+        backgroundColor: theme.colors.lightGray 
+    },
+    name: { 
+        fontSize: 22, 
+        fontWeight: 'bold',
+        color: theme.colors.text
+    },
+    location: { 
+        fontSize: 16, 
+        color: theme.colors.textSecondary, 
+        marginTop: 4 
+    },
+    bio: { 
+        fontSize: 16, 
+        color: theme.colors.text, 
+        textAlign: 'center', 
+        marginTop: theme.spacing.sm, 
+        marginHorizontal: theme.spacing.lg 
+    },
     followButton: {
-        marginTop: 15,
-        backgroundColor: '#007bff',
-        paddingVertical: 10,
-        paddingHorizontal: 30,
+        marginTop: theme.spacing.md,
+        backgroundColor: theme.colors.primary,
+        paddingVertical: theme.spacing.sm,
+        paddingHorizontal: theme.spacing.xl,
         borderRadius: 20,
     },
     unfollowButton: {
-        backgroundColor: '#6c757d',
+        backgroundColor: theme.colors.textSecondary,
     },
     followButtonText: {
         color: '#fff',
         fontWeight: 'bold',
         fontSize: 16,
     },
-    listHeader: { fontSize: 18, fontWeight: 'bold', padding: 15 },
-    emptyText: { textAlign: 'center', marginTop: 20, fontSize: 16, color: '#666' }
+    listHeader: { 
+        fontSize: 18, 
+        fontWeight: 'bold', 
+        padding: theme.spacing.md,
+        color: theme.colors.text
+    },
+    emptyText: { 
+        textAlign: 'center', 
+        marginTop: theme.spacing.lg, 
+        fontSize: 16, 
+        color: theme.colors.textSecondary 
+    }
 });
 
 export default PublicProfileScreen;

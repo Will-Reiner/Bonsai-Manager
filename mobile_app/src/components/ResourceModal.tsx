@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Modal, View, Text, TextInput, StyleSheet, TouchableOpacity, Alert, ActivityIndicator, ScrollView } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
-import { Recurso, TipoRecurso, RecursoStatus } from '../types';
+import { Recurso, TipoRecurso, UnidadeMedida } from '../types';
 import { recursoService, CreateRecursoDTO, UpdateRecursoDTO } from '../services/recursoService';
+import { theme } from '../constants/theme';
 
 interface ResourceModalProps {
   isVisible: boolean;
@@ -14,8 +15,7 @@ interface ResourceModalProps {
 const ResourceModal: React.FC<ResourceModalProps> = ({ isVisible, onClose, onSave, recursoToEdit }) => {
   const [tipoRecursoId, setTipoRecursoId] = useState<string | undefined>();
   const [quantidade, setQuantidade] = useState('');
-  const [unidadeMedida, setUnidadeMedida] = useState('');
-  const [status, setStatus] = useState<RecursoStatus>('DISPONIVEL');
+  const [unidadeMedida, setUnidadeMedida] = useState<UnidadeMedida | undefined>();
   const [observacoes, setObservacoes] = useState('');
 
   const [tiposRecurso, setTiposRecurso] = useState<TipoRecurso[]>([]);
@@ -43,14 +43,12 @@ const ResourceModal: React.FC<ResourceModalProps> = ({ isVisible, onClose, onSav
     if (recursoToEdit) {
       setTipoRecursoId(recursoToEdit.tipoRecursoId);
       setQuantidade(recursoToEdit.quantidadeDisponivel.toString());
-      setUnidadeMedida(recursoToEdit.unidadeMedida || '');
-      setStatus(recursoToEdit.status);
+      setUnidadeMedida(recursoToEdit.unidadeMedida || undefined);
       setObservacoes(recursoToEdit.observacoes || '');
     } else {
       setTipoRecursoId(undefined);
       setQuantidade('');
-      setUnidadeMedida('');
-      setStatus('DISPONIVEL');
+      setUnidadeMedida(undefined);
       setObservacoes('');
     }
   }, [recursoToEdit]);
@@ -70,11 +68,11 @@ const ResourceModal: React.FC<ResourceModalProps> = ({ isVisible, onClose, onSav
     
     try {
       if (recursoToEdit) {
-        const data: UpdateRecursoDTO = { tipoRecursoId, quantidadeDisponivel: quantidadeNum, unidadeMedida: unidadeMedida || undefined, status, observacoes: observacoes || undefined };
+        const data: UpdateRecursoDTO = { tipoRecursoId, quantidadeDisponivel: quantidadeNum, unidadeMedida: unidadeMedida || undefined, observacoes: observacoes || undefined };
         await recursoService.updateRecurso(recursoToEdit.id, data);
         Alert.alert('Sucesso', 'Recurso atualizado!');
       } else {
-        const data: CreateRecursoDTO = { tipoRecursoId, quantidadeDisponivel: quantidadeNum, unidadeMedida: unidadeMedida || undefined, status, observacoes: observacoes || undefined };
+        const data: CreateRecursoDTO = { tipoRecursoId, quantidadeDisponivel: quantidadeNum, unidadeMedida: unidadeMedida || undefined, observacoes: observacoes || undefined };
         await recursoService.createRecurso(data);
         Alert.alert('Sucesso', 'Recurso adicionado ao inventário!');
       }
@@ -107,14 +105,14 @@ const ResourceModal: React.FC<ResourceModalProps> = ({ isVisible, onClose, onSav
             <TextInput style={styles.input} value={quantidade} onChangeText={setQuantidade} keyboardType="numeric" placeholder="Ex: 5" />
             
             <Text style={styles.label}>Unidade de Medida</Text>
-            <TextInput style={styles.input} value={unidadeMedida} onChangeText={setUnidadeMedida} placeholder="Ex: kg, L, un" />
-
-            <Text style={styles.label}>Status</Text>
-             <View style={styles.pickerContainer}>
-              <Picker selectedValue={status} onValueChange={(itemValue) => setStatus(itemValue)}>
-                <Picker.Item label="Disponível" value="DISPONIVEL" />
-                <Picker.Item label="Em Falta" value="EM_FALTA" />
-                <Picker.Item label="Encomendado" value="ENCOMENDADO" />
+            <View style={styles.pickerContainer}>
+              <Picker selectedValue={unidadeMedida} onValueChange={(itemValue) => setUnidadeMedida(itemValue)}>
+                <Picker.Item label="Selecione uma unidade..." value={undefined} />
+                <Picker.Item label="Unidade" value="UNIDADE" />
+                <Picker.Item label="Quilograma (kg)" value="KG" />
+                <Picker.Item label="Grama (g)" value="G" />
+                <Picker.Item label="Litro (L)" value="L" />
+                <Picker.Item label="Mililitro (mL)" value="ML" />
               </Picker>
             </View>
 
@@ -136,18 +134,82 @@ const ResourceModal: React.FC<ResourceModalProps> = ({ isVisible, onClose, onSav
   );
 };
 const styles = StyleSheet.create({
-    centeredView: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.5)' },
-    modalView: { margin: 20, backgroundColor: 'white', borderRadius: 20, padding: 25, width: '90%', maxHeight: '80%' },
-    modalTitle: { marginBottom: 15, textAlign: 'center', fontSize: 20, fontWeight: 'bold' },
-    label: { fontSize: 16, fontWeight: 'bold', color: '#333', marginBottom: 8 },
-    input: { backgroundColor: '#f5f5f5', borderRadius: 8, paddingHorizontal: 15, height: 50, fontSize: 16, marginBottom: 15, borderWidth: 1, borderColor: '#ddd' },
-    textArea: { height: 100, textAlignVertical: 'top', paddingTop: 15 },
-    pickerContainer: { backgroundColor: '#f5f5f5', borderRadius: 8, borderWidth: 1, borderColor: '#ddd', marginBottom: 15, justifyContent: 'center' },
-    buttonContainer: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 10 },
-    button: { borderRadius: 10, padding: 12, elevation: 2, flex: 1, marginHorizontal: 5 },
-    buttonSave: { backgroundColor: '#007bff' },
-    buttonClose: { backgroundColor: '#6c757d' },
-    buttonDisabled: { backgroundColor: '#a0c7e4' },
-    textStyle: { color: 'white', fontWeight: 'bold', textAlign: 'center' },
+    centeredView: { 
+        flex: 1, 
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        backgroundColor: 'rgba(0,0,0,0.5)' 
+    },
+    modalView: { 
+        margin: theme.spacing.lg, 
+        backgroundColor: theme.colors.card, 
+        borderRadius: 20, 
+        padding: theme.spacing.xl, 
+        width: '90%', 
+        maxHeight: '80%' 
+    },
+    modalTitle: { 
+        marginBottom: theme.spacing.md, 
+        textAlign: 'center', 
+        fontSize: 20, 
+        fontWeight: 'bold',
+        color: theme.colors.text
+    },
+    label: { 
+        fontSize: 16, 
+        fontWeight: 'bold', 
+        color: theme.colors.text, 
+        marginBottom: 8 
+    },
+    input: { 
+        backgroundColor: theme.colors.background, 
+        borderRadius: 8, 
+        paddingHorizontal: theme.spacing.md, 
+        height: 50, 
+        fontSize: 16, 
+        marginBottom: theme.spacing.md, 
+        borderWidth: 1, 
+        borderColor: theme.colors.lightGray,
+        color: theme.colors.text
+    },
+    textArea: { 
+        height: 100, 
+        textAlignVertical: 'top', 
+        paddingTop: theme.spacing.md 
+    },
+    pickerContainer: { 
+        backgroundColor: theme.colors.background, 
+        borderRadius: 8, 
+        borderWidth: 1, 
+        borderColor: theme.colors.lightGray, 
+        marginBottom: theme.spacing.md, 
+        justifyContent: 'center' 
+    },
+    buttonContainer: { 
+        flexDirection: 'row', 
+        justifyContent: 'space-between', 
+        marginTop: theme.spacing.sm 
+    },
+    button: { 
+        borderRadius: 10, 
+        padding: theme.spacing.sm, 
+        elevation: 2, 
+        flex: 1, 
+        marginHorizontal: 5 
+    },
+    buttonSave: { 
+        backgroundColor: theme.colors.primary 
+    },
+    buttonClose: { 
+        backgroundColor: theme.colors.textSecondary 
+    },
+    buttonDisabled: { 
+        backgroundColor: theme.colors.lightGray 
+    },
+    textStyle: { 
+        color: 'white', 
+        fontWeight: 'bold', 
+        textAlign: 'center' 
+    },
 });
 export default ResourceModal;

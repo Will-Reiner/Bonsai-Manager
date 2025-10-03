@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Recurso } from '../types';
+import { theme } from '../constants/theme';
 
 interface ResourceListItemProps {
   recurso: Recurso;
@@ -9,21 +10,6 @@ interface ResourceListItemProps {
 }
 
 const ResourceListItem: React.FC<ResourceListItemProps> = ({ recurso, onEdit, onDelete }) => {
-  const getStatusStyle = (status: string) => {
-    switch (status) {
-      case 'DISPONIVEL':
-        return { container: styles.statusDisponivel, text: styles.statusText };
-      case 'EM_FALTA':
-        return { container: styles.statusEmFalta, text: styles.statusText };
-      case 'ENCOMENDADO':
-        return { container: styles.statusEncomendado, text: styles.statusText };
-      default:
-        return { container: {}, text: {} };
-    }
-  };
-
-  const statusStyle = getStatusStyle(recurso.status);
-
   return (
     <View style={styles.container}>
       <View style={styles.infoContainer}>
@@ -31,9 +17,9 @@ const ResourceListItem: React.FC<ResourceListItemProps> = ({ recurso, onEdit, on
         <Text style={styles.details}>
           Quantidade: {recurso.quantidadeDisponivel} {recurso.unidadeMedida || ''}
         </Text>
-        <View style={[styles.statusBadge, statusStyle.container]}>
-          <Text style={statusStyle.text}>{recurso.status}</Text>
-        </View>
+        {recurso.observacoes && (
+          <Text style={styles.observations}>{recurso.observacoes}</Text>
+        )}
       </View>
       <View style={styles.actionsContainer}>
         <TouchableOpacity style={styles.button} onPress={onEdit}>
@@ -49,11 +35,11 @@ const ResourceListItem: React.FC<ResourceListItemProps> = ({ recurso, onEdit, on
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: '#fff',
+    backgroundColor: theme.colors.card,
     borderRadius: 8,
-    padding: 15,
-    marginBottom: 10,
-    marginHorizontal: 10,
+    padding: theme.spacing.md,
+    marginBottom: theme.spacing.sm,
+    marginHorizontal: theme.spacing.sm,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
@@ -69,40 +55,32 @@ const styles = StyleSheet.create({
   name: {
     fontSize: 18,
     fontWeight: 'bold',
+    color: theme.colors.text,
   },
   details: {
     fontSize: 14,
-    color: '#666',
+    color: theme.colors.textSecondary,
     marginTop: 4,
   },
-  statusBadge: {
-    marginTop: 8,
-    paddingVertical: 3,
-    paddingHorizontal: 8,
-    borderRadius: 12,
-    alignSelf: 'flex-start',
-  },
-  statusText: {
-    color: '#fff',
+  observations: {
     fontSize: 12,
-    fontWeight: 'bold',
+    color: theme.colors.subtext,
+    marginTop: 4,
+    fontStyle: 'italic',
   },
-  statusDisponivel: { backgroundColor: '#28a745' },
-  statusEmFalta: { backgroundColor: '#dc3545' },
-  statusEncomendado: { backgroundColor: '#ffc107' },
   actionsContainer: {
     flexDirection: 'column',
     alignItems: 'flex-end',
   },
   button: {
-    backgroundColor: '#007bff',
+    backgroundColor: theme.colors.primary,
     paddingVertical: 8,
-    paddingHorizontal: 15,
+    paddingHorizontal: theme.spacing.md,
     borderRadius: 5,
     marginVertical: 4,
   },
   deleteButton: {
-    backgroundColor: '#dc3545',
+    backgroundColor: theme.colors.error,
   },
   buttonText: {
     color: '#fff',

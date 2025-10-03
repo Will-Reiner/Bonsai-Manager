@@ -6,6 +6,7 @@ import { userService } from '../../services/userService';
 import { Usuario } from '../../types';
 import { RootStackParamList } from '../../navigation/AppNavigator';
 import UserListItem from '../../components/UserListItem';
+import { theme } from '../../constants/theme';
 
 // CORREÇÃO APLICADA AQUI:
 // Usamos uma tipagem mais genérica que dá acesso a todas as rotas do Stack Navigator.
@@ -48,7 +49,17 @@ const CommunityScreen = () => {
   }, [users, searchTerm]);
 
   if (isLoading) {
-    return <View style={styles.centered}><ActivityIndicator size="large" /></View>;
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.headerContainer}>
+          <Text style={styles.headerTitle}>Comunidade</Text>
+        </View>
+        <View style={styles.centered}>
+          <ActivityIndicator size="large" color={theme.colors.primary} />
+          <Text style={styles.infoText}>A carregar a comunidade...</Text>
+        </View>
+      </SafeAreaView>
+    );
   }
 
   return (
@@ -59,6 +70,7 @@ const CommunityScreen = () => {
       <TextInput
         style={styles.searchInput}
         placeholder="Pesquisar bonsaístas..."
+        placeholderTextColor={theme.colors.subtext}
         value={searchTerm}
         onChangeText={setSearchTerm}
       />
@@ -72,34 +84,65 @@ const CommunityScreen = () => {
           />
         )}
         ListEmptyComponent={<Text style={styles.emptyText}>Nenhum utilizador encontrado.</Text>}
+        contentContainerStyle={filteredUsers.length === 0 ? styles.emptyContainer : styles.list}
       />
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: '#f8f9fa' },
-    centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-    headerContainer: {
-        paddingHorizontal: 15,
-        paddingTop: 15,
-        paddingBottom: 10,
-        backgroundColor: '#fff',
-        borderBottomWidth: 1,
-        borderBottomColor: '#eee',
+    container: { 
+      flex: 1, 
+      backgroundColor: theme.colors.background 
     },
-    headerTitle: { fontSize: 28, fontWeight: 'bold' },
+    centered: { 
+      flex: 1, 
+      justifyContent: 'center', 
+      alignItems: 'center',
+      padding: theme.spacing.large,
+    },
+    infoText: {
+      marginTop: theme.spacing.small,
+      fontSize: theme.typography.body.fontSize,
+      color: theme.colors.subtext,
+    },
+    headerContainer: {
+        paddingHorizontal: theme.spacing.medium,
+        paddingVertical: theme.spacing.small,
+        backgroundColor: theme.colors.card,
+        borderBottomWidth: 1,
+        borderBottomColor: theme.colors.lightGray,
+    },
+    headerTitle: { 
+      fontSize: theme.typography.h1.fontSize, 
+      fontWeight: theme.typography.h1.fontWeight as any,
+      color: theme.colors.text,
+    },
     searchInput: {
         height: 50,
-        backgroundColor: '#fff',
-        paddingHorizontal: 15,
-        margin: 10,
+        backgroundColor: theme.colors.card,
+        paddingHorizontal: theme.spacing.medium,
+        margin: theme.spacing.small,
         borderRadius: 8,
         borderWidth: 1,
-        borderColor: '#ddd',
-        fontSize: 16,
+        borderColor: theme.colors.lightGray,
+        fontSize: theme.typography.body.fontSize,
+        color: theme.colors.text,
     },
-    emptyText: { textAlign: 'center', marginTop: 20, fontSize: 16, color: '#666' }
+    list: {
+      paddingVertical: theme.spacing.small,
+    },
+    emptyContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      padding: theme.spacing.large,
+    },
+    emptyText: { 
+      textAlign: 'center', 
+      fontSize: theme.typography.body.fontSize, 
+      color: theme.colors.subtext 
+    }
 });
 
 export default CommunityScreen;

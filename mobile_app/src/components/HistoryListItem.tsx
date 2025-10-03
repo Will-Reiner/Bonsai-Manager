@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Agenda } from '../types'; // Agora usamos o tipo Agenda
+import { theme } from '../constants/theme';
 
 // A propriedade agora espera um item do tipo Agenda
 interface HistoryListItemProps {
@@ -32,18 +33,18 @@ const HistoryListItem: React.FC<HistoryListItemProps> = ({ item }) => {
 const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
-    paddingVertical: 15,
+    paddingVertical: theme.spacing.md,
     borderBottomWidth: 1,
-    borderBottomColor: '#eee',
-    marginLeft: 10,
-    marginHorizontal: 15,
+    borderBottomColor: theme.colors.lightGray,
+    marginLeft: theme.spacing.sm,
+    marginHorizontal: theme.spacing.md,
   },
   timelineDot: {
     width: 12,
     height: 12,
     borderRadius: 6,
-    backgroundColor: '#28a745', // Verde para indicar sucesso
-    marginRight: 15,
+    backgroundColor: theme.colors.success, // Verde para indicar sucesso
+    marginRight: theme.spacing.md,
     marginTop: 5,
   },
   content: {
@@ -52,19 +53,19 @@ const styles = StyleSheet.create({
   activity: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#333',
+    color: theme.colors.text,
   },
   date: {
     fontSize: 14,
-    color: '#888',
+    color: theme.colors.textSecondary,
     marginTop: 4,
   },
   details: {
     fontSize: 14,
-    color: '#555',
+    color: theme.colors.text,
     marginTop: 8,
-    backgroundColor: '#f8f9fa',
-    padding: 10,
+    backgroundColor: theme.colors.background,
+    padding: theme.spacing.sm,
     borderRadius: 6,
   },
 });

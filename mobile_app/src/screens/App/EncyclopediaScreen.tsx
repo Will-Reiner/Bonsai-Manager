@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/AppNavigator';
+import { theme } from '../../constants/theme';
 
 type EncyclopediaNavigationProp = NativeStackNavigationProp<RootStackParamList, 'MainTabs'>;
 
@@ -39,27 +40,28 @@ const EncyclopediaScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8f9fa',
+    backgroundColor: theme.colors.background,
   },
   headerContainer: {
-    paddingHorizontal: 15,
-    paddingVertical: 10,
-    backgroundColor: '#fff',
+    paddingHorizontal: theme.spacing.medium,
+    paddingVertical: theme.spacing.small,
+    backgroundColor: theme.colors.card,
     borderBottomWidth: 1,
-    borderBottomColor: '#eee',
+    borderBottomColor: theme.colors.lightGray,
   },
   headerTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
+    fontSize: theme.typography.h2.fontSize,
+    fontWeight: theme.typography.h2.fontWeight as any,
+    color: theme.colors.text,
   },
   content: {
-    padding: 20,
+    padding: theme.spacing.large,
   },
   card: {
-    backgroundColor: '#fff',
+    backgroundColor: theme.colors.card,
     borderRadius: 12,
-    padding: 20,
-    marginBottom: 20,
+    padding: theme.spacing.large,
+    marginBottom: theme.spacing.large,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
@@ -69,12 +71,12 @@ const styles = StyleSheet.create({
   cardTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    marginBottom: 8,
-    color: '#007bff',
+    marginBottom: theme.spacing.small,
+    color: theme.colors.primary,
   },
   cardDescription: {
-    fontSize: 16,
-    color: '#6c757d',
+    fontSize: theme.typography.body.fontSize,
+    color: theme.colors.subtext,
   },
 });
 

@@ -5,6 +5,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/AppNavigator';
 import { Usuario } from '../../types';
 import UserListItem from '../../components/UserListItem';
+import { theme } from '../../constants/theme';
 
 type UserListScreenRouteProp = RouteProp<RootStackParamList, 'UserList'>;
 type UserListNavigationProp = NativeStackNavigationProp<RootStackParamList, 'UserList'>;
@@ -34,13 +35,13 @@ const UserListScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8f9fa',
+    backgroundColor: theme.colors.background,
   },
   emptyText: {
     textAlign: 'center',
     marginTop: 50,
     fontSize: 16,
-    color: '#666',
+    color: theme.colors.textSecondary,
   },
 });
 

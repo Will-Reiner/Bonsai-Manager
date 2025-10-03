@@ -17,6 +17,7 @@ import { atividadeService } from '../../services/atividadeService';
 import { agendaService, CreateAgendaDTO } from '../../services/agendaService';
 import { Atividade } from '../../types';
 import { RootStackParamList } from '../../navigation/AppNavigator';
+import { theme } from '../../constants/theme';
 
 type ScheduleCareScreenRouteProp = RouteProp<RootStackParamList, 'ScheduleCare'>;
 
@@ -161,52 +162,102 @@ const ScheduleCareScreen = () => {
 
 // Adicionar novos estilos e ajustar os existentes
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: '#f5f5f5' },
-    centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-    contentContainer: { padding: 20 },
-    label: { fontSize: 16, fontWeight: 'bold', color: '#333', marginBottom: 8, marginTop: 10 },
-    input: { backgroundColor: '#fff', borderRadius: 8, paddingHorizontal: 15, height: 50, fontSize: 16, marginBottom: 20, borderWidth: 1, borderColor: '#ddd' },
-    textArea: { height: 120, textAlignVertical: 'top', paddingTop: 15 },
-    pickerContainer: { backgroundColor: '#fff', borderRadius: 8, borderWidth: 1, borderColor: '#ddd', marginBottom: 10, justifyContent: 'center' },
+    container: { 
+        flex: 1, 
+        backgroundColor: theme.colors.background 
+    },
+    centered: { 
+        flex: 1, 
+        justifyContent: 'center', 
+        alignItems: 'center',
+        backgroundColor: theme.colors.background
+    },
+    contentContainer: { 
+        padding: theme.spacing.lg 
+    },
+    label: { 
+        fontSize: 16, 
+        fontWeight: 'bold', 
+        color: theme.colors.text, 
+        marginBottom: theme.spacing.xs, 
+        marginTop: theme.spacing.sm 
+    },
+    input: { 
+        backgroundColor: theme.colors.card, 
+        borderRadius: 8, 
+        paddingHorizontal: theme.spacing.md, 
+        height: 50, 
+        fontSize: 16, 
+        marginBottom: theme.spacing.lg, 
+        borderWidth: 1, 
+        borderColor: theme.colors.lightGray,
+        color: theme.colors.text
+    },
+    textArea: { 
+        height: 120, 
+        textAlignVertical: 'top', 
+        paddingTop: theme.spacing.md 
+    },
+    pickerContainer: { 
+        backgroundColor: theme.colors.card, 
+        borderRadius: 8, 
+        borderWidth: 1, 
+        borderColor: theme.colors.lightGray, 
+        marginBottom: theme.spacing.sm, 
+        justifyContent: 'center' 
+    },
     
     // Novos estilos para a seleção de data
     quickDateContainer: {
         flexDirection: 'row',
         flexWrap: 'wrap',
         justifyContent: 'space-between',
-        marginBottom: 20,
+        marginBottom: theme.spacing.lg,
     },
     quickDateButton: {
-        backgroundColor: '#e9ecef',
-        paddingVertical: 10,
-        paddingHorizontal: 12,
+        backgroundColor: theme.colors.lightGray,
+        paddingVertical: theme.spacing.sm,
+        paddingHorizontal: theme.spacing.sm,
         borderRadius: 20,
-        marginBottom: 10,
+        marginBottom: theme.spacing.sm,
         borderWidth: 1,
-        borderColor: '#dee2e6'
+        borderColor: theme.colors.lightGray
     },
     quickDateButtonText: {
-        color: '#495057',
+        color: theme.colors.text,
         fontSize: 14,
     },
     datePickerButton: {
-      backgroundColor: '#fff',
+      backgroundColor: theme.colors.card,
       borderRadius: 8,
-      paddingHorizontal: 15,
+      paddingHorizontal: theme.spacing.md,
       height: 50,
       justifyContent: 'center',
       borderWidth: 1,
-      borderColor: '#ddd',
-      marginBottom: 10,
+      borderColor: theme.colors.lightGray,
+      marginBottom: theme.spacing.sm,
     },
     datePickerButtonText: {
       fontSize: 16,
-      color: '#333'
+      color: theme.colors.text
     },
 
-    button: { backgroundColor: '#007bff', height: 50, borderRadius: 8, justifyContent: 'center', alignItems: 'center', marginTop: 10 },
-    buttonDisabled: { backgroundColor: '#a0c7e4' },
-    buttonText: { color: '#ffffff', fontSize: 18, fontWeight: 'bold' },
+    button: { 
+        backgroundColor: theme.colors.primary, 
+        height: 50, 
+        borderRadius: 8, 
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        marginTop: theme.spacing.sm 
+    },
+    buttonDisabled: { 
+        backgroundColor: theme.colors.lightGray 
+    },
+    buttonText: { 
+        color: theme.colors.card, 
+        fontSize: 18, 
+        fontWeight: 'bold' 
+    },
 });
 
 export default ScheduleCareScreen;

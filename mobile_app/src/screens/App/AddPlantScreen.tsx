@@ -14,6 +14,7 @@ import { Picker } from '@react-native-picker/picker';
 import { especieService } from '../../services/especieService';
 import { plantaService, CreatePlantaDTO } from '../../services/plantaService';
 import { Especie, ModoAquisicao } from '../../types';
+import { theme } from '../../constants/theme';
 
 const AddPlantScreen = () => {
   const navigation = useNavigation();
@@ -154,53 +155,54 @@ const AddPlantScreen = () => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#f5f5f5',
+        backgroundColor: theme.colors.background,
     },
     contentContainer: {
-        padding: 20,
+        padding: theme.spacing.lg,
     },
     label: {
         fontSize: 16,
         fontWeight: 'bold',
-        color: '#333',
-        marginBottom: 8,
+        color: theme.colors.text,
+        marginBottom: theme.spacing.xs,
     },
     input: {
-        backgroundColor: '#fff',
+        backgroundColor: theme.colors.card,
         borderRadius: 8,
-        paddingHorizontal: 15,
+        paddingHorizontal: theme.spacing.md,
         height: 50,
         fontSize: 16,
-        marginBottom: 20,
+        marginBottom: theme.spacing.lg,
         borderWidth: 1,
-        borderColor: '#ddd',
+        borderColor: theme.colors.lightGray,
+        color: theme.colors.text,
     },
     textArea: {
         height: 100,
         textAlignVertical: 'top',
-        paddingTop: 15,
+        paddingTop: theme.spacing.md,
     },
     pickerContainer: {
-        backgroundColor: '#fff',
+        backgroundColor: theme.colors.card,
         borderRadius: 8,
         borderWidth: 1,
-        borderColor: '#ddd',
-        marginBottom: 20,
+        borderColor: theme.colors.lightGray,
+        marginBottom: theme.spacing.lg,
         justifyContent: 'center',
     },
     button: {
-        backgroundColor: '#28a745',
+        backgroundColor: theme.colors.success,
         height: 50,
         borderRadius: 8,
         justifyContent: 'center',
         alignItems: 'center',
-        marginTop: 10,
+        marginTop: theme.spacing.sm,
     },
     buttonDisabled: {
-        backgroundColor: '#a3d9b1',
+        backgroundColor: theme.colors.lightGray,
     },
     buttonText: {
-        color: '#ffffff',
+        color: theme.colors.card,
         fontSize: 18,
         fontWeight: 'bold',
     },

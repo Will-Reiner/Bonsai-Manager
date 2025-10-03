@@ -7,11 +7,12 @@ import { useAuth } from '../../context/AuthContext';
 import api from '../../api';
 import { Usuario } from '../../types';
 import { RootStackParamList } from '../../navigation/AppNavigator';
+import { theme } from '../../constants/theme';
 
 // Componente reutilizado
 const StatCard = ({ label, value, loading, onPress }: { label: string; value: string | number; loading: boolean, onPress?: () => void }) => (
   <TouchableOpacity style={styles.statCard} onPress={onPress} disabled={!onPress}>
-    <Text style={styles.statValue}>{loading ? <ActivityIndicator size="small" /> : value}</Text>
+    <Text style={styles.statValue}>{loading ? <ActivityIndicator size="small" color={theme.colors.primary} /> : value}</Text>
     <Text style={styles.statLabel}>{label}</Text>
   </TouchableOpacity>
 );
@@ -54,7 +55,18 @@ const ProfileScreen = () => {
 
         <View style={styles.card}>
           <Text style={styles.cardTitle}>{user?.nomePublico || user?.nome}</Text>
-          {/* ... (infoRow existente) ... */}
+          <View style={styles.infoRow}>
+            <Text style={styles.infoLabel}>Nome:</Text>
+            <Text style={styles.infoValue}>{user?.nome}</Text>
+          </View>
+          <View style={styles.infoRow}>
+            <Text style={styles.infoLabel}>Email:</Text>
+            <Text style={styles.infoValue}>{user?.email}</Text>
+          </View>
+          <View style={styles.infoRow}>
+            <Text style={styles.infoLabel}>Nome Público:</Text>
+            <Text style={styles.infoValue}>{user?.nomePublico || 'Não definido'}</Text>
+          </View>
         </View>
 
         <View style={styles.card}>
@@ -86,20 +98,86 @@ const ProfileScreen = () => {
 
 // Estilos atualizados
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: '#f8f9fa' },
-    headerContainer: { padding: 20, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#eee' },
-    headerTitle: { fontSize: 28, fontWeight: 'bold' },
-    card: { backgroundColor: '#fff', borderRadius: 12, padding: 20, marginHorizontal: 15, marginTop: 20, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 5, elevation: 3 },
-    cardTitle: { fontSize: 20, fontWeight: 'bold', marginBottom: 15, color: '#333' },
-    infoRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 8 },
-    infoLabel: { fontSize: 16, color: '#6c757d' },
-    infoValue: { fontSize: 16, fontWeight: '500' },
-    statsContainer: { flexDirection: 'row', justifyContent: 'space-around' },
-    statCard: { alignItems: 'center', flex: 1, paddingVertical: 10 },
-    statValue: { fontSize: 24, fontWeight: 'bold', color: '#007bff', marginBottom: 5 },
-    statLabel: { fontSize: 14, color: '#6c757d', textAlign: 'center' },
-    logoutButton: { backgroundColor: '#dc3545', margin: 15, padding: 15, borderRadius: 8, alignItems: 'center', marginTop: 30 },
-    logoutButtonText: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
+    container: { 
+      flex: 1, 
+      backgroundColor: theme.colors.background 
+    },
+    headerContainer: { 
+      padding: theme.spacing.large, 
+      backgroundColor: theme.colors.card, 
+      borderBottomWidth: 1, 
+      borderBottomColor: theme.colors.lightGray 
+    },
+    headerTitle: { 
+      fontSize: theme.typography.h1.fontSize, 
+      fontWeight: theme.typography.h1.fontWeight as any,
+      color: theme.colors.text,
+    },
+    card: { 
+      backgroundColor: theme.colors.card, 
+      borderRadius: 12, 
+      padding: theme.spacing.large, 
+      marginHorizontal: theme.spacing.medium, 
+      marginTop: theme.spacing.large, 
+      shadowColor: '#000', 
+      shadowOffset: { width: 0, height: 2 }, 
+      shadowOpacity: 0.05, 
+      shadowRadius: 5, 
+      elevation: 3 
+    },
+    cardTitle: { 
+      fontSize: 20, 
+      fontWeight: 'bold', 
+      marginBottom: theme.spacing.medium, 
+      color: theme.colors.text 
+    },
+    infoRow: { 
+      flexDirection: 'row', 
+      justifyContent: 'space-between', 
+      paddingVertical: theme.spacing.small 
+    },
+    infoLabel: { 
+      fontSize: theme.typography.body.fontSize, 
+      color: theme.colors.subtext 
+    },
+    infoValue: { 
+      fontSize: theme.typography.body.fontSize, 
+      fontWeight: '500',
+      color: theme.colors.text,
+    },
+    statsContainer: { 
+      flexDirection: 'row', 
+      justifyContent: 'space-around' 
+    },
+    statCard: { 
+      alignItems: 'center', 
+      flex: 1, 
+      paddingVertical: theme.spacing.small 
+    },
+    statValue: { 
+      fontSize: 24, 
+      fontWeight: 'bold', 
+      color: theme.colors.primary, 
+      marginBottom: 5 
+    },
+    statLabel: { 
+      fontSize: 14, 
+      color: theme.colors.subtext, 
+      textAlign: 'center' 
+    },
+    logoutButton: { 
+      backgroundColor: theme.colors.danger, 
+      margin: theme.spacing.medium, 
+      padding: theme.spacing.medium, 
+      borderRadius: 8, 
+      alignItems: 'center', 
+      marginTop: theme.spacing.large 
+    },
+    logoutButtonText: { 
+      color: theme.colors.card, 
+      fontWeight: 'bold', 
+      fontSize: theme.typography.body.fontSize 
+    },
 });
 
 export default ProfileScreen;

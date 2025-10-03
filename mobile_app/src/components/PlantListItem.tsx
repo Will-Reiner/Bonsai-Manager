@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Planta } from '../types';
+import { theme } from '../constants/theme';
 
 interface PlantListItemProps {
   planta: Planta;
@@ -25,10 +26,10 @@ const PlantListItem: React.FC<PlantListItemProps> = ({ planta, onPress }) => {
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: '#fff',
+    backgroundColor: theme.colors.card,
     borderRadius: 12,
-    padding: 15,
-    marginBottom: 15,
+    padding: theme.spacing.md,
+    marginBottom: theme.spacing.md,
     marginHorizontal: 5,
     flexDirection: 'row',
     alignItems: 'center',
@@ -53,11 +54,11 @@ const styles = StyleSheet.create({
   name: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#333',
+    color: theme.colors.text,
   },
   species: {
     fontSize: 14,
-    color: '#666',
+    color: theme.colors.textSecondary,
     fontStyle: 'italic',
     marginTop: 4,
   },

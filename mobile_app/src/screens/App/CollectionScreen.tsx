@@ -15,13 +15,13 @@ import PlantListItem from '../../components/PlantListItem';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/AppNavigator';
+import { theme } from '../../constants/theme'; // Importando nosso tema
+import { MaterialCommunityIcons } from '@expo/vector-icons'; // Importando ícones
 
-// Define o tipo do hook de navegação para ter autocomplete e segurança
-type CollectionScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Home'>;
+type CollectionScreenNavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 const CollectionScreen = () => {
   const navigation = useNavigation<CollectionScreenNavigationProp>();
-  const { user, logout } = useAuth();
   const [plantas, setPlantas] = useState<Planta[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -38,8 +38,6 @@ const CollectionScreen = () => {
     }
   }, []);
 
-  // useFocusEffect roda toda vez que a tela entra em foco.
-  // Isso garante que a lista seja atualizada se o utilizador voltar de outra tela.
   useFocusEffect(
     useCallback(() => {
       setIsLoading(true);
@@ -61,7 +59,7 @@ const CollectionScreen = () => {
     if (isLoading) {
       return (
         <View style={styles.centered}>
-          <ActivityIndicator size="large" color="#007bff" />
+          <ActivityIndicator size="large" color={theme.colors.primary} />
           <Text style={styles.infoText}>A carregar a sua coleção...</Text>
         </View>
       );
@@ -81,6 +79,7 @@ const CollectionScreen = () => {
     if (plantas.length === 0) {
         return (
             <View style={styles.centered}>
+                <MaterialCommunityIcons name="leaf-off" size={64} color={theme.colors.lightGray} />
                 <Text style={styles.emptyText}>A sua coleção está vazia.</Text>
                 <Text style={styles.emptySubtext}>Toque em '+' para adicionar a sua primeira planta!</Text>
             </View>
@@ -109,25 +108,11 @@ const CollectionScreen = () => {
       <View style={styles.headerContainer}>
         <Text style={styles.headerTitle}>Minha Coleção</Text>
         <TouchableOpacity onPress={() => navigation.navigate('AddPlant')} style={styles.addButton}>
-            <Text style={styles.addButtonText}>+</Text>
+            <MaterialCommunityIcons name="plus" size={28} color={theme.colors.card} />
         </TouchableOpacity>
       </View>
 
       {renderContent()}
-
-      <View style={styles.footerButtons}>
-        {user?.role === 'ADMIN' && (
-            <TouchableOpacity 
-                style={[styles.button, styles.adminButton]} 
-                onPress={() => navigation.navigate('Admin')}
-            >
-                <Text style={styles.buttonText}>Painel Admin</Text>
-            </TouchableOpacity>
-        )}
-        <TouchableOpacity style={[styles.button, styles.logoutButton]} onPress={logout}>
-            <Text style={styles.buttonText}>Deslogar</Text>
-        </TouchableOpacity>
-      </View>
     </SafeAreaView>
   );
 };
@@ -135,46 +120,47 @@ const CollectionScreen = () => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#f8f9fa',
+        backgroundColor: theme.colors.background,
     },
     centered: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        padding: 20,
+        padding: theme.spacing.large,
     },
     infoText: {
-        marginTop: 10,
+        marginTop: theme.spacing.medium,
         fontSize: 16,
-        color: '#666'
+        color: theme.colors.subtext,
     },
     list: {
-        padding: 10,
+        padding: theme.spacing.medium,
     },
     errorText: {
         fontSize: 16,
-        color: 'red',
-        marginBottom: 20,
+        color: theme.colors.danger,
+        marginBottom: theme.spacing.medium,
         textAlign: 'center',
     },
     emptyText: {
         fontSize: 18,
         fontWeight: 'bold',
-        color: '#555',
+        color: theme.colors.subtext,
+        marginTop: theme.spacing.medium,
     },
     emptySubtext: {
         fontSize: 14,
-        color: '#777',
-        marginTop: 8,
+        color: theme.colors.subtext,
+        marginTop: theme.spacing.small,
     },
     button: {
-        backgroundColor: '#007bff',
+        backgroundColor: theme.colors.primary,
         paddingVertical: 12,
         paddingHorizontal: 30,
         borderRadius: 25,
     },
     buttonText: {
-        color: '#ffffff',
+        color: theme.colors.card,
         fontSize: 16,
         fontWeight: 'bold',
     },
@@ -182,42 +168,24 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        paddingHorizontal: 15,
-        paddingTop: 10,
-        paddingBottom: 10,
-        backgroundColor: '#fff',
+        paddingHorizontal: theme.spacing.medium,
+        paddingVertical: theme.spacing.small,
+        backgroundColor: theme.colors.card,
         borderBottomWidth: 1,
-        borderBottomColor: '#eee',
+        borderBottomColor: theme.colors.lightGray,
     },
     headerTitle: {
         fontSize: 24,
         fontWeight: 'bold',
+        color: theme.colors.text,
     },
     addButton: {
-        backgroundColor: '#007bff',
-        width: 40,
-        height: 40,
-        borderRadius: 20,
+        backgroundColor: theme.colors.primary,
+        width: 44,
+        height: 44,
+        borderRadius: 22,
         justifyContent: 'center',
         alignItems: 'center',
-    },
-    addButtonText: {
-        color: '#fff',
-        fontSize: 24,
-        lineHeight: 30,
-        fontWeight: 'bold',
-    },
-    footerButtons: {
-        padding: 10,
-        flexDirection: 'row',
-        justifyContent: 'space-around',
-        alignItems: 'center',
-    },
-    adminButton: {
-        backgroundColor: '#ffc107', // Cor de aviso/admin
-    },
-    logoutButton: {
-        backgroundColor: '#dc3545',
     },
 });
 
