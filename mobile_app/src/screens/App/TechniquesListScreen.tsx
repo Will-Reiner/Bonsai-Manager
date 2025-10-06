@@ -5,6 +5,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { atividadeService } from '../../services/atividadeService';
 import { Atividade } from '../../types';
 import { RootStackParamList } from '../../navigation/AppNavigator';
+import { theme } from '../../constants/theme';
 
 type TechniquesListNavigationProp = NativeStackNavigationProp<RootStackParamList, 'TechniquesList'>;
 
@@ -49,10 +50,27 @@ const TechniquesListScreen = () => {
   );
 };
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f8f9fa' },
-  centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  listItem: { backgroundColor: '#fff', padding: 20, borderBottomWidth: 1, borderBottomColor: '#eee' },
-  listItemTitle: { fontSize: 16, fontWeight: '500' },
+  container: { 
+    flex: 1, 
+    backgroundColor: theme.colors.background 
+  },
+  centered: { 
+    flex: 1, 
+    justifyContent: 'center', 
+    alignItems: 'center',
+    backgroundColor: theme.colors.background
+  },
+  listItem: { 
+    backgroundColor: theme.colors.card, 
+    padding: theme.spacing.lg, 
+    borderBottomWidth: 1, 
+    borderBottomColor: theme.colors.lightGray 
+  },
+  listItemTitle: { 
+    fontSize: 16, 
+    fontWeight: '500',
+    color: theme.colors.text
+  },
 });
 
 export default TechniquesListScreen;

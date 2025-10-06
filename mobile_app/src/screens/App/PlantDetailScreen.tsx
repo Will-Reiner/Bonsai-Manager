@@ -7,6 +7,7 @@ import { Planta, Agenda } from '../../types';
 import { RootStackParamList } from '../../navigation/AppNavigator';
 import HistoryListItem from '../../components/HistoryListItem';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { theme } from '../../constants/theme';
 
 type PlantDetailScreenRouteProp = RouteProp<RootStackParamList, 'PlantDetail'>;
 type PlantDetailNavigationProp = NativeStackNavigationProp<RootStackParamList, 'PlantDetail'>;
@@ -140,24 +141,101 @@ const PlantDetailScreen = () => {
 
 
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: '#f5f5f5' },
-    centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-    centeredEmpty: { padding: 20, alignItems: 'center' },
-    header: { backgroundColor: '#fff', padding: 20, borderBottomWidth: 1, borderBottomColor: '#eee' },
-    mainTitle: { fontSize: 28, fontWeight: 'bold', color: '#333' },
-    subtitle: { fontSize: 18, fontStyle: 'italic', color: '#666', marginTop: 4 },
-    card: { backgroundColor: '#fff', padding: 20, marginHorizontal: 15, marginTop: 15, borderRadius: 8 },
-    historyHeader: { marginTop: 20, paddingHorizontal: 20, paddingBottom: 10 },
-    cardTitle: { fontSize: 18, fontWeight: 'bold', color: '#444' },
-    detailRow: { marginBottom: 10 },
-    detailLabel: { fontSize: 14, color: '#888', marginBottom: 4 },
-    detailValue: { fontSize: 16, color: '#333' },
-    errorText: { fontSize: 16, color: 'red' },
-    actionsContainer: { flexDirection: 'row', justifyContent: 'space-around', padding: 20, marginTop: 10 },
-    actionButton: { backgroundColor: '#007bff', paddingVertical: 12, paddingHorizontal: 20, borderRadius: 8, alignItems: 'center', flex: 1, marginHorizontal: 5 },
-    scheduleButton: { backgroundColor: '#17a2b8' },
-    deleteButton: { backgroundColor: '#dc3545' },
-    actionButtonText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
+    container: { 
+        flex: 1, 
+        backgroundColor: theme.colors.background 
+    },
+    centered: { 
+        flex: 1, 
+        justifyContent: 'center', 
+        alignItems: 'center',
+        backgroundColor: theme.colors.background
+    },
+    centeredEmpty: { 
+        padding: theme.spacing.lg, 
+        alignItems: 'center' 
+    },
+    header: { 
+        backgroundColor: theme.colors.card, 
+        padding: theme.spacing.lg, 
+        borderBottomWidth: 1, 
+        borderBottomColor: theme.colors.lightGray 
+    },
+    mainTitle: { 
+        fontSize: 28, 
+        fontWeight: 'bold', 
+        color: theme.colors.text 
+    },
+    subtitle: { 
+        fontSize: 18, 
+        fontStyle: 'italic', 
+        color: theme.colors.subtext, 
+        marginTop: theme.spacing.xs 
+    },
+    card: { 
+        backgroundColor: theme.colors.card, 
+        padding: theme.spacing.lg, 
+        marginHorizontal: theme.spacing.md, 
+        marginTop: theme.spacing.md, 
+        borderRadius: 8,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 3
+    },
+    historyHeader: { 
+        marginTop: theme.spacing.lg, 
+        paddingHorizontal: theme.spacing.lg, 
+        paddingBottom: theme.spacing.sm 
+    },
+    cardTitle: { 
+        fontSize: 18, 
+        fontWeight: 'bold', 
+        color: theme.colors.text 
+    },
+    detailRow: { 
+        marginBottom: theme.spacing.sm 
+    },
+    detailLabel: { 
+        fontSize: 14, 
+        color: theme.colors.subtext, 
+        marginBottom: theme.spacing.xs 
+    },
+    detailValue: { 
+        fontSize: 16, 
+        color: theme.colors.text 
+    },
+    errorText: { 
+        fontSize: 16, 
+        color: theme.colors.danger 
+    },
+    actionsContainer: { 
+        flexDirection: 'row', 
+        justifyContent: 'space-around', 
+        padding: theme.spacing.lg, 
+        marginTop: theme.spacing.sm 
+    },
+    actionButton: { 
+        backgroundColor: theme.colors.primary, 
+        paddingVertical: theme.spacing.sm, 
+        paddingHorizontal: theme.spacing.lg, 
+        borderRadius: 8, 
+        alignItems: 'center', 
+        flex: 1, 
+        marginHorizontal: theme.spacing.xs 
+    },
+    scheduleButton: { 
+        backgroundColor: theme.colors.accent 
+    },
+    deleteButton: { 
+        backgroundColor: theme.colors.danger 
+    },
+    actionButtonText: { 
+        color: theme.colors.card, 
+        fontSize: 16, 
+        fontWeight: 'bold' 
+    },
 });
 
 export default PlantDetailScreen;

@@ -4,6 +4,10 @@
 echo "Waiting for postgres..."
 sleep 5
 
+# Instala dependências (necessário porque /app/node_modules é um volume vazio no runtime)
+echo "Installing node dependencies..."
+npm install
+
 # Gera o Prisma Client (corrige o primeiro erro)
 echo "Generating Prisma Client..."
 npx prisma generate

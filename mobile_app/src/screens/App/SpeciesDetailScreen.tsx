@@ -4,6 +4,7 @@ import { RouteProp, useRoute } from '@react-navigation/native';
 import { especieService } from '../../services/especieService';
 import { Especie } from '../../types';
 import { RootStackParamList } from '../../navigation/AppNavigator';
+import { theme } from '../../constants/theme';
 
 type SpeciesDetailRouteProp = RouteProp<RootStackParamList, 'SpeciesDetail'>;
 
@@ -70,14 +71,56 @@ const SpeciesDetailScreen = () => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f5f5f5' },
-  centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  header: { backgroundColor: '#fff', padding: 20, borderBottomWidth: 1, borderBottomColor: '#eee' },
-  mainTitle: { fontSize: 28, fontWeight: 'bold', color: '#333' },
-  subtitle: { fontSize: 18, fontStyle: 'italic', color: '#666', marginTop: 4 },
-  card: { backgroundColor: '#fff', padding: 20, marginHorizontal: 15, marginTop: 15, borderRadius: 8 },
-  cardTitle: { fontSize: 18, fontWeight: 'bold', color: '#444', marginBottom: 10 },
-  cardContent: { fontSize: 16, color: '#333', lineHeight: 24 },
+  container: { 
+    flex: 1, 
+    backgroundColor: theme.colors.background 
+  },
+  centered: { 
+    flex: 1, 
+    justifyContent: 'center', 
+    alignItems: 'center',
+    backgroundColor: theme.colors.background
+  },
+  header: { 
+    backgroundColor: theme.colors.card, 
+    padding: theme.spacing.lg, 
+    borderBottomWidth: 1, 
+    borderBottomColor: theme.colors.lightGray 
+  },
+  mainTitle: { 
+    fontSize: 28, 
+    fontWeight: 'bold', 
+    color: theme.colors.text 
+  },
+  subtitle: { 
+    fontSize: 18, 
+    fontStyle: 'italic', 
+    color: theme.colors.subtext, 
+    marginTop: theme.spacing.xs 
+  },
+  card: { 
+    backgroundColor: theme.colors.card, 
+    padding: theme.spacing.lg, 
+    marginHorizontal: theme.spacing.md, 
+    marginTop: theme.spacing.md, 
+    borderRadius: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3
+  },
+  cardTitle: { 
+    fontSize: 18, 
+    fontWeight: 'bold', 
+    color: theme.colors.text, 
+    marginBottom: theme.spacing.sm 
+  },
+  cardContent: { 
+    fontSize: 16, 
+    color: theme.colors.text, 
+    lineHeight: 24 
+  },
 });
 
 export default SpeciesDetailScreen;

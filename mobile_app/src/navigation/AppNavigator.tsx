@@ -3,6 +3,8 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { View, ActivityIndicator } from 'react-native';
+import { MaterialCommunityIcons } from '@expo/vector-icons'; // Importando os ícones
+import { theme } from '../constants/theme'; // Importando nosso tema
 
 // Import all screens
 import LoginScreen from '../screens/Auth/LoginScreen';
@@ -42,8 +44,9 @@ export type RootStackParamList = {
   SpeciesDetail: { especieId: string; title: string };
   TechniquesList: undefined;
   TechniqueDetail: { atividadeId: string; title: string };
-  PublicProfile: { userId: string }; // 'Community' foi removido daqui
-  UserList: { users: Partial<Usuario>[], title: string };
+  PublicProfile: { userId: string };
+  UserList: { users: Partial<Usuario>[]; title: string };
+  Home: undefined; // Adicionado para evitar erro de tipo em CollectionScreen
 };
 
 // Tipos para a navegação por abas (Tabs)
@@ -52,23 +55,48 @@ export type MainTabParamList = {
   Agenda: undefined;
   Inventory: undefined;
   Encyclopedia: undefined;
-  Community: undefined; // Este é o lugar correto para a rota 'Community'
+  Community: undefined;
   Profile: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator<MainTabParamList>();
 
-// Componente para a Navegação por Abas
+// Componente para a Navegação por Abas com os novos ícones e cores
 const MainTabs = () => {
   return (
     <Tab.Navigator
-      screenOptions={{
+      screenOptions={({ route }) => ({
         headerShown: false,
+        tabBarActiveTintColor: theme.colors.primary,
+        tabBarInactiveTintColor: theme.colors.subtext,
         tabBarLabelStyle: { fontSize: 12, fontWeight: 'bold' },
-        tabBarActiveTintColor: '#007bff',
-        tabBarInactiveTintColor: 'gray',
-      }}
+        tabBarStyle: {
+            backgroundColor: theme.colors.card,
+            borderTopColor: theme.colors.lightGray,
+        },
+        tabBarIcon: ({ color, size }) => {
+          let iconName: React.ComponentProps<typeof MaterialCommunityIcons>['name'];
+
+          if (route.name === 'Collection') {
+            iconName = 'leaf';
+          } else if (route.name === 'Agenda') {
+            iconName = 'calendar-check';
+          } else if (route.name === 'Inventory') {
+            iconName = 'archive-outline';
+          } else if (route.name === 'Encyclopedia') {
+            iconName = 'book-open-variant';
+          } else if (route.name === 'Community') {
+            iconName = 'account-group-outline';
+          } else if (route.name === 'Profile') {
+            iconName = 'account-circle-outline';
+          } else {
+            iconName = 'help-circle'; // Ícone padrão
+          }
+
+          return <MaterialCommunityIcons name={iconName} size={size} color={color} />;
+        },
+      })}
     >
       <Tab.Screen name="Collection" component={CollectionScreen} options={{ title: 'Coleção' }} />
       <Tab.Screen name="Agenda" component={AgendaScreen} options={{ title: 'Agenda' }} />
@@ -86,7 +114,7 @@ const AppNavigator = () => {
   if (authState.isLoading) {
     return (
       <View style={{ flex: 1, justifyContent: 'center' }}>
-        <ActivityIndicator size="large" />
+        <ActivityIndicator size="large" color={theme.colors.primary} />
       </View>
     );
   }

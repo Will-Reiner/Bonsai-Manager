@@ -5,6 +5,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { especieService } from '../../services/especieService';
 import { Especie } from '../../types';
 import { RootStackParamList } from '../../navigation/AppNavigator';
+import { theme } from '../../constants/theme';
 
 type SpeciesListNavigationProp = NativeStackNavigationProp<RootStackParamList, 'SpeciesList'>;
 
@@ -56,7 +57,7 @@ const SpeciesListScreen = () => {
         renderItem={({ item }) => (
           <TouchableOpacity
             style={styles.listItem}
-            onPress={() => navigation.navigate('SpeciesDetail', { especieId: item.id })}
+            onPress={() => navigation.navigate('SpeciesDetail', { especieId: item.id, title: item.nomeComum || item.nomeCientifico })}
           >
             <Text style={styles.listItemTitle}>{item.nomeComum || item.nomeCientifico}</Text>
             <Text style={styles.listItemSubtitle}>{item.nomeCientifico}</Text>
@@ -68,26 +69,43 @@ const SpeciesListScreen = () => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f8f9fa' },
-  centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  container: { 
+    flex: 1, 
+    backgroundColor: theme.colors.background 
+  },
+  centered: { 
+    flex: 1, 
+    justifyContent: 'center', 
+    alignItems: 'center',
+    backgroundColor: theme.colors.background
+  },
   searchInput: {
     height: 50,
-    backgroundColor: '#fff',
-    paddingHorizontal: 15,
-    margin: 10,
+    backgroundColor: theme.colors.card,
+    paddingHorizontal: theme.spacing.md,
+    margin: theme.spacing.sm,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#ddd',
+    borderColor: theme.colors.lightGray,
     fontSize: 16,
+    color: theme.colors.text,
   },
   listItem: {
-    backgroundColor: '#fff',
-    padding: 20,
+    backgroundColor: theme.colors.card,
+    padding: theme.spacing.lg,
     borderBottomWidth: 1,
-    borderBottomColor: '#eee',
+    borderBottomColor: theme.colors.lightGray,
   },
-  listItemTitle: { fontSize: 16, fontWeight: '500' },
-  listItemSubtitle: { fontSize: 14, color: '#666', fontStyle: 'italic' },
+  listItemTitle: { 
+    fontSize: 16, 
+    fontWeight: '500',
+    color: theme.colors.text
+  },
+  listItemSubtitle: { 
+    fontSize: 14, 
+    color: theme.colors.subtext, 
+    fontStyle: 'italic' 
+  },
 });
 
 export default SpeciesListScreen;

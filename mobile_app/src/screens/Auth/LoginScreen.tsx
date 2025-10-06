@@ -10,16 +10,17 @@ import {
   Platform,
 } from 'react-native';
 import { useAuth } from '../../context/AuthContext';
-import { useNavigation } from '@react-navigation/native'; // 1. Importar useNavigation
+import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/AppNavigator';
+import { MaterialCommunityIcons } from '@expo/vector-icons'; // Importando ícones
+import { theme } from '../../constants/theme'; // Importando nosso tema
 
-// 2. Definir o tipo para a propriedade de navegação
 type LoginScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Login'>;
 
 const LoginScreen = () => {
   const { login } = useAuth();
-  const navigation = useNavigation<LoginScreenNavigationProp>(); // 3. Inicializar a navegação
+  const navigation = useNavigation<LoginScreenNavigationProp>();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -48,8 +49,32 @@ const LoginScreen = () => {
       <Text style={styles.title}>Bonsai Manager</Text>
       <Text style={styles.subtitle}>Acesse sua coleção</Text>
 
-      <TextInput style={styles.input} placeholder="Email" value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" autoCorrect={false} />
-      <TextInput style={styles.input} placeholder="Senha" value={password} onChangeText={setPassword} secureTextEntry />
+      <View style={styles.inputContainer}>
+        <MaterialCommunityIcons name="email-outline" size={24} color={theme.colors.subtext} style={styles.icon} />
+        <TextInput
+            style={styles.input}
+            placeholder="Email"
+            value={email}
+            onChangeText={setEmail}
+            keyboardType="email-address"
+            autoCapitalize="none"
+            autoCorrect={false}
+            placeholderTextColor={theme.colors.subtext}
+        />
+      </View>
+
+      <View style={styles.inputContainer}>
+        <MaterialCommunityIcons name="lock-outline" size={24} color={theme.colors.subtext} style={styles.icon} />
+        <TextInput
+            style={styles.input}
+            placeholder="Senha"
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry
+            placeholderTextColor={theme.colors.subtext}
+        />
+      </View>
+
 
       <TouchableOpacity
         style={[styles.button, isLoading && styles.buttonDisabled]}
@@ -63,7 +88,6 @@ const LoginScreen = () => {
         )}
       </TouchableOpacity>
       
-      {/* 4. Adicionar o botão para navegar para a tela de registo */}
       <TouchableOpacity onPress={() => navigation.navigate('Register')} style={styles.registerButton}>
         <Text style={styles.registerButtonText}>Não tem uma conta? Crie uma agora</Text>
       </TouchableOpacity>
@@ -76,54 +100,63 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 20,
-    backgroundColor: '#f5f5f5',
+    padding: theme.spacing.large,
+    backgroundColor: theme.colors.background,
   },
   title: {
     fontSize: 32,
     fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 10,
+    color: theme.colors.primary, // Cor atualizada
+    marginBottom: theme.spacing.small,
   },
   subtitle: {
     fontSize: 16,
-    color: '#666',
-    marginBottom: 30,
+    color: theme.colors.subtext,
+    marginBottom: theme.spacing.large * 1.5,
   },
-  input: {
+  inputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: theme.colors.card,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: theme.colors.lightGray,
     width: '100%',
     height: 50,
-    backgroundColor: '#fff',
-    borderRadius: 8,
-    paddingHorizontal: 15,
+    marginBottom: theme.spacing.medium,
+    paddingHorizontal: theme.spacing.medium,
+  },
+  icon: {
+    marginRight: theme.spacing.small,
+  },
+  input: {
+    flex: 1,
+    height: '100%',
     fontSize: 16,
-    marginBottom: 15,
-    borderWidth: 1,
-    borderColor: '#ddd',
+    color: theme.colors.text,
   },
   button: {
     width: '100%',
     height: 50,
-    backgroundColor: '#007bff',
+    backgroundColor: theme.colors.primary, // Cor atualizada
     borderRadius: 8,
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 10,
+    marginTop: theme.spacing.small,
   },
   buttonDisabled: {
-    backgroundColor: '#a0c7e4',
+    backgroundColor: '#A9B9A8', // Tom mais claro do verde primário
   },
   buttonText: {
     color: '#ffffff',
     fontSize: 18,
     fontWeight: 'bold',
   },
-  // 5. Adicionar estilos para o novo botão
   registerButton: {
-      marginTop: 25,
+      marginTop: theme.spacing.large,
   },
   registerButtonText: {
-      color: '#007bff',
+      color: theme.colors.primary, // Cor atualizada
       fontSize: 16,
       fontWeight: '600'
   }

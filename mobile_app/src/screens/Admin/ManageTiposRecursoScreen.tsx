@@ -3,6 +3,7 @@ import { View, Text, TextInput, StyleSheet, FlatList, TouchableOpacity, Alert, A
 import { useFocusEffect } from '@react-navigation/native';
 import { recursoService, CreateTipoRecursoDTO } from '../../services/recursoService';
 import { TipoRecurso } from '../../types';
+import { theme } from '../../constants/theme';
 
 // O formulário para adicionar o Tipo de Recurso
 const AddTipoRecursoForm = React.memo(({ onTipoRecursoAdded }: { onTipoRecursoAdded: () => void }) => {
@@ -97,34 +98,36 @@ const ManageTiposRecursoScreen = () => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#f5f5f5',
+        backgroundColor: theme.colors.background,
     },
     formContainer: {
-        padding: 15,
-        backgroundColor: '#fff',
+        padding: theme.spacing.md,
+        backgroundColor: theme.colors.card,
     },
     formTitle: {
         fontSize: 18,
         fontWeight: 'bold',
-        marginBottom: 15,
+        marginBottom: theme.spacing.md,
+        color: theme.colors.text,
     },
     input: {
         borderWidth: 1,
-        borderColor: '#ccc',
+        borderColor: theme.colors.lightGray,
         borderRadius: 8,
-        padding: 12,
-        marginBottom: 15,
-        backgroundColor: '#fff',
+        padding: theme.spacing.sm,
+        marginBottom: theme.spacing.md,
+        backgroundColor: theme.colors.card,
         fontSize: 16,
+        color: theme.colors.text,
     },
     button: {
-        backgroundColor: '#007bff',
-        padding: 15,
+        backgroundColor: theme.colors.primary,
+        padding: theme.spacing.md,
         borderRadius: 8,
         alignItems: 'center',
     },
     buttonDisabled: {
-        backgroundColor: '#a0c7e4',
+        backgroundColor: theme.colors.lightGray,
     },
     buttonText: {
         color: '#fff',
@@ -134,27 +137,29 @@ const styles = StyleSheet.create({
     listHeader: {
         fontSize: 18,
         fontWeight: 'bold',
-        padding: 15,
-        backgroundColor: '#f5f5f5',
+        padding: theme.spacing.md,
+        backgroundColor: theme.colors.background,
         borderTopWidth: 1,
-        borderTopColor: '#ddd'
+        borderTopColor: theme.colors.lightGray,
+        color: theme.colors.text,
     },
     listItem: {
-        backgroundColor: '#fff',
-        padding: 20,
+        backgroundColor: theme.colors.card,
+        padding: theme.spacing.lg,
         borderBottomWidth: 1,
-        borderBottomColor: '#eee',
+        borderBottomColor: theme.colors.lightGray,
     },
     listItemTitle: {
         fontSize: 16,
         fontWeight: '500',
+        color: theme.colors.text,
     },
     // O estilo que estava em falta, agora adicionado
     emptyText: {
       textAlign: 'center',
-      marginTop: 20,
+      marginTop: theme.spacing.lg,
       fontSize: 16,
-      color: '#666'
+      color: theme.colors.textSecondary,
     }
 });
 

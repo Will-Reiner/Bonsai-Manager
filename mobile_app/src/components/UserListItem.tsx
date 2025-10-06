@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
 import { Usuario } from '../types';
+import { theme } from '../constants/theme';
 
 interface UserListItemProps {
   user: Partial<Usuario>;
@@ -27,10 +28,10 @@ const UserListItem: React.FC<UserListItemProps> = ({ user, onPress }) => {
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: '#fff',
-    padding: 15,
+    backgroundColor: theme.colors.card,
+    padding: theme.spacing.md,
     borderBottomWidth: 1,
-    borderBottomColor: '#eee',
+    borderBottomColor: theme.colors.lightGray,
     flexDirection: 'row',
     alignItems: 'center',
   },
@@ -38,8 +39,8 @@ const styles = StyleSheet.create({
     width: 50,
     height: 50,
     borderRadius: 25,
-    marginRight: 15,
-    backgroundColor: '#e9ecef',
+    marginRight: theme.spacing.md,
+    backgroundColor: theme.colors.lightGray,
   },
   infoContainer: {
     flex: 1,
@@ -47,11 +48,11 @@ const styles = StyleSheet.create({
   name: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#333',
+    color: theme.colors.text,
   },
   location: {
     fontSize: 14,
-    color: '#6c757d',
+    color: theme.colors.textSecondary,
     marginTop: 4,
   },
 });

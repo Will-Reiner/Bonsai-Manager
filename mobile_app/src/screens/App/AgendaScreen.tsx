@@ -14,6 +14,7 @@ import { agendaService } from '../../services/agendaService';
 import { Agenda } from '../../types';
 import AgendaListItem from '../../components/AgendaListItem';
 import { RootStackParamList } from '../../navigation/AppNavigator';
+import { theme } from '../../constants/theme';
 
 type AgendaScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'MainTabs'>;
 
@@ -57,7 +58,7 @@ const AgendaScreen = () => {
     if (isLoading) {
       return (
         <View style={styles.centered}>
-          <ActivityIndicator size="large" color="#007bff" />
+          <ActivityIndicator size="large" color={theme.colors.primary} />
           <Text style={styles.infoText}>A carregar a sua agenda...</Text>
         </View>
       );
@@ -117,66 +118,67 @@ const AgendaScreen = () => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#f8f9fa',
+        backgroundColor: theme.colors.background,
     },
     centered: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        padding: 20,
+        padding: theme.spacing.large,
     },
     infoText: {
-        marginTop: 10,
-        fontSize: 16,
-        color: '#666'
+        marginTop: theme.spacing.small,
+        fontSize: theme.typography.body.fontSize,
+        color: theme.colors.subtext,
     },
     list: {
-        paddingVertical: 10,
+        paddingVertical: theme.spacing.small,
     },
     errorText: {
-        fontSize: 16,
-        color: 'red',
-        marginBottom: 20,
+        fontSize: theme.typography.body.fontSize,
+        color: theme.colors.danger,
+        marginBottom: theme.spacing.large,
         textAlign: 'center',
     },
     emptyText: {
         fontSize: 18,
         fontWeight: 'bold',
-        color: '#555',
+        color: theme.colors.text,
     },
     emptySubtext: {
         fontSize: 14,
-        color: '#777',
-        marginTop: 8,
+        color: theme.colors.subtext,
+        marginTop: theme.spacing.small,
+        textAlign: 'center',
     },
     button: {
-        backgroundColor: '#007bff',
+        backgroundColor: theme.colors.primary,
         paddingVertical: 12,
         paddingHorizontal: 30,
         borderRadius: 25,
     },
     buttonText: {
-        color: '#ffffff',
-        fontSize: 16,
+        color: theme.colors.card,
+        fontSize: theme.typography.body.fontSize,
         fontWeight: 'bold',
     },
     headerContainer: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        paddingHorizontal: 15,
-        paddingTop: 10,
-        paddingBottom: 10,
-        backgroundColor: '#fff',
+        paddingHorizontal: theme.spacing.medium,
+        paddingVertical: theme.spacing.small,
+        backgroundColor: theme.colors.card,
         borderBottomWidth: 1,
-        borderBottomColor: '#eee',
+        borderBottomColor: theme.colors.lightGray,
     },
     headerTitle: {
-        fontSize: 24,
-        fontWeight: 'bold',
+        fontSize: theme.typography.h2.fontSize,
+        fontWeight: theme.typography.h2.fontWeight as any,
+        color: theme.colors.text,
     },
     addButton: {
-        backgroundColor: '#007bff',
+        backgroundColor: theme.colors.primary,
         width: 40,
         height: 40,
         borderRadius: 20,
@@ -184,7 +186,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     addButtonText: {
-        color: '#fff',
+        color: theme.colors.card,
         fontSize: 24,
         lineHeight: 30,
         fontWeight: 'bold',

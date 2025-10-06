@@ -17,6 +17,9 @@ import atividadeFerramentaSugeridaRouter from './modules/atividade-ferramenta-su
 import guiaDeTecnicasRouter from './modules/guia-de-tecnicas/guia-de-tecnicas.router';
 import atividadeRecursoSugeridoRouter from './modules/atividade-recurso-sugerido/atividade-recurso-sugerido.router';
 import userRouter from './modules/user/user.router';
+// @ts-ignore
+import swaggerUi from 'swagger-ui-express';
+import swaggerSpec from './docs/swagger';
 
 
 const app = express();
@@ -27,6 +30,9 @@ app.use(express.json());
 app.get('/', (_req, res) => {
   res.send('Bonsai API is running!');
 });
+
+// Montar Swagger UI
+app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 // Usar as rotas com prefixos
 app.use('/api/auth', authRouter);

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Agenda } from '../types';
 import CompleteTaskModal from './CompleteTaskModal';
+import { theme } from '../constants/theme';
 
 interface AgendaListItemProps {
   item: Agenda;
@@ -67,11 +68,11 @@ const getStatusColor = (status: string) => {
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: '#fff',
+    backgroundColor: theme.colors.card,
     borderRadius: 12,
-    padding: 15,
-    marginBottom: 15,
-    marginHorizontal: 10,
+    padding: theme.spacing.md,
+    marginBottom: theme.spacing.md,
+    marginHorizontal: theme.spacing.sm,
     flexDirection: 'row',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
@@ -80,10 +81,10 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   dateContainer: {
-    padding: 10,
+    padding: theme.spacing.sm,
     borderRadius: 8,
-    backgroundColor: '#f8f9fa',
-    marginRight: 15,
+    backgroundColor: theme.colors.background,
+    marginRight: theme.spacing.md,
     alignItems: 'center',
     justifyContent: 'center',
     minWidth: 60,
@@ -91,11 +92,11 @@ const styles = StyleSheet.create({
   dateDay: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#007bff',
+    color: theme.colors.primary,
   },
   dateMonth: {
     fontSize: 14,
-    color: '#6c757d',
+    color: theme.colors.textSecondary,
     textTransform: 'uppercase',
   },
   infoContainer: {
@@ -104,18 +105,18 @@ const styles = StyleSheet.create({
   activityTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#333',
+    color: theme.colors.text,
   },
   plantName: {
     fontSize: 16,
-    color: '#555',
+    color: theme.colors.text,
     fontStyle: 'italic',
     marginBottom: 8,
   },
   observationText: {
     fontSize: 14,
-    color: '#666',
-    marginBottom: 10,
+    color: theme.colors.textSecondary,
+    marginBottom: theme.spacing.sm,
   },
   footer: {
     flexDirection: 'row',
@@ -126,7 +127,7 @@ const styles = StyleSheet.create({
   statusBadge: {
     alignSelf: 'flex-start',
     paddingVertical: 4,
-    paddingHorizontal: 10,
+    paddingHorizontal: theme.spacing.sm,
     borderRadius: 12,
   },
   statusText: {
@@ -135,9 +136,9 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   completeButton: {
-    backgroundColor: '#007bff',
+    backgroundColor: theme.colors.primary,
     paddingVertical: 6,
-    paddingHorizontal: 15,
+    paddingHorizontal: theme.spacing.md,
     borderRadius: 20,
   },
   completeButtonText: {

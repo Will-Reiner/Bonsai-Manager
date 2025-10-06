@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { Agenda, UpdateAgendaDTO } from '../types'; // Importamos o DTO
 import { agendaService } from '../services/agendaService'; // Usamos apenas o agendaService
+import { theme } from '../constants/theme';
 
 interface CompleteTaskModalProps {
   isVisible: boolean;
@@ -140,10 +141,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center'
   },
   modalView: {
-    margin: 20,
-    backgroundColor: 'white',
+    margin: theme.spacing.lg,
+    backgroundColor: theme.colors.card,
     borderRadius: 20,
-    padding: 25,
+    padding: theme.spacing.xl,
     alignItems: 'stretch',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
@@ -152,17 +153,65 @@ const styles = StyleSheet.create({
     elevation: 5,
     width: '90%',
   },
-  modalTitle: { marginBottom: 4, fontSize: 20, fontWeight: 'bold' },
-  modalSubtitle: { marginBottom: 15, fontSize: 16, color: 'gray' },
-  label: { fontSize: 16, fontWeight: 'bold', color: '#333', marginBottom: 8 },
-  input: { backgroundColor: '#f5f5f5', borderRadius: 8, paddingHorizontal: 15, height: 50, fontSize: 16, marginBottom: 15, borderWidth: 1, borderColor: '#ddd' },
-  textArea: { height: 100, textAlignVertical: 'top', paddingTop: 15 },
-  buttonContainer: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 10 },
-  button: { borderRadius: 10, padding: 12, elevation: 2, flex: 1, marginHorizontal: 5 },
-  buttonComplete: { backgroundColor: '#28a745' },
-  buttonClose: { backgroundColor: '#6c757d' },
-  buttonDisabled: { backgroundColor: '#a3d9b1' },
-  textStyle: { color: 'white', fontWeight: 'bold', textAlign: 'center' },
+  modalTitle: { 
+    marginBottom: 4, 
+    fontSize: 20, 
+    fontWeight: 'bold',
+    color: theme.colors.text
+  },
+  modalSubtitle: { 
+    marginBottom: theme.spacing.md, 
+    fontSize: 16, 
+    color: theme.colors.textSecondary 
+  },
+  label: { 
+    fontSize: 16, 
+    fontWeight: 'bold', 
+    color: theme.colors.text, 
+    marginBottom: 8 
+  },
+  input: { 
+    backgroundColor: theme.colors.background, 
+    borderRadius: 8, 
+    paddingHorizontal: theme.spacing.md, 
+    height: 50, 
+    fontSize: 16, 
+    marginBottom: theme.spacing.md, 
+    borderWidth: 1, 
+    borderColor: theme.colors.lightGray,
+    color: theme.colors.text
+  },
+  textArea: { 
+    height: 100, 
+    textAlignVertical: 'top', 
+    paddingTop: theme.spacing.md 
+  },
+  buttonContainer: { 
+    flexDirection: 'row', 
+    justifyContent: 'space-between', 
+    marginTop: theme.spacing.sm 
+  },
+  button: { 
+    borderRadius: 10, 
+    padding: theme.spacing.sm, 
+    elevation: 2, 
+    flex: 1, 
+    marginHorizontal: 5 
+  },
+  buttonComplete: { 
+    backgroundColor: theme.colors.success 
+  },
+  buttonClose: { 
+    backgroundColor: theme.colors.textSecondary 
+  },
+  buttonDisabled: { 
+    backgroundColor: theme.colors.lightGray 
+  },
+  textStyle: { 
+    color: 'white', 
+    fontWeight: 'bold', 
+    textAlign: 'center' 
+  },
 });
 
 export default CompleteTaskModal;
