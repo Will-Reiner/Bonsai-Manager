@@ -1,49 +1,84 @@
 import { Request, Response } from 'express';
-import { prisma } from '../../lib/prisma';
 import { createGuiaDeTecnicasSchema, updateGuiaDeTecnicasSchema, GuiaDeTecnicasIdSchema } from './guia-de-tecnicas.schema';
+import { PrismaGuiaDeTecnicasRepository } from './repositories/prisma-guia-de-tecnicas.repository';
+import { CreateGuiaDeTecnicasUseCase, UpdateGuiaDeTecnicasUseCase, DeleteGuiaDeTecnicasUseCase } from './use-cases';
 
-export const guiaDeTecnicasController = {
-  // Cria uma nova associação entre espécie e atividade
-  create: async (req: Request, res: Response) => {
+export class GuiaDeTecnicasController {
+  private repository: PrismaGuiaDeTecnicasRepository;
+  private createGuiaDeTecnicasUseCase: CreateGuiaDeTecnicasUseCase;
+  private updateGuiaDeTecnicasUseCase: UpdateGuiaDeTecnicasUseCase;
+  private deleteGuiaDeTecnicasUseCase: DeleteGuiaDeTecnicasUseCase;
+
+  constructor() {
+    this.repository = new PrismaGuiaDeTecnicasRepository();
+    this.createGuiaDeTecnicasUseCase = new CreateGuiaDeTecnicasUseCase(this.repository);
+    this.updateGuiaDeTecnicasUseCase = new UpdateGuiaDeTecnicasUseCase(this.repository);
+    this.deleteGuiaDeTecnicasUseCase = new DeleteGuiaDeTecnicasUseCase(this.repository);
+  }
+
+  create = async (req: Request, res: Response) => {
     try {
-      const data = createGuiaDeTecnicasSchema.parse(req).body;
-      const novaAssociacao = await prisma.guiaDeTecnicas.create({ data });
-      return res.status(201).json(novaAssociacao);
+      const validatedData = createGuiaDeTecnicasSchema.parse(req);
+
+      const result = await this.createGuiaDeTecnicasUseCase.execute(validatedData.body);
+
+      return res.status(201).json(result);
     } catch (error) {
+      if (error instanceof Error) {
+        if (error.message === 'Espécie não encontrada') {
+          return res.status(404).json({ message: error.message });
+        }
+        if (error.message === 'Atividade não encontrada') {
+          return res.status(404).json({ message: error.message });
+        }
+        if (error.message === 'Esta associação já existe') {
+          return res.status(409).json({ message: error.message });
+        }
+        return res.status(400).json({ message: error.message });
+      }
       return res.status(400).json({ error });
     }
-  },
+  };
 
-  // Atualiza uma associação existente
-  update: async (req: Request, res: Response) => {
+  update = async (req: Request, res: Response) => {
     try {
-        const { especieId, atividadeId } = GuiaDeTecnicasIdSchema.parse(req).params;
-        const data = updateGuiaDeTecnicasSchema.parse(req).body;
+      const validatedData = updateGuiaDeTecnicasSchema.parse(req);
+      const { especieId, atividadeId } = validatedData.params;
 
-        const associacaoAtualizada = await prisma.guiaDeTecnicas.update({
-            where: {
-                especieId_atividadeId: { especieId, atividadeId }
-            },
-            data,
-        });
-        return res.status(200).json(associacaoAtualizada);
+      const result = await this.updateGuiaDeTecnicasUseCase.execute(
+        especieId,
+        atividadeId,
+        validatedData.body
+      );
+
+      return res.status(200).json(result);
     } catch (error) {
-        return res.status(400).json({ error });
+      if (error instanceof Error) {
+        if (error.message === 'Associação não encontrada') {
+          return res.status(404).json({ message: error.message });
+        }
+        return res.status(400).json({ message: error.message });
+      }
+      return res.status(400).json({ error });
     }
-  },
+  };
 
-  // Apaga uma associação
-  delete: async (req: Request, res: Response) => {
+  delete = async (req: Request, res: Response) => {
     try {
-        const { especieId, atividadeId } = GuiaDeTecnicasIdSchema.parse(req).params;
-        await prisma.guiaDeTecnicas.delete({
-            where: {
-                especieId_atividadeId: { especieId, atividadeId }
-            }
-        });
-        return res.status(204).send();
+      const validatedData = GuiaDeTecnicasIdSchema.parse(req);
+      const { especieId, atividadeId } = validatedData.params;
+
+      await this.deleteGuiaDeTecnicasUseCase.execute(especieId, atividadeId);
+
+      return res.status(204).send();
     } catch (error) {
-        return res.status(400).json({ error });
+      if (error instanceof Error) {
+        if (error.message === 'Associação não encontrada') {
+          return res.status(404).json({ message: error.message });
+        }
+        return res.status(400).json({ message: error.message });
+      }
+      return res.status(400).json({ error });
     }
-  },
-};
+  };
+}

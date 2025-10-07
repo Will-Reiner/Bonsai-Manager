@@ -1,33 +1,73 @@
 import { Request, Response } from 'express';
-import { prisma } from '../../lib/prisma';
 import { atividadeFerramentaSugeridaSchema } from './atividade-ferramenta-sugerida.schema';
+import { PrismaAtividadeFerramentaSugeridaRepository } from './repositories/prisma-atividade-ferramenta-sugerida.repository';
+import {
+  CreateAtividadeFerramentaSugeridaUseCase,
+  DeleteAtividadeFerramentaSugeridaUseCase,
+} from './use-cases';
 
-export const atividadeFerramentaSugeridaController = {
+export class AtividadeFerramentaSugeridaController {
+  private atividadeFerramentaSugeridaRepository: PrismaAtividadeFerramentaSugeridaRepository;
+  private createAtividadeFerramentaSugeridaUseCase: CreateAtividadeFerramentaSugeridaUseCase;
+  private deleteAtividadeFerramentaSugeridaUseCase: DeleteAtividadeFerramentaSugeridaUseCase;
+
+  constructor() {
+    this.atividadeFerramentaSugeridaRepository = new PrismaAtividadeFerramentaSugeridaRepository();
+    this.createAtividadeFerramentaSugeridaUseCase = new CreateAtividadeFerramentaSugeridaUseCase(
+      this.atividadeFerramentaSugeridaRepository
+    );
+    this.deleteAtividadeFerramentaSugeridaUseCase = new DeleteAtividadeFerramentaSugeridaUseCase(
+      this.atividadeFerramentaSugeridaRepository
+    );
+  }
+
   // Cria a associação
-  create: async (req: Request, res: Response) => {
+  async create(req: Request, res: Response) {
     try {
-      const { atividadeId, ferramentaId } = atividadeFerramentaSugeridaSchema.parse(req).params;
-      const novaAssociacao = await prisma.atividadeFerramentaSugerida.create({
-        data: { atividadeId, ferramentaId },
+      const { params } = atividadeFerramentaSugeridaSchema.parse(req);
+      const { atividadeId, ferramentaId } = params;
+
+      const novaAssociacao = await this.createAtividadeFerramentaSugeridaUseCase.execute({
+        atividadeId,
+        ferramentaId,
       });
+
       return res.status(201).json(novaAssociacao);
     } catch (error) {
+      if (error instanceof Error) {
+        if (error.message === 'Atividade não encontrada') {
+          return res.status(404).json({ error: error.message });
+        }
+        if (error.message === 'Ferramenta não encontrada') {
+          return res.status(404).json({ error: error.message });
+        }
+        if (error.message === 'Associação já existe') {
+          return res.status(409).json({ error: error.message });
+        }
+      }
       return res.status(400).json({ error });
     }
-  },
+  }
 
   // Apaga a associação
-  delete: async (req: Request, res: Response) => {
+  async delete(req: Request, res: Response) {
     try {
-      const { atividadeId, ferramentaId } = atividadeFerramentaSugeridaSchema.parse(req).params;
-      await prisma.atividadeFerramentaSugerida.delete({
-        where: {
-          atividadeId_ferramentaId: { atividadeId, ferramentaId },
-        },
+      const { params } = atividadeFerramentaSugeridaSchema.parse(req);
+      const { atividadeId, ferramentaId } = params;
+
+      await this.deleteAtividadeFerramentaSugeridaUseCase.execute({
+        atividadeId,
+        ferramentaId,
       });
+
       return res.status(204).send();
     } catch (error) {
+      if (error instanceof Error) {
+        if (error.message === 'Associação não encontrada') {
+          return res.status(404).json({ error: error.message });
+        }
+      }
       return res.status(400).json({ error });
     }
-  },
-};
+  }
+}

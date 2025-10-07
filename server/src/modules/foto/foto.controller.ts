@@ -1,122 +1,142 @@
 import { Request, Response } from 'express';
-import { prisma } from '../../lib/prisma';
 import { createFotoSchema, updateFotoSchema, fotoIdSchema, plantaIdSchema } from './foto.schema';
+import { PrismaFotoRepository } from './repositories/prisma-foto.repository';
+import {
+  CreateFotoUseCase,
+  GetFotosByPlantaUseCase,
+  GetFotoByIdUseCase,
+  UpdateFotoUseCase,
+  DeleteFotoUseCase,
+} from './use-cases';
 
-export const fotoController = {
-  // Criar uma nova foto para o usuário logado
-  create: async (req: Request, res: Response) => {
+export class FotoController {
+  private createFotoUseCase: CreateFotoUseCase;
+  private getFotosByPlantaUseCase: GetFotosByPlantaUseCase;
+  private getFotoByIdUseCase: GetFotoByIdUseCase;
+  private updateFotoUseCase: UpdateFotoUseCase;
+  private deleteFotoUseCase: DeleteFotoUseCase;
+
+  constructor() {
+    const fotoRepository = new PrismaFotoRepository();
+    this.createFotoUseCase = new CreateFotoUseCase(fotoRepository);
+    this.getFotosByPlantaUseCase = new GetFotosByPlantaUseCase(fotoRepository);
+    this.getFotoByIdUseCase = new GetFotoByIdUseCase(fotoRepository);
+    this.updateFotoUseCase = new UpdateFotoUseCase(fotoRepository);
+    this.deleteFotoUseCase = new DeleteFotoUseCase(fotoRepository);
+  }
+
+  async create(req: Request, res: Response) {
     try {
-      const usuarioId = req.user!.userId;
-      const data = createFotoSchema.parse(req).body;
+      const { body: createData } = createFotoSchema.parse({ body: req.body });
+      const usuarioId = req.user?.userId;
 
-      // Se um plantaId for fornecido, verifique se a planta pertence ao usuário
-      if (data.plantaId) {
-        const planta = await prisma.planta.findFirst({
-          where: { id: data.plantaId, usuarioId },
-        });
-        if (!planta) {
-          return res.status(404).json({ message: 'Planta não encontrada ou não pertence a si.' });
-        }
+      if (!usuarioId) {
+        return res.status(401).json({ error: 'Usuário não autenticado' });
       }
 
-      const novaFoto = await prisma.foto.create({
-        data: {
-          ...data,
-          usuarioId, // Associa a foto ao usuário logado
-        },
-      });
+      const foto = await this.createFotoUseCase.execute(createData, usuarioId);
 
-      return res.status(201).json(novaFoto);
+      res.status(201).json(foto);
     } catch (error) {
-      return res.status(400).json({ error });
+      console.error('Erro ao criar foto:', error);
+      
+      if (error instanceof Error && error.message === 'Planta não encontrada ou não pertence a si.') {
+        return res.status(404).json({ error: error.message });
+      }
+      
+      res.status(500).json({ error: 'Erro interno do servidor' });
     }
-  },
+  }
 
-  // Listar todas as fotos de uma planta específica
-  getAllByPlanta: async (req: Request, res: Response) => {
+  async getAllByPlanta(req: Request, res: Response) {
     try {
-      const usuarioId = req.user!.userId;
-      const { plantaId } = plantaIdSchema.parse(req).params;
+      const { params: { plantaId } } = plantaIdSchema.parse({ params: req.params });
+      const usuarioId = req.user?.userId;
 
-      // Verificar se a planta pertence ao usuário para permitir o acesso
-      const planta = await prisma.planta.findFirst({
-        where: { id: plantaId, usuarioId },
-      });
-      if (!planta) {
-        return res.status(404).json({ message: 'Planta não encontrada ou não pertence a si.' });
+      if (!usuarioId) {
+        return res.status(401).json({ error: 'Usuário não autenticado' });
       }
 
-      const fotos = await prisma.foto.findMany({
-        where: { plantaId },
-        orderBy: { createdAt: 'desc' },
-      });
+      const fotos = await this.getFotosByPlantaUseCase.execute(plantaId, usuarioId);
 
-      return res.status(200).json(fotos);
+      res.json(fotos);
     } catch (error) {
-      return res.status(400).json({ error });
+      console.error('Erro ao buscar fotos da planta:', error);
+      
+      if (error instanceof Error && error.message === 'Planta não encontrada ou não pertence a si.') {
+        return res.status(404).json({ error: error.message });
+      }
+      
+      res.status(500).json({ error: 'Erro interno do servidor' });
     }
-  },
+  }
 
-  // Obter uma foto específica (verificando a posse da foto)
-  getById: async (req: Request, res: Response) => {
+  async getById(req: Request, res: Response) {
     try {
-      const usuarioId = req.user!.userId;
-      const { id } = fotoIdSchema.parse(req).params;
+      const { params: { id } } = fotoIdSchema.parse({ params: req.params });
+      const usuarioId = req.user?.userId;
 
-      const foto = await prisma.foto.findFirst({
-        where: { id, usuarioId }, // Verifica se a foto pertence ao usuário
-      });
-
-      if (!foto) {
-        return res.status(404).json({ message: 'Foto não encontrada ou não pertence a si.' });
+      if (!usuarioId) {
+        return res.status(401).json({ error: 'Usuário não autenticado' });
       }
 
-      return res.status(200).json(foto);
+      const foto = await this.getFotoByIdUseCase.execute(id, usuarioId);
+
+      res.json(foto);
     } catch (error) {
-      return res.status(400).json({ error });
+      console.error('Erro ao buscar foto:', error);
+      
+      if (error instanceof Error && error.message === 'Foto não encontrada ou não pertence a si.') {
+        return res.status(404).json({ error: error.message });
+      }
+      
+      res.status(500).json({ error: 'Erro interno do servidor' });
     }
-  },
+  }
 
-  // Atualizar uma foto (verificando a posse da foto)
-  update: async (req: Request, res: Response) => {
+  async update(req: Request, res: Response) {
     try {
-      const usuarioId = req.user!.userId;
-      const { id } = updateFotoSchema.parse(req).params;
-      const dataToUpdate = updateFotoSchema.parse(req).body;
+      const { params: { id }, body: updateData } = updateFotoSchema.parse({ params: req.params, body: req.body });
+      const usuarioId = req.user?.userId;
 
-      // Verifica se a foto existe e pertence ao usuário
-      const fotoExistente = await prisma.foto.findFirst({ where: { id, usuarioId } });
-      if (!fotoExistente) {
-        return res.status(404).json({ message: 'Foto não encontrada ou não pertence a si.' });
+      if (!usuarioId) {
+        return res.status(401).json({ error: 'Usuário não autenticado' });
       }
 
-      const fotoAtualizada = await prisma.foto.update({
-        where: { id },
-        data: dataToUpdate,
-      });
+      const updatedFoto = await this.updateFotoUseCase.execute(id, updateData, usuarioId);
 
-      return res.status(200).json(fotoAtualizada);
+      res.json(updatedFoto);
     } catch (error) {
-      return res.status(400).json({ error });
+      console.error('Erro ao atualizar foto:', error);
+      
+      if (error instanceof Error && error.message === 'Foto não encontrada ou não pertence a si.') {
+        return res.status(404).json({ error: error.message });
+      }
+      
+      res.status(500).json({ error: 'Erro interno do servidor' });
     }
-  },
+  }
 
-  // Apagar uma foto (verificando a posse da foto)
-  delete: async (req: Request, res: Response) => {
+  async delete(req: Request, res: Response) {
     try {
-      const usuarioId = req.user!.userId;
-      const { id } = fotoIdSchema.parse(req).params;
+      const { params: { id } } = fotoIdSchema.parse({ params: req.params });
+      const usuarioId = req.user?.userId;
 
-      const fotoExistente = await prisma.foto.findFirst({ where: { id, usuarioId } });
-      if (!fotoExistente) {
-        return res.status(404).json({ message: 'Foto não encontrada ou não pertence a si.' });
+      if (!usuarioId) {
+        return res.status(401).json({ error: 'Usuário não autenticado' });
       }
 
-      await prisma.foto.delete({ where: { id } });
+      await this.deleteFotoUseCase.execute(id, usuarioId);
 
-      return res.status(204).send();
+      res.status(204).send();
     } catch (error) {
-      return res.status(400).json({ error });
+      console.error('Erro ao deletar foto:', error);
+      
+      if (error instanceof Error && error.message === 'Foto não encontrada ou não pertence a si.') {
+        return res.status(404).json({ error: error.message });
+      }
+      
+      res.status(500).json({ error: 'Erro interno do servidor' });
     }
-  },
-};
+  }
+}

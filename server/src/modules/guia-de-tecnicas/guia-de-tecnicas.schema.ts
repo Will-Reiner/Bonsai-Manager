@@ -17,6 +17,10 @@ export const createGuiaDeTecnicasSchema = z.object({
 });
 
 export const updateGuiaDeTecnicasSchema = z.object({
+  params: z.object({
+    especieId: z.string().uuid(),
+    atividadeId: z.string().uuid(),
+  }),
   body: z.object({
     recomendacao: RecomendacaoTecnicaEnum.optional(),
     observacoes: z.string().optional(),

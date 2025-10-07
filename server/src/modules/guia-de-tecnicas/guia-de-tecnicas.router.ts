@@ -1,14 +1,12 @@
 import { Router } from 'express';
-import { guiaDeTecnicasController } from './guia-de-tecnicas.controller';
+import { GuiaDeTecnicasController } from './guia-de-tecnicas.controller';
 import { adminMiddleware } from '../../middlewares/admin.middleware';
 
-const guiaDeTecnicasRouter = Router();
+const router = Router();
+const controller = new GuiaDeTecnicasController();
 
-// Todas as operações neste módulo exigem privilégios de administrador
-guiaDeTecnicasRouter.use(adminMiddleware);
+router.post('/', adminMiddleware, controller.create);
+router.put('/:especieId/:atividadeId', adminMiddleware, controller.update);
+router.delete('/:especieId/:atividadeId', adminMiddleware, controller.delete);
 
-guiaDeTecnicasRouter.post('/', guiaDeTecnicasController.create);
-guiaDeTecnicasRouter.put('/:especieId/:atividadeId', guiaDeTecnicasController.update);
-guiaDeTecnicasRouter.delete('/:especieId/:atividadeId', guiaDeTecnicasController.delete);
-
-export default guiaDeTecnicasRouter;
+export { router as guiaDeTecnicasRouter };

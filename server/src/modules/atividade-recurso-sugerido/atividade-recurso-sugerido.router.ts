@@ -1,11 +1,11 @@
 import { Router } from 'express';
-import { atividadeRecursoSugeridoController } from './atividade-recurso-sugerido.controller';
+import { AtividadeRecursoSugeridoController } from './atividade-recurso-sugerido.controller';
 import { adminMiddleware } from '../../middlewares/admin.middleware';
 
-const atividadeRecursoSugeridoRouter = Router();
-atividadeRecursoSugeridoRouter.use(adminMiddleware);
+const router = Router();
+const atividadeRecursoSugeridoController = new AtividadeRecursoSugeridoController();
 
-atividadeRecursoSugeridoRouter.post('/:atividadeId/:tipoRecursoId', atividadeRecursoSugeridoController.create);
-atividadeRecursoSugeridoRouter.delete('/:atividadeId/:tipoRecursoId', atividadeRecursoSugeridoController.delete);
+router.post('/:atividadeId/:tipoRecursoId', adminMiddleware, atividadeRecursoSugeridoController.create.bind(atividadeRecursoSugeridoController));
+router.delete('/:atividadeId/:tipoRecursoId', adminMiddleware, atividadeRecursoSugeridoController.delete.bind(atividadeRecursoSugeridoController));
 
-export default atividadeRecursoSugeridoRouter;
+export { router as atividadeRecursoSugeridoRouter };

@@ -1,6 +1,25 @@
 import { Request, Response } from 'express';
 import { prisma } from '../../lib/prisma';
 import { createPlantaSchema, updatePlantaSchema, plantaIdSchema } from './planta.schema';
+import { 
+  CreatePlantaUseCase, 
+  GetPlantasByUserUseCase, 
+  GetPlantaByIdUseCase, 
+  UpdatePlantaUseCase, 
+  DeletePlantaUseCase 
+} from './use-cases';
+import { PrismaPlantaRepository, PrismaEspecieRepository } from './repositories';
+
+// Inicialização dos repositórios
+const plantaRepository = new PrismaPlantaRepository(prisma);
+const especieRepository = new PrismaEspecieRepository(prisma);
+
+// Inicialização dos use cases
+const createPlantaUseCase = new CreatePlantaUseCase(plantaRepository, especieRepository);
+const getPlantasByUserUseCase = new GetPlantasByUserUseCase(plantaRepository);
+const getPlantaByIdUseCase = new GetPlantaByIdUseCase(plantaRepository);
+const updatePlantaUseCase = new UpdatePlantaUseCase(plantaRepository, especieRepository);
+const deletePlantaUseCase = new DeletePlantaUseCase(plantaRepository);
 
 export const plantaController = {
   create: async (req: Request, res: Response) => {
@@ -8,29 +27,27 @@ export const plantaController = {
       const usuarioId = req.user!.userId;
       const data = createPlantaSchema.parse(req).body;
 
-      const novaPlanta = await prisma.planta.create({
-        data: {
-          ...data,
-          usuarioId,
-        },
+      const novaPlanta = await createPlantaUseCase.execute({
+        ...data,
+        usuarioId,
       });
 
       return res.status(201).json(novaPlanta);
-    } catch (error) {
-      return res.status(400).json({ error });
+    } catch (error: any) {
+      if (error.message === 'Espécie não encontrada') {
+        return res.status(404).json({ message: error.message });
+      }
+      return res.status(400).json({ error: error.message || 'Erro ao criar planta' });
     }
   },
 
   getAllByUser: async (req: Request, res: Response) => {
     try {
       const usuarioId = req.user!.userId;
-      const plantas = await prisma.planta.findMany({
-        where: { usuarioId },
-        include: { especie: true },
-      });
+      const plantas = await getPlantasByUserUseCase.execute(usuarioId);
       return res.status(200).json(plantas);
-    } catch (error) {
-      return res.status(500).json({ error: 'Erro ao buscar plantas.' });
+    } catch (error: any) {
+      return res.status(500).json({ error: error.message || 'Erro ao buscar plantas.' });
     }
   },
 
@@ -39,22 +56,13 @@ export const plantaController = {
       const usuarioId = req.user!.userId;
       const { id } = plantaIdSchema.parse(req).params;
 
-      const planta = await prisma.planta.findFirst({
-        where: { id, usuarioId },
-        include: { 
-            especie: true,
-            // Podemos incluir inspirações no futuro, se necessário
-            // inspiracoes: { include: { foto: true } } 
-        },
-      });
-
-      if (!planta) {
-        return res.status(404).json({ message: 'Planta não encontrada ou não pertence a si.' });
-      }
-
+      const planta = await getPlantaByIdUseCase.execute(id, usuarioId);
       return res.status(200).json(planta);
-    } catch (error) {
-      return res.status(400).json({ error });
+    } catch (error: any) {
+      if (error.message === 'Planta não encontrada ou não pertence ao usuário') {
+        return res.status(404).json({ message: error.message });
+      }
+      return res.status(400).json({ error: error.message || 'Erro ao buscar planta' });
     }
   },
 
@@ -62,21 +70,18 @@ export const plantaController = {
     try {
       const usuarioId = req.user!.userId;
       const { id } = plantaIdSchema.parse(req).params;
-      const dataToUpdate = updatePlantaSchema.parse(req).body;
+      const data = updatePlantaSchema.parse(req).body;
 
-      const plantaExistente = await prisma.planta.findFirst({ where: { id, usuarioId } });
-      if (!plantaExistente) {
-        return res.status(404).json({ message: 'Planta não encontrada ou não pertence a si.' });
-      }
-
-      const plantaAtualizada = await prisma.planta.update({
-        where: { id },
-        data: dataToUpdate,
-      });
-
+      const plantaAtualizada = await updatePlantaUseCase.execute(id, usuarioId, data);
       return res.status(200).json(plantaAtualizada);
-    } catch (error) {
-      return res.status(400).json({ error });
+    } catch (error: any) {
+      if (error.message === 'Planta não encontrada ou não pertence ao usuário') {
+        return res.status(404).json({ message: error.message });
+      }
+      if (error.message === 'Espécie não encontrada') {
+        return res.status(404).json({ message: error.message });
+      }
+      return res.status(400).json({ error: error.message || 'Erro ao atualizar planta' });
     }
   },
 
@@ -85,16 +90,13 @@ export const plantaController = {
       const usuarioId = req.user!.userId;
       const { id } = plantaIdSchema.parse(req).params;
 
-      const plantaExistente = await prisma.planta.findFirst({ where: { id, usuarioId } });
-      if (!plantaExistente) {
-        return res.status(404).json({ message: 'Planta não encontrada ou não pertence a si.' });
-      }
-
-      await prisma.planta.delete({ where: { id } });
-
+      await deletePlantaUseCase.execute(id, usuarioId);
       return res.status(204).send();
-    } catch (error) {
-      return res.status(400).json({ error });
+    } catch (error: any) {
+      if (error.message === 'Planta não encontrada ou não pertence ao usuário') {
+        return res.status(404).json({ message: error.message });
+      }
+      return res.status(400).json({ error: error.message || 'Erro ao deletar planta' });
     }
   },
 };

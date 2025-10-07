@@ -15,6 +15,11 @@ export const createGuiaSazonalSchema = z.object({
 });
 
 export const updateGuiaSazonalSchema = z.object({
+  params: z.object({
+    especieId: z.string().uuid(),
+    atividadeId: z.string().uuid(),
+    estacao: EstacaoEnum,
+  }),
   body: z.object({
     momentoIdeal: MomentoIdealEnum.optional(),
     observacoes: z.string().optional(),

@@ -1,114 +1,113 @@
 import { Request, Response } from 'express';
-import { prisma } from '../../lib/prisma';
-import { Prisma } from '@prisma/client';
 import { createAgendaSchema, updateAgendaSchema, agendaIdSchema } from './agenda.schema';
+import { PrismaAgendaRepository } from './repositories/prisma-agenda.repository';
+import {
+  CreateAgendaUseCase,
+  GetAllAgendasByUserUseCase,
+  UpdateAgendaUseCase,
+  DeleteAgendaUseCase,
+} from './use-cases';
+import { CreateAgendaDTO, UpdateAgendaDTO } from './agenda.types';
+import '../../middlewares/auth.middleware'; // Import para garantir que a extensão da interface Request seja reconhecida
 
-export const agendaController = {
-  // Criar um novo evento na agenda
-  create: async (req: Request, res: Response) => {
+export class AgendaController {
+  private createAgendaUseCase: CreateAgendaUseCase;
+  private getAllAgendasByUserUseCase: GetAllAgendasByUserUseCase;
+  private updateAgendaUseCase: UpdateAgendaUseCase;
+  private deleteAgendaUseCase: DeleteAgendaUseCase;
+
+  constructor() {
+    const agendaRepository = new PrismaAgendaRepository();
+    this.createAgendaUseCase = new CreateAgendaUseCase(agendaRepository);
+    this.getAllAgendasByUserUseCase = new GetAllAgendasByUserUseCase(agendaRepository);
+    this.updateAgendaUseCase = new UpdateAgendaUseCase(agendaRepository);
+    this.deleteAgendaUseCase = new DeleteAgendaUseCase(agendaRepository);
+  }
+
+  async create(req: Request, res: Response) {
     try {
-      const usuarioId = req.user!.userId;
-      const { plantaId, atividadeId, dataAgendada, observacoes } = createAgendaSchema.parse(req).body;
+      const { body } = createAgendaSchema.parse({ body: req.body });
+      const usuarioId = req.user?.userId;
 
-      const plantaPertenceAoUtilizador = await prisma.planta.findFirst({
-        where: { id: plantaId, usuarioId },
-      });
-      if (!plantaPertenceAoUtilizador) {
-        return res.status(403).json({ message: 'Acesso negado. A planta não pertence a si.' });
+      if (!usuarioId) {
+        return res.status(401).json({ error: 'Usuário não autenticado' });
       }
 
-      const novoAgendamento = await prisma.agenda.create({
-        data: { plantaId, atividadeId, dataAgendada, observacoes },
-      });
+      const agenda = await this.createAgendaUseCase.execute(body as CreateAgendaDTO, usuarioId);
 
-      return res.status(201).json(novoAgendamento);
+      res.status(201).json(agenda);
     } catch (error) {
-      return res.status(400).json({ error });
+      console.error('Erro ao criar agendamento:', error);
+      
+      if (error instanceof Error && error.message === 'Acesso negado. A planta não pertence a si.') {
+        return res.status(403).json({ error: error.message });
+      }
+      
+      res.status(500).json({ error: 'Erro interno do servidor' });
     }
-  },
+  }
 
-  // Listar todos os eventos da agenda do utilizador logado
-  getAllByUser: async (req: Request, res: Response) => {
+  async getAllByUser(req: Request, res: Response) {
     try {
-      const usuarioId = req.user!.userId;
-      const agendamentos = await prisma.agenda.findMany({
-        where: {
-          planta: { usuarioId },
-        },
-        include: {
-          planta: { select: { id: true, nome: true, especie: true } },
-          atividade: { select: { id: true, nome: true } },
-          recursosUtilizados: { include: { recurso: { include: { tipoRecurso: true } } } },
-        },
-        orderBy: { dataAgendada: 'asc' },
-      });
-      return res.status(200).json(agendamentos);
-    } catch (error) {
-      return res.status(500).json({ error: 'Erro ao buscar agendamentos.' });
-    }
-  },
+      const usuarioId = req.user?.userId;
 
-  // Atualizar um evento da agenda (agora também serve para "completar" a tarefa)
-  update: async (req: Request, res: Response) => {
-    try {
-      const usuarioId = req.user!.userId;
-      const { id } = agendaIdSchema.parse(req).params;
-      const { recursosUtilizados, ...dataToUpdate } = updateAgendaSchema.parse(req).body;
-
-      const agendamentoExistente = await prisma.agenda.findFirst({
-        where: { id, planta: { usuarioId } },
-      });
-      if (!agendamentoExistente) {
-        return res.status(403).json({ message: 'Acesso negado ou agendamento não encontrado.' });
+      if (!usuarioId) {
+        return res.status(401).json({ error: 'Usuário não autenticado' });
       }
 
-      // Usamos uma transação para garantir que ambas as operações (atualizar agenda e criar histórico de recursos)
-      // aconteçam com sucesso, ou nenhuma delas acontece.
-      const agendamentoAtualizado = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
-        const updated = await tx.agenda.update({
-          where: { id },
-          data: dataToUpdate,
-        });
+      const agendas = await this.getAllAgendasByUserUseCase.execute(usuarioId);
 
-        if (recursosUtilizados && recursosUtilizados.length > 0) {
-          // Apaga registros antigos para evitar duplicatas, caso seja uma re-edição
-          await tx.agendaRecursoUtilizado.deleteMany({ where: { agendaId: id } });
-
-          // Cria os novos registros de recursos utilizados
-          await tx.agendaRecursoUtilizado.createMany({
-            data: recursosUtilizados.map(r => ({
-              agendaId: id,
-              recursoId: r.recursoId,
-              quantidadeUtilizada: r.quantidadeUtilizada,
-            })),
-          });
-        }
-        return updated;
-      });
-
-      return res.status(200).json(agendamentoAtualizado);
+      res.json(agendas);
     } catch (error) {
-      return res.status(400).json({ error });
+      console.error('Erro ao buscar agendamentos:', error);
+      res.status(500).json({ error: 'Erro interno do servidor' });
     }
-  },
+  }
 
-  // Apagar um evento da agenda (sem mudanças)
-  delete: async (req: Request, res: Response) => {
+  async update(req: Request, res: Response) {
     try {
-      const usuarioId = req.user!.userId;
-      const { id } = agendaIdSchema.parse(req).params;
+      const { params } = agendaIdSchema.parse({ params: req.params });
+      const { body } = updateAgendaSchema.parse({ body: req.body, params: req.params });
+      const usuarioId = req.user?.userId;
 
-      const agendamentoExistente = await prisma.agenda.findFirst({
-        where: { id, planta: { usuarioId } },
-      });
-      if (!agendamentoExistente) {
-        return res.status(403).json({ message: 'Acesso negado ou agendamento não encontrado.' });
+      if (!usuarioId) {
+        return res.status(401).json({ error: 'Usuário não autenticado' });
       }
 
-      await prisma.agenda.delete({ where: { id } });
-      return res.status(204).send();
+      const updatedAgenda = await this.updateAgendaUseCase.execute(params.id, body as UpdateAgendaDTO, usuarioId);
+
+      res.json(updatedAgenda);
     } catch (error) {
-      return res.status(400).json({ error });
+      console.error('Erro ao atualizar agendamento:', error);
+      
+      if (error instanceof Error && error.message === 'Acesso negado ou agendamento não encontrado.') {
+        return res.status(404).json({ error: error.message });
+      }
+      
+      res.status(500).json({ error: 'Erro interno do servidor' });
     }
-  },
-};
+  }
+
+  async delete(req: Request, res: Response) {
+    try {
+      const { params } = agendaIdSchema.parse({ params: req.params });
+      const usuarioId = req.user?.userId;
+
+      if (!usuarioId) {
+        return res.status(401).json({ error: 'Usuário não autenticado' });
+      }
+
+      await this.deleteAgendaUseCase.execute(params.id, usuarioId);
+
+      res.status(204).send();
+    } catch (error) {
+      console.error('Erro ao deletar agendamento:', error);
+      
+      if (error instanceof Error && error.message === 'Acesso negado ou agendamento não encontrado.') {
+        return res.status(404).json({ error: error.message });
+      }
+      
+      res.status(500).json({ error: 'Erro interno do servidor' });
+    }
+  }
+}

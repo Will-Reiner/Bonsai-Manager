@@ -1,16 +1,17 @@
 import { Router } from 'express';
-import { fotoController } from './foto.controller';
+import { FotoController } from './foto.controller';
 import { authMiddleware } from '../../middlewares/auth.middleware';
 
 const fotoRouter = Router();
+const fotoController = new FotoController();
 
 // APLICA O MIDDLEWARE A TODAS AS ROTAS DESTE ROTEADOR
 fotoRouter.use(authMiddleware);
 
-fotoRouter.post('/', fotoController.create);
-fotoRouter.get('/planta/:plantaId', fotoController.getAllByPlanta);
-fotoRouter.get('/:id', fotoController.getById);
-fotoRouter.put('/:id', fotoController.update);
-fotoRouter.delete('/:id', fotoController.delete);
+fotoRouter.post('/', fotoController.create.bind(fotoController));
+fotoRouter.get('/planta/:plantaId', fotoController.getAllByPlanta.bind(fotoController));
+fotoRouter.get('/:id', fotoController.getById.bind(fotoController));
+fotoRouter.put('/:id', fotoController.update.bind(fotoController));
+fotoRouter.delete('/:id', fotoController.delete.bind(fotoController));
 
 export default fotoRouter;
