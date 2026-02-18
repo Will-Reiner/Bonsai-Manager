@@ -1,12 +1,14 @@
-import { TipoPlanta, RecomendacaoTecnica, Estacao, MomentoIdeal } from '@prisma/client';
+import { TipoPlanta, RecomendacaoTecnica, Estacao, MomentoIdeal, StatusEspecie } from '@prisma/client';
 
 // DTOs para requisições
 export interface CreateEspecieRequestDTO {
-  nomeCientifico: string;
+  nomeCientifico?: string;
   nomeComum?: string;
   familia?: string;
   origem?: string;
   tipoDePlanta?: TipoPlanta;
+  status?: StatusEspecie;
+  criadoPorId?: string;
   folhas?: string;
   tronco?: string;
   flores?: string;
@@ -30,6 +32,7 @@ export interface UpdateEspecieRequestDTO {
   familia?: string;
   origem?: string;
   tipoDePlanta?: TipoPlanta;
+  status?: StatusEspecie;
   folhas?: string;
   tronco?: string;
   flores?: string;
@@ -50,11 +53,13 @@ export interface UpdateEspecieRequestDTO {
 // DTOs para respostas
 export interface EspecieResponseDTO {
   id: string;
-  nomeCientifico: string;
+  nomeCientifico: string | null;
   nomeComum: string | null;
   familia: string | null;
   origem: string | null;
   tipoDePlanta: TipoPlanta | null;
+  status: StatusEspecie;
+  criadoPorId: string | null;
   folhas: string | null;
   tronco: string | null;
   flores: string | null;
@@ -73,6 +78,7 @@ export interface EspecieResponseDTO {
 }
 
 export interface EspecieWithRelationsResponseDTO extends EspecieResponseDTO {
+  criadoPor?: { id: string; nome: string; nomePublico: string | null } | null;
   guiasDeTecnicas: {
     especieId: string;
     atividadeId: string;
@@ -103,6 +109,7 @@ export interface EspecieRepository {
   create(data: CreateEspecieRequestDTO): Promise<EspecieResponseDTO>;
   findAll(): Promise<EspecieResponseDTO[]>;
   findById(id: string): Promise<EspecieWithRelationsResponseDTO | null>;
+  findByStatus(status: StatusEspecie): Promise<EspecieResponseDTO[]>;
   update(id: string, data: UpdateEspecieRequestDTO): Promise<EspecieResponseDTO>;
   delete(id: string): Promise<void>;
   existsByNomeCientifico(nomeCientifico: string): Promise<boolean>;

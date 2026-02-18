@@ -68,6 +68,11 @@ enum TipoPlanta {
   CONIFERA
 }
 
+enum StatusEspecie {
+  VERIFICADO
+  SUGERIDO
+}
+
 
 // --- TABELAS PRINCIPAIS ---
 
@@ -87,20 +92,22 @@ model Usuario {
   role               Role      @default(USER)
 
   // Relacionamentos
-  plantas    Planta[]
-  recursos   Recurso[]
-  fotos      Foto[]
-  seguindo   Amizade[] @relation("Seguidor")
-  seguidores Amizade[] @relation("Seguido")
+  plantas            Planta[]
+  recursos           Recurso[]
+  fotos              Foto[]
+  seguindo           Amizade[] @relation("Seguidor")
+  seguidores         Amizade[] @relation("Seguido")
+  especiesSugeridas  Especie[]
 }
 
 model Especie {
   id                 String   @id @default(uuid())
-  nomeCientifico     String   @unique
+  nomeCientifico     String?  @unique
   nomeComum          String?
   familia            String?
   origem             String?
   tipoDePlanta       TipoPlanta?
+  status             StatusEspecie @default(SUGERIDO)
   folhas             String?  @db.Text
   tronco             String?  @db.Text
   flores             String?  @db.Text
@@ -116,6 +123,9 @@ model Especie {
   contras            String?  @db.Text
   linhasDeRaciocinio String?  @db.Text
   observacoes        String?  @db.Text
+
+  criadoPorId        String?
+  criadoPor          Usuario? @relation(fields: [criadoPorId], references: [id], onDelete: SetNull)
 
   // Relacionamentos
   plantas          Planta[]

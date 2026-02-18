@@ -8,6 +8,31 @@ import {
 } from '../guia-de-tecnicas.types';
 
 export class PrismaGuiaDeTecnicasRepository implements GuiaDeTecnicasRepository {
+  async findAll(): Promise<GuiaDeTecnicasResponseDTO[]> {
+    const results = await prisma.guiaDeTecnicas.findMany({
+      include: { atividade: true, especie: true },
+    });
+    return results.map(r => ({
+      especieId: r.especieId,
+      atividadeId: r.atividadeId,
+      recomendacao: r.recomendacao as any,
+      observacoes: r.observacoes || undefined,
+    }));
+  }
+
+  async findByEspecie(especieId: string): Promise<GuiaDeTecnicasResponseDTO[]> {
+    const results = await prisma.guiaDeTecnicas.findMany({
+      where: { especieId },
+      include: { atividade: true },
+    });
+    return results.map(r => ({
+      especieId: r.especieId,
+      atividadeId: r.atividadeId,
+      recomendacao: r.recomendacao as any,
+      observacoes: r.observacoes || undefined,
+    }));
+  }
+
   async create(data: CreateGuiaDeTecnicasDTO): Promise<GuiaDeTecnicasResponseDTO> {
     const result = await prisma.guiaDeTecnicas.create({
       data: {

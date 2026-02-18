@@ -1,16 +1,20 @@
 import { CreateEspecieUseCase } from './create-especie.use-case';
-import { EspecieRepository, CreateEspecieRequestDTO, EspecieResponseDTO } from '../especie.types';
-import { TipoPlanta } from '@prisma/client';
+import { EspecieRepository, EspecieResponseDTO } from '../especie.types';
+import { TipoPlanta, StatusEspecie } from '@prisma/client';
 
 describe('CreateEspecieUseCase', () => {
   let createEspecieUseCase: CreateEspecieUseCase;
   let mockEspecieRepository: jest.Mocked<EspecieRepository>;
+
+  const userId = 'user-123';
+  const adminId = 'admin-456';
 
   beforeEach(() => {
     mockEspecieRepository = {
       create: jest.fn(),
       findAll: jest.fn(),
       findById: jest.fn(),
+      findByStatus: jest.fn(),
       update: jest.fn(),
       delete: jest.fn(),
       existsByNomeCientifico: jest.fn(),
@@ -20,112 +24,170 @@ describe('CreateEspecieUseCase', () => {
     createEspecieUseCase = new CreateEspecieUseCase(mockEspecieRepository);
   });
 
-  it('should create a new especie successfully', async () => {
-    // Arrange
-    const createEspecieData: CreateEspecieRequestDTO = {
-      nomeCientifico: 'Ficus benjamina',
-      nomeComum: 'Ficus',
-      familia: 'Moraceae',
-      origem: 'Ásia',
-      tipoDePlanta: 'PERENE' as TipoPlanta,
-      folhas: 'Pequenas e verdes',
-      luminosidade: 'Luz indireta',
-      rega: 'Moderada',
-    };
+  const buildResponse = (overrides: Partial<EspecieResponseDTO> = {}): EspecieResponseDTO => ({
+    id: '123e4567-e89b-12d3-a456-426614174000',
+    nomeCientifico: null,
+    nomeComum: null,
+    familia: null,
+    origem: null,
+    tipoDePlanta: null,
+    status: 'SUGERIDO' as StatusEspecie,
+    criadoPorId: userId,
+    folhas: null,
+    tronco: null,
+    flores: null,
+    frutos: null,
+    raizes: null,
+    luminosidade: null,
+    rega: null,
+    substratoIdeal: null,
+    adubacao: null,
+    clima: null,
+    problemasComuns: null,
+    pros: null,
+    contras: null,
+    linhasDeRaciocinio: null,
+    observacoes: null,
+    ...overrides,
+  });
 
-    const expectedResponse: EspecieResponseDTO = {
-      id: '123e4567-e89b-12d3-a456-426614174000',
+  it('should create a verified especie when admin creates', async () => {
+    const expectedResponse = buildResponse({
       nomeCientifico: 'Ficus benjamina',
       nomeComum: 'Ficus',
-      familia: 'Moraceae',
-      origem: 'Ásia',
-      tipoDePlanta: 'PERENE' as TipoPlanta,
-      folhas: 'Pequenas e verdes',
-      tronco: null,
-      flores: null,
-      frutos: null,
-      raizes: null,
-      luminosidade: 'Luz indireta',
-      rega: 'Moderada',
-      substratoIdeal: null,
-      adubacao: null,
-      clima: null,
-      problemasComuns: null,
-      pros: null,
-      contras: null,
-      linhasDeRaciocinio: null,
-      observacoes: null,
-    };
+      status: 'VERIFICADO' as StatusEspecie,
+      criadoPorId: adminId,
+    });
 
     mockEspecieRepository.existsByNomeCientifico.mockResolvedValue(false);
     mockEspecieRepository.create.mockResolvedValue(expectedResponse);
 
-    // Act
-    const result = await createEspecieUseCase.execute(createEspecieData);
+    const result = await createEspecieUseCase.execute({
+      data: { nomeCientifico: 'Ficus benjamina', nomeComum: 'Ficus' },
+      userId: adminId,
+      isAdmin: true,
+    });
 
-    // Assert
-    expect(mockEspecieRepository.existsByNomeCientifico).toHaveBeenCalledWith('Ficus benjamina');
-    expect(mockEspecieRepository.create).toHaveBeenCalledWith(createEspecieData);
-    expect(result).toEqual(expectedResponse);
-  });
-
-  it('should throw error when especie with same nomeCientifico already exists', async () => {
-    // Arrange
-    const createEspecieData: CreateEspecieRequestDTO = {
+    expect(mockEspecieRepository.create).toHaveBeenCalledWith({
       nomeCientifico: 'Ficus benjamina',
       nomeComum: 'Ficus',
-    };
+      status: 'VERIFICADO',
+      criadoPorId: adminId,
+    });
+    expect(result.status).toBe('VERIFICADO');
+  });
 
-    mockEspecieRepository.existsByNomeCientifico.mockResolvedValue(true);
+  it('should force SUGERIDO status for non-admin user even if they pass VERIFICADO', async () => {
+    const expectedResponse = buildResponse({
+      nomeComum: 'Ficus',
+      status: 'SUGERIDO' as StatusEspecie,
+    });
 
-    // Act & Assert
-    await expect(createEspecieUseCase.execute(createEspecieData)).rejects.toThrow(
-      'Já existe uma espécie com este nome científico.'
+    mockEspecieRepository.create.mockResolvedValue(expectedResponse);
+
+    await createEspecieUseCase.execute({
+      data: { nomeComum: 'Ficus', status: 'VERIFICADO' as StatusEspecie },
+      userId,
+      isAdmin: false,
+    });
+
+    expect(mockEspecieRepository.create).toHaveBeenCalledWith(
+      expect.objectContaining({ status: 'SUGERIDO' })
     );
+  });
 
-    expect(mockEspecieRepository.existsByNomeCientifico).toHaveBeenCalledWith('Ficus benjamina');
+  it('should require nomeComum for non-admin user', async () => {
+    await expect(
+      createEspecieUseCase.execute({
+        data: { nomeCientifico: 'Ficus benjamina' },
+        userId,
+        isAdmin: false,
+      })
+    ).rejects.toThrow('O nome comum é obrigatório para sugestão de espécie.');
+
     expect(mockEspecieRepository.create).not.toHaveBeenCalled();
   });
 
-  it('should create especie with minimal required data', async () => {
-    // Arrange
-    const createEspecieData: CreateEspecieRequestDTO = {
-      nomeCientifico: 'Juniperus chinensis',
-    };
-
-    const expectedResponse: EspecieResponseDTO = {
-      id: '123e4567-e89b-12d3-a456-426614174001',
-      nomeCientifico: 'Juniperus chinensis',
-      nomeComum: null,
-      familia: null,
-      origem: null,
-      tipoDePlanta: null,
-      folhas: null,
-      tronco: null,
-      flores: null,
-      frutos: null,
-      raizes: null,
-      luminosidade: null,
-      rega: null,
-      substratoIdeal: null,
-      adubacao: null,
-      clima: null,
-      problemasComuns: null,
-      pros: null,
-      contras: null,
-      linhasDeRaciocinio: null,
-      observacoes: null,
-    };
+  it('should not require nomeComum for admin', async () => {
+    const expectedResponse = buildResponse({
+      nomeCientifico: 'Ficus benjamina',
+      status: 'VERIFICADO' as StatusEspecie,
+      criadoPorId: adminId,
+    });
 
     mockEspecieRepository.existsByNomeCientifico.mockResolvedValue(false);
     mockEspecieRepository.create.mockResolvedValue(expectedResponse);
 
-    // Act
-    const result = await createEspecieUseCase.execute(createEspecieData);
+    const result = await createEspecieUseCase.execute({
+      data: { nomeCientifico: 'Ficus benjamina' },
+      userId: adminId,
+      isAdmin: true,
+    });
 
-    // Assert
-    expect(mockEspecieRepository.existsByNomeCientifico).toHaveBeenCalledWith('Juniperus chinensis');
-    expect(mockEspecieRepository.create).toHaveBeenCalledWith(createEspecieData);
     expect(result).toEqual(expectedResponse);
+  });
+
+  it('should allow creating especie without nomeCientifico', async () => {
+    const expectedResponse = buildResponse({ nomeComum: 'Ficus' });
+
+    mockEspecieRepository.create.mockResolvedValue(expectedResponse);
+
+    const result = await createEspecieUseCase.execute({
+      data: { nomeComum: 'Ficus' },
+      userId,
+      isAdmin: false,
+    });
+
+    expect(mockEspecieRepository.existsByNomeCientifico).not.toHaveBeenCalled();
+    expect(result).toEqual(expectedResponse);
+  });
+
+  it('should check nomeCientifico uniqueness when provided', async () => {
+    mockEspecieRepository.existsByNomeCientifico.mockResolvedValue(true);
+
+    await expect(
+      createEspecieUseCase.execute({
+        data: { nomeCientifico: 'Ficus benjamina', nomeComum: 'Ficus' },
+        userId,
+        isAdmin: false,
+      })
+    ).rejects.toThrow('Já existe uma espécie com este nome científico.');
+
+    expect(mockEspecieRepository.create).not.toHaveBeenCalled();
+  });
+
+  it('should always set criadoPorId to userId', async () => {
+    const expectedResponse = buildResponse({ nomeComum: 'Ficus' });
+    mockEspecieRepository.create.mockResolvedValue(expectedResponse);
+
+    await createEspecieUseCase.execute({
+      data: { nomeComum: 'Ficus' },
+      userId,
+      isAdmin: false,
+    });
+
+    expect(mockEspecieRepository.create).toHaveBeenCalledWith(
+      expect.objectContaining({ criadoPorId: userId })
+    );
+  });
+
+  it('should allow admin to create with explicit SUGERIDO status', async () => {
+    const expectedResponse = buildResponse({
+      nomeComum: 'Ficus',
+      status: 'SUGERIDO' as StatusEspecie,
+      criadoPorId: adminId,
+    });
+
+    mockEspecieRepository.create.mockResolvedValue(expectedResponse);
+
+    await createEspecieUseCase.execute({
+      data: { nomeComum: 'Ficus', status: 'SUGERIDO' as StatusEspecie },
+      userId: adminId,
+      isAdmin: true,
+    });
+
+    expect(mockEspecieRepository.create).toHaveBeenCalledWith(
+      expect.objectContaining({ status: 'SUGERIDO' })
+    );
   });
 });

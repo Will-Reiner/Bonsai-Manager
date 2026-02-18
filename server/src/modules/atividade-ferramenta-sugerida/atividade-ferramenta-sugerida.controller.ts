@@ -4,12 +4,14 @@ import { PrismaAtividadeFerramentaSugeridaRepository } from './repositories/pris
 import {
   CreateAtividadeFerramentaSugeridaUseCase,
   DeleteAtividadeFerramentaSugeridaUseCase,
+  GetFerramentasSugeridasByAtividadeUseCase,
 } from './use-cases';
 
 export class AtividadeFerramentaSugeridaController {
   private atividadeFerramentaSugeridaRepository: PrismaAtividadeFerramentaSugeridaRepository;
   private createAtividadeFerramentaSugeridaUseCase: CreateAtividadeFerramentaSugeridaUseCase;
   private deleteAtividadeFerramentaSugeridaUseCase: DeleteAtividadeFerramentaSugeridaUseCase;
+  private getFerramentasSugeridasByAtividadeUseCase: GetFerramentasSugeridasByAtividadeUseCase;
 
   constructor() {
     this.atividadeFerramentaSugeridaRepository = new PrismaAtividadeFerramentaSugeridaRepository();
@@ -19,6 +21,22 @@ export class AtividadeFerramentaSugeridaController {
     this.deleteAtividadeFerramentaSugeridaUseCase = new DeleteAtividadeFerramentaSugeridaUseCase(
       this.atividadeFerramentaSugeridaRepository
     );
+    this.getFerramentasSugeridasByAtividadeUseCase = new GetFerramentasSugeridasByAtividadeUseCase(
+      this.atividadeFerramentaSugeridaRepository
+    );
+  }
+
+  async getByAtividade(req: Request, res: Response) {
+    try {
+      const { atividadeId } = req.params;
+      const ferramentas = await this.getFerramentasSugeridasByAtividadeUseCase.execute(atividadeId);
+      return res.status(200).json(ferramentas);
+    } catch (error) {
+      if (error instanceof Error && error.message === 'Atividade não encontrada') {
+        return res.status(404).json({ message: error.message });
+      }
+      return res.status(500).json({ message: 'Erro ao buscar ferramentas sugeridas.' });
+    }
   }
 
   // Cria a associação

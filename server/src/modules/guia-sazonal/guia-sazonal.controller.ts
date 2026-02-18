@@ -1,20 +1,52 @@
 import { Request, Response } from 'express';
 import { createGuiaSazonalSchema, updateGuiaSazonalSchema, GuiaSazonalIdSchema } from './guia-sazonal.schema';
 import { PrismaGuiaSazonalRepository } from './repositories/prisma-guia-sazonal.repository';
-import { CreateGuiaSazonalUseCase, UpdateGuiaSazonalUseCase, DeleteGuiaSazonalUseCase } from './use-cases';
+import {
+  CreateGuiaSazonalUseCase,
+  UpdateGuiaSazonalUseCase,
+  DeleteGuiaSazonalUseCase,
+  GetAllGuiasSazonaisUseCase,
+  GetGuiasSazonaisByEspecieUseCase,
+} from './use-cases';
 
 export class GuiaSazonalController {
   private repository: PrismaGuiaSazonalRepository;
   private createGuiaSazonalUseCase: CreateGuiaSazonalUseCase;
   private updateGuiaSazonalUseCase: UpdateGuiaSazonalUseCase;
   private deleteGuiaSazonalUseCase: DeleteGuiaSazonalUseCase;
+  private getAllGuiasSazonaisUseCase: GetAllGuiasSazonaisUseCase;
+  private getGuiasSazonaisByEspecieUseCase: GetGuiasSazonaisByEspecieUseCase;
 
   constructor() {
     this.repository = new PrismaGuiaSazonalRepository();
     this.createGuiaSazonalUseCase = new CreateGuiaSazonalUseCase(this.repository);
     this.updateGuiaSazonalUseCase = new UpdateGuiaSazonalUseCase(this.repository);
     this.deleteGuiaSazonalUseCase = new DeleteGuiaSazonalUseCase(this.repository);
+    this.getAllGuiasSazonaisUseCase = new GetAllGuiasSazonaisUseCase(this.repository);
+    this.getGuiasSazonaisByEspecieUseCase = new GetGuiasSazonaisByEspecieUseCase(this.repository);
   }
+
+  getAll = async (_req: Request, res: Response) => {
+    try {
+      const guias = await this.getAllGuiasSazonaisUseCase.execute();
+      return res.status(200).json(guias);
+    } catch (error) {
+      return res.status(500).json({ message: 'Erro ao buscar guias sazonais.' });
+    }
+  };
+
+  getByEspecie = async (req: Request, res: Response) => {
+    try {
+      const { especieId } = req.params;
+      const guias = await this.getGuiasSazonaisByEspecieUseCase.execute(especieId);
+      return res.status(200).json(guias);
+    } catch (error) {
+      if (error instanceof Error && error.message === 'Espécie não encontrada') {
+        return res.status(404).json({ message: error.message });
+      }
+      return res.status(500).json({ message: 'Erro ao buscar guias sazonais.' });
+    }
+  };
 
   create = async (req: Request, res: Response) => {
     try {

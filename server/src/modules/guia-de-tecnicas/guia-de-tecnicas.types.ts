@@ -26,6 +26,8 @@ export interface GuiaDeTecnicasResponseDTO {
 
 export interface GuiaDeTecnicasRepository {
   create(data: CreateGuiaDeTecnicasDTO): Promise<GuiaDeTecnicasResponseDTO>;
+  findAll(): Promise<GuiaDeTecnicasResponseDTO[]>;
+  findByEspecie(especieId: string): Promise<GuiaDeTecnicasResponseDTO[]>;
   update(especieId: string, atividadeId: string, data: UpdateGuiaDeTecnicasDTO): Promise<GuiaDeTecnicasResponseDTO>;
   delete(data: DeleteGuiaDeTecnicasDTO): Promise<void>;
   exists(especieId: string, atividadeId: string): Promise<boolean>;

@@ -25,6 +25,39 @@ export class FotoController {
     this.deleteFotoUseCase = new DeleteFotoUseCase(fotoRepository);
   }
 
+  async upload(req: Request, res: Response) {
+    try {
+      const usuarioId = req.user?.userId;
+      if (!usuarioId) {
+        return res.status(401).json({ error: 'Usuário não autenticado' });
+      }
+
+      if (!req.file) {
+        return res.status(400).json({ error: 'Nenhum arquivo enviado.' });
+      }
+
+      const caminhoArquivo = `/uploads/${req.file.filename}`;
+      const plantaId = req.body.plantaId || null;
+      const titulo = req.body.titulo || undefined;
+      const tags = req.body.tags || undefined;
+
+      const foto = await this.createFotoUseCase.execute(
+        { caminhoArquivo, plantaId, titulo, tags },
+        usuarioId,
+      );
+
+      res.status(201).json(foto);
+    } catch (error) {
+      console.error('Erro ao fazer upload de foto:', error);
+
+      if (error instanceof Error && error.message === 'Planta não encontrada ou não pertence a si.') {
+        return res.status(404).json({ error: error.message });
+      }
+
+      res.status(500).json({ error: 'Erro interno do servidor' });
+    }
+  }
+
   async create(req: Request, res: Response) {
     try {
       const { body: createData } = createFotoSchema.parse({ body: req.body });

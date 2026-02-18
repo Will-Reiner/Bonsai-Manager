@@ -13,6 +13,7 @@ describe('RemoveInspiracaoUseCase', () => {
       plantaExistsAndBelongsToUser: jest.fn(),
       fotoExistsAndCanBeUsedAsInspiration: jest.fn(),
       inspiracaoExistsAndBelongsToUser: jest.fn(),
+      findByPlanta: jest.fn(),
     };
     useCase = new RemoveInspiracaoUseCase(mockRepository);
   });

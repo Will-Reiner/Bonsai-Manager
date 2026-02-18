@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, TextInput, StyleSheet, FlatList, TouchableOpacity, Alert, ActivityIndicator, ScrollView } from 'react-native';
+import { View, Text, TextInput, StyleSheet, FlatList, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { Picker } from '@react-native-picker/picker';
 import { especieService, CreateEspecieDTO } from '../../services/especieService';
@@ -34,14 +34,14 @@ const AddEspecieForm = React.memo(({ onEspecieAdded }: { onEspecieAdded: () => v
   };
 
   const handleAddEspecie = async () => {
-    if (!nomeCientifico.trim()) {
-      Alert.alert('Erro', 'O nome científico é obrigatório.');
+    if (!nomeCientifico.trim() && !nomeComum.trim()) {
+      Alert.alert('Erro', 'Preencha pelo menos o nome científico ou o nome comum.');
       return;
     }
     setIsSubmitting(true);
     try {
       const data: CreateEspecieDTO = {
-        nomeCientifico,
+        nomeCientifico: nomeCientifico || undefined,
         nomeComum: nomeComum || undefined,
         familia: familia || undefined,
         origem: origem || undefined,
@@ -65,8 +65,8 @@ const AddEspecieForm = React.memo(({ onEspecieAdded }: { onEspecieAdded: () => v
   return (
     <View style={styles.formContainer}>
       <Text style={styles.formTitle}>Adicionar Nova Espécie</Text>
-      
-      <TextInput style={styles.input} placeholder="Nome Científico *" value={nomeCientifico} onChangeText={setNomeCientifico} />
+
+      <TextInput style={styles.input} placeholder="Nome Científico" value={nomeCientifico} onChangeText={setNomeCientifico} />
       <TextInput style={styles.input} placeholder="Nome Comum" value={nomeComum} onChangeText={setNomeComum} />
       <TextInput style={styles.input} placeholder="Família" value={familia} onChangeText={setFamilia} />
       <TextInput style={styles.input} placeholder="Origem" value={origem} onChangeText={setOrigem} />
@@ -85,7 +85,7 @@ const AddEspecieForm = React.memo(({ onEspecieAdded }: { onEspecieAdded: () => v
       <TextInput style={[styles.input, styles.textArea]} placeholder="Rega (Frequência, volume...)" value={rega} onChangeText={setRega} multiline/>
       <TextInput style={[styles.input, styles.textArea]} placeholder="Substrato Ideal" value={substratoIdeal} onChangeText={setSubstratoIdeal} multiline/>
       <TextInput style={[styles.input, styles.textArea]} placeholder="Adubação (Tipo, frequência...)" value={adubacao} onChangeText={setAdubacao} multiline/>
-      
+
       <TouchableOpacity
         style={[styles.button, isSubmitting && styles.buttonDisabled]}
         onPress={handleAddEspecie}
@@ -97,16 +97,57 @@ const AddEspecieForm = React.memo(({ onEspecieAdded }: { onEspecieAdded: () => v
   );
 });
 
+const SugeridaItem = ({ especie, onAprovar }: { especie: Especie; onAprovar: (id: string) => void }) => {
+  const [isApproving, setIsApproving] = useState(false);
+
+  const handleAprovar = async () => {
+    setIsApproving(true);
+    try {
+      await especieService.aprovarEspecie(especie.id);
+      Alert.alert('Sucesso', `Espécie "${especie.nomeComum || especie.nomeCientifico}" aprovada.`);
+      onAprovar(especie.id);
+    } catch {
+      Alert.alert('Erro', 'Não foi possível aprovar a espécie.');
+    } finally {
+      setIsApproving(false);
+    }
+  };
+
+  return (
+    <View style={styles.sugeridaItem}>
+      <View style={styles.sugeridaInfo}>
+        <Text style={styles.listItemTitle}>{especie.nomeComum || 'Sem nome comum'}</Text>
+        {especie.nomeCientifico && <Text style={styles.listItemSubtitle}>{especie.nomeCientifico}</Text>}
+      </View>
+      <TouchableOpacity
+        style={[styles.approveButton, isApproving && styles.buttonDisabled]}
+        onPress={handleAprovar}
+        disabled={isApproving}
+      >
+        {isApproving ? (
+          <ActivityIndicator size="small" color="#fff" />
+        ) : (
+          <Text style={styles.approveButtonText}>Aprovar</Text>
+        )}
+      </TouchableOpacity>
+    </View>
+  );
+};
 
 const ManageEspeciesScreen = () => {
   const [especies, setEspecies] = useState<Especie[]>([]);
+  const [sugeridas, setSugeridas] = useState<Especie[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  const fetchEspecies = useCallback(async () => {
-    setIsLoading(true); // Força o loading para dar feedback ao admin
+  const fetchData = useCallback(async () => {
+    setIsLoading(true);
     try {
-      const data = await especieService.getAllEspecies();
-      setEspecies(data);
+      const [allData, sugeridasData] = await Promise.all([
+        especieService.getAllEspecies(),
+        especieService.getEspeciesSugeridas(),
+      ]);
+      setEspecies(allData);
+      setSugeridas(sugeridasData);
     } catch (error) {
       Alert.alert('Erro', 'Não foi possível carregar as espécies.');
     } finally {
@@ -116,9 +157,14 @@ const ManageEspeciesScreen = () => {
 
   useFocusEffect(
     useCallback(() => {
-      fetchEspecies();
-    }, [fetchEspecies])
+      fetchData();
+    }, [fetchData])
   );
+
+  const handleAprovada = (id: string) => {
+    setSugeridas(prev => prev.filter(e => e.id !== id));
+    fetchData();
+  };
 
   return (
     <FlatList
@@ -127,13 +173,30 @@ const ManageEspeciesScreen = () => {
       keyExtractor={(item) => item.id}
       renderItem={({ item }) => (
         <View style={styles.listItem}>
-          <Text style={styles.listItemTitle}>{item.nomeComum || item.nomeCientifico}</Text>
-          <Text style={styles.listItemSubtitle}>{item.nomeCientifico}</Text>
+          <View style={styles.listItemRow}>
+            <Text style={styles.listItemTitle}>{item.nomeComum || item.nomeCientifico || 'Sem nome'}</Text>
+            {item.status === 'SUGERIDO' && (
+              <View style={styles.badge}>
+                <Text style={styles.badgeText}>Sugerido</Text>
+              </View>
+            )}
+          </View>
+          {item.nomeCientifico && <Text style={styles.listItemSubtitle}>{item.nomeCientifico}</Text>}
         </View>
       )}
       ListHeaderComponent={
         <>
-          <AddEspecieForm onEspecieAdded={fetchEspecies} />
+          <AddEspecieForm onEspecieAdded={fetchData} />
+
+          {sugeridas.length > 0 && (
+            <>
+              <Text style={styles.listHeader}>Fila de Homologação ({sugeridas.length})</Text>
+              {sugeridas.map(especie => (
+                <SugeridaItem key={especie.id} especie={especie} onAprovar={handleAprovada} />
+              ))}
+            </>
+          )}
+
           <Text style={styles.listHeader}>Espécies Existentes</Text>
         </>
       }
@@ -209,6 +272,11 @@ const styles = StyleSheet.create({
         borderBottomWidth: 1,
         borderBottomColor: theme.colors.lightGray,
     },
+    listItemRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+    },
     listItemTitle: {
         fontSize: 16,
         fontWeight: '500',
@@ -224,7 +292,42 @@ const styles = StyleSheet.create({
       marginTop: theme.spacing.lg,
       fontSize: 16,
       color: theme.colors.textSecondary,
-    }
+    },
+    badge: {
+      backgroundColor: '#F59E0B',
+      paddingHorizontal: 8,
+      paddingVertical: 2,
+      borderRadius: 12,
+    },
+    badgeText: {
+      color: '#fff',
+      fontSize: 12,
+      fontWeight: 'bold',
+    },
+    sugeridaItem: {
+      backgroundColor: theme.colors.card,
+      padding: theme.spacing.md,
+      borderBottomWidth: 1,
+      borderBottomColor: theme.colors.lightGray,
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+    },
+    sugeridaInfo: {
+      flex: 1,
+      marginRight: theme.spacing.sm,
+    },
+    approveButton: {
+      backgroundColor: theme.colors.success || '#22C55E',
+      paddingHorizontal: 16,
+      paddingVertical: 8,
+      borderRadius: 8,
+    },
+    approveButtonText: {
+      color: '#fff',
+      fontWeight: 'bold',
+      fontSize: 14,
+    },
 });
 
 export default ManageEspeciesScreen;

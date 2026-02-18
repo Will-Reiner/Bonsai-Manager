@@ -1,9 +1,11 @@
 import { Request, Response } from 'express';
+import { parsePagination, buildPaginatedResponse } from '../../utils/pagination';
 import { createAgendaSchema, updateAgendaSchema, agendaIdSchema } from './agenda.schema';
 import { PrismaAgendaRepository } from './repositories/prisma-agenda.repository';
 import {
   CreateAgendaUseCase,
   GetAllAgendasByUserUseCase,
+  GetAgendaByIdUseCase,
   UpdateAgendaUseCase,
   DeleteAgendaUseCase,
 } from './use-cases';
@@ -13,6 +15,7 @@ import '../../middlewares/auth.middleware'; // Import para garantir que a extens
 export class AgendaController {
   private createAgendaUseCase: CreateAgendaUseCase;
   private getAllAgendasByUserUseCase: GetAllAgendasByUserUseCase;
+  private getAgendaByIdUseCase: GetAgendaByIdUseCase;
   private updateAgendaUseCase: UpdateAgendaUseCase;
   private deleteAgendaUseCase: DeleteAgendaUseCase;
 
@@ -20,8 +23,28 @@ export class AgendaController {
     const agendaRepository = new PrismaAgendaRepository();
     this.createAgendaUseCase = new CreateAgendaUseCase(agendaRepository);
     this.getAllAgendasByUserUseCase = new GetAllAgendasByUserUseCase(agendaRepository);
+    this.getAgendaByIdUseCase = new GetAgendaByIdUseCase(agendaRepository);
     this.updateAgendaUseCase = new UpdateAgendaUseCase(agendaRepository);
     this.deleteAgendaUseCase = new DeleteAgendaUseCase(agendaRepository);
+  }
+
+  async getById(req: Request, res: Response) {
+    try {
+      const { params } = agendaIdSchema.parse({ params: req.params });
+      const usuarioId = req.user?.userId;
+
+      if (!usuarioId) {
+        return res.status(401).json({ error: 'Usuário não autenticado' });
+      }
+
+      const agenda = await this.getAgendaByIdUseCase.execute(params.id, usuarioId);
+      res.json(agenda);
+    } catch (error) {
+      if (error instanceof Error && error.message === 'Agendamento não encontrado.') {
+        return res.status(404).json({ message: error.message });
+      }
+      res.status(500).json({ error: 'Erro interno do servidor' });
+    }
   }
 
   async create(req: Request, res: Response) {
@@ -56,6 +79,12 @@ export class AgendaController {
       }
 
       const agendas = await this.getAllAgendasByUserUseCase.execute(usuarioId);
+
+      if (req.query.page) {
+        const params = parsePagination(req.query);
+        const paginatedData = agendas.slice(params.skip, params.skip + params.take);
+        return res.json(buildPaginatedResponse(paginatedData, agendas.length, params));
+      }
 
       res.json(agendas);
     } catch (error) {

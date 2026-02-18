@@ -32,6 +32,13 @@ export class PrismaAtividadeRecursoSugeridoRepository implements AtividadeRecurs
     });
   }
 
+  async findByAtividade(atividadeId: string): Promise<any[]> {
+    return await prisma.atividadeRecursoSugerido.findMany({
+      where: { atividadeId },
+      include: { tipoRecurso: true },
+    });
+  }
+
   async exists(atividadeId: string, tipoRecursoId: string): Promise<boolean> {
     const result = await prisma.atividadeRecursoSugerido.findUnique({
       where: {

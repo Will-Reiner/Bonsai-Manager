@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -6,19 +6,21 @@ import {
   FlatList,
   ActivityIndicator,
   TouchableOpacity,
+  TextInput,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useAuth } from '../../context/AuthContext';
 import { plantaService } from '../../services/plantaService';
 import { Planta } from '../../types';
 import PlantListItem from '../../components/PlantListItem';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/AppNavigator';
-import { theme } from '../../constants/theme'; // Importando nosso tema
-import { MaterialCommunityIcons } from '@expo/vector-icons'; // Importando ícones
+import { theme } from '../../constants/theme';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 type CollectionScreenNavigationProp = NativeStackNavigationProp<RootStackParamList>;
+
+type SortOption = 'nome' | 'data_asc' | 'data_desc';
 
 const CollectionScreen = () => {
   const navigation = useNavigation<CollectionScreenNavigationProp>();
@@ -26,6 +28,8 @@ const CollectionScreen = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [searchText, setSearchText] = useState('');
+  const [sortBy, setSortBy] = useState<SortOption>('data_desc');
 
   const carregarPlantas = useCallback(async () => {
     try {
@@ -44,16 +48,57 @@ const CollectionScreen = () => {
       carregarPlantas().finally(() => setIsLoading(false));
     }, [carregarPlantas])
   );
-  
+
   const handleRefresh = async () => {
     setIsRefreshing(true);
     await carregarPlantas();
     setIsRefreshing(false);
-  }
+  };
+
+  const filteredAndSorted = useMemo(() => {
+    let result = [...plantas];
+
+    // Filtrar por texto
+    if (searchText.trim()) {
+      const term = searchText.toLowerCase();
+      result = result.filter(p => {
+        const nome = (p.nome || '').toLowerCase();
+        const nomeComum = (p.especie?.nomeComum || '').toLowerCase();
+        const nomeCientifico = (p.especie?.nomeCientifico || '').toLowerCase();
+        return nome.includes(term) || nomeComum.includes(term) || nomeCientifico.includes(term);
+      });
+    }
+
+    // Ordenar
+    result.sort((a, b) => {
+      if (sortBy === 'nome') {
+        const nomeA = (a.nome || a.especie?.nomeComum || '').toLowerCase();
+        const nomeB = (b.nome || b.especie?.nomeComum || '').toLowerCase();
+        return nomeA.localeCompare(nomeB);
+      }
+      if (sortBy === 'data_asc') {
+        return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+      }
+      // data_desc (padrão)
+      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+    });
+
+    return result;
+  }, [plantas, searchText, sortBy]);
 
   const handlePlantPress = (planta: Planta) => {
     navigation.navigate('PlantDetail', { plantaId: planta.id });
   };
+
+  const cycleSortOption = () => {
+    setSortBy(prev => {
+      if (prev === 'data_desc') return 'nome';
+      if (prev === 'nome') return 'data_asc';
+      return 'data_desc';
+    });
+  };
+
+  const sortLabel = sortBy === 'nome' ? 'A-Z' : sortBy === 'data_asc' ? 'Antiga' : 'Recente';
 
   const renderContent = () => {
     if (isLoading) {
@@ -64,7 +109,7 @@ const CollectionScreen = () => {
         </View>
       );
     }
-  
+
     if (error) {
       return (
         <View style={styles.centered}>
@@ -87,21 +132,41 @@ const CollectionScreen = () => {
     }
 
     return (
+      <>
+        <View style={styles.filterRow}>
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Pesquisar planta..."
+            placeholderTextColor={theme.colors.subtext}
+            value={searchText}
+            onChangeText={setSearchText}
+          />
+          <TouchableOpacity style={styles.sortButton} onPress={cycleSortOption}>
+            <MaterialCommunityIcons name="sort" size={18} color={theme.colors.card} />
+            <Text style={styles.sortButtonText}>{sortLabel}</Text>
+          </TouchableOpacity>
+        </View>
         <FlatList
-            data={plantas}
+            data={filteredAndSorted}
             keyExtractor={(item) => item.id}
             renderItem={({ item }) => (
-                <PlantListItem 
-                planta={item} 
-                onPress={() => handlePlantPress(item)} 
+                <PlantListItem
+                planta={item}
+                onPress={() => handlePlantPress(item)}
                 />
             )}
             contentContainerStyle={styles.list}
             onRefresh={handleRefresh}
             refreshing={isRefreshing}
+            ListEmptyComponent={
+              <View style={styles.centered}>
+                <Text style={styles.infoText}>Nenhum resultado encontrado.</Text>
+              </View>
+            }
         />
+      </>
     );
-  }
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -186,6 +251,38 @@ const styles = StyleSheet.create({
         borderRadius: 22,
         justifyContent: 'center',
         alignItems: 'center',
+    },
+    filterRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: theme.spacing.medium,
+        paddingVertical: theme.spacing.small,
+        gap: 8,
+    },
+    searchInput: {
+        flex: 1,
+        backgroundColor: theme.colors.card,
+        borderRadius: 8,
+        paddingHorizontal: 12,
+        paddingVertical: 8,
+        fontSize: 15,
+        color: theme.colors.text,
+        borderWidth: 1,
+        borderColor: theme.colors.lightGray,
+    },
+    sortButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: theme.colors.primary,
+        paddingHorizontal: 12,
+        paddingVertical: 8,
+        borderRadius: 8,
+        gap: 4,
+    },
+    sortButtonText: {
+        color: theme.colors.card,
+        fontWeight: 'bold',
+        fontSize: 13,
     },
 });
 

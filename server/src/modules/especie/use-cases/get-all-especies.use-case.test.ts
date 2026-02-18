@@ -1,6 +1,6 @@
 import { GetAllEspeciesUseCase } from './get-all-especies.use-case';
 import { EspecieRepository, EspecieResponseDTO } from '../especie.types';
-import { TipoPlanta } from '@prisma/client';
+import { TipoPlanta, StatusEspecie } from '@prisma/client';
 
 describe('GetAllEspeciesUseCase', () => {
   let getAllEspeciesUseCase: GetAllEspeciesUseCase;
@@ -11,6 +11,7 @@ describe('GetAllEspeciesUseCase', () => {
       create: jest.fn(),
       findAll: jest.fn(),
       findById: jest.fn(),
+      findByStatus: jest.fn(),
       update: jest.fn(),
       delete: jest.fn(),
       existsByNomeCientifico: jest.fn(),
@@ -30,6 +31,8 @@ describe('GetAllEspeciesUseCase', () => {
         familia: 'Moraceae',
         origem: 'Ásia',
         tipoDePlanta: 'PERENE' as TipoPlanta,
+        status: 'VERIFICADO' as StatusEspecie,
+        criadoPorId: null,
         folhas: 'Pequenas e verdes',
         tronco: null,
         flores: null,
@@ -53,6 +56,8 @@ describe('GetAllEspeciesUseCase', () => {
         familia: 'Cupressaceae',
         origem: 'China',
         tipoDePlanta: 'CONIFERA' as TipoPlanta,
+        status: 'VERIFICADO' as StatusEspecie,
+        criadoPorId: null,
         folhas: 'Aciculares',
         tronco: null,
         flores: null,

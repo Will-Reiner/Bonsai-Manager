@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm test:*)",
+      "Bash(npm run test:coverage:*)",
+      "Bash(npm install:*)",
+      "Bash(npx expo install:*)",
+      "Bash(if not exist \"C:\\\\Users\\\\willi\\\\Cursor Projects\\\\Bonsai_Manager\\\\server\\\\uploads\" mkdir \"C:\\\\Users\\\\willi\\\\Cursor Projects\\\\Bonsai_Manager\\\\server\\\\uploads\")",
+      "mcp__ide__getDiagnostics"
+    ]
+  }
+}

@@ -2,9 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { ScrollView, View, Text, StyleSheet, ActivityIndicator, Alert } from 'react-native';
 import { RouteProp, useRoute } from '@react-navigation/native';
 import { atividadeService } from '../../services/atividadeService';
-// O serviço de recursos sugeridos será criado no futuro
-// import { atividadeRecursoService } from '../../services/atividadeRecursoService'; 
-import { Atividade, TipoRecurso } from '../../types';
+import { atividadeFerramentaSugeridaService } from '../../services/atividadeFerramentaSugeridaService';
+import { atividadeRecursoSugeridoService } from '../../services/atividadeRecursoSugeridoService';
+import { Atividade, AtividadeFerramentaSugerida, AtividadeRecursoSugerido } from '../../types';
 import { RootStackParamList } from '../../navigation/AppNavigator';
 import { theme } from '../../constants/theme';
 
@@ -25,14 +25,21 @@ const TechniqueDetailScreen = () => {
   const { atividadeId } = route.params;
 
   const [atividade, setAtividade] = useState<Atividade | null>(null);
+  const [ferramentas, setFerramentas] = useState<AtividadeFerramentaSugerida[]>([]);
+  const [recursos, setRecursos] = useState<AtividadeRecursoSugerido[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const atividadeData = await atividadeService.getAtividadeById(atividadeId);
+        const [atividadeData, ferramentasData, recursosData] = await Promise.all([
+          atividadeService.getAtividadeById(atividadeId),
+          atividadeFerramentaSugeridaService.getByAtividade(atividadeId).catch(() => []),
+          atividadeRecursoSugeridoService.getByAtividade(atividadeId).catch(() => []),
+        ]);
         setAtividade(atividadeData);
-        // No futuro, aqui também buscaríamos os recursos e ferramentas sugeridos
+        setFerramentas(ferramentasData);
+        setRecursos(recursosData);
       } catch (error) {
         Alert.alert('Erro', 'Não foi possível carregar os detalhes da técnica.');
       } finally {
@@ -60,37 +67,64 @@ const TechniqueDetailScreen = () => {
       <DetailSection title="Preparação" content={atividade.preparacao} />
       <DetailSection title="Execução Passo a Passo" content={atividade.execucao} />
       <DetailSection title="Cuidados Pós-Procedimento" content={atividade.cuidadosPosProcedimento} />
+
+      {ferramentas.length > 0 && (
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>Ferramentas Necessárias</Text>
+          {ferramentas.map((item) => (
+            <View key={item.ferramentaId} style={styles.listItem}>
+              <Text style={styles.listItemName}>{item.ferramenta?.nome}</Text>
+              {item.ferramenta?.descricao ? (
+                <Text style={styles.listItemDesc}>{item.ferramenta.descricao}</Text>
+              ) : null}
+            </View>
+          ))}
+        </View>
+      )}
+
+      {recursos.length > 0 && (
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>Recursos Sugeridos</Text>
+          {recursos.map((item) => (
+            <View key={item.tipoRecursoId} style={styles.listItem}>
+              <Text style={styles.listItemName}>{item.tipoRecurso?.nome}</Text>
+            </View>
+          ))}
+        </View>
+      )}
+
+      <View style={styles.bottomSpacer} />
     </ScrollView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: { 
-    flex: 1, 
-    backgroundColor: theme.colors.background 
+  container: {
+    flex: 1,
+    backgroundColor: theme.colors.background
   },
-  centered: { 
-    flex: 1, 
-    justifyContent: 'center', 
+  centered: {
+    flex: 1,
+    justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: theme.colors.background
   },
-  header: { 
-    backgroundColor: theme.colors.card, 
-    padding: theme.spacing.lg, 
-    borderBottomWidth: 1, 
-    borderBottomColor: theme.colors.lightGray 
+  header: {
+    backgroundColor: theme.colors.card,
+    padding: theme.spacing.lg,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.lightGray
   },
-  mainTitle: { 
-    fontSize: 28, 
-    fontWeight: 'bold', 
-    color: theme.colors.text 
+  mainTitle: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: theme.colors.text
   },
-  card: { 
-    backgroundColor: theme.colors.card, 
-    padding: theme.spacing.lg, 
-    marginHorizontal: theme.spacing.md, 
-    marginTop: theme.spacing.md, 
+  card: {
+    backgroundColor: theme.colors.card,
+    padding: theme.spacing.lg,
+    marginHorizontal: theme.spacing.md,
+    marginTop: theme.spacing.md,
     borderRadius: 8,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
@@ -98,16 +132,34 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 3
   },
-  cardTitle: { 
-    fontSize: 18, 
-    fontWeight: 'bold', 
-    color: theme.colors.text, 
-    marginBottom: theme.spacing.sm 
+  cardTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: theme.colors.text,
+    marginBottom: theme.spacing.sm
   },
-  cardContent: { 
-    fontSize: 16, 
-    color: theme.colors.text, 
-    lineHeight: 24 
+  cardContent: {
+    fontSize: 16,
+    color: theme.colors.text,
+    lineHeight: 24
+  },
+  listItem: {
+    paddingVertical: theme.spacing.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.lightGray,
+  },
+  listItemName: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: theme.colors.text,
+  },
+  listItemDesc: {
+    fontSize: 14,
+    color: theme.colors.subtext,
+    marginTop: 2,
+  },
+  bottomSpacer: {
+    height: theme.spacing.lg,
   },
 });
 

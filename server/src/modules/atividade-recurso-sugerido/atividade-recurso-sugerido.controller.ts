@@ -4,12 +4,14 @@ import { PrismaAtividadeRecursoSugeridoRepository } from './repositories/prisma-
 import {
   CreateAtividadeRecursoSugeridoUseCase,
   DeleteAtividadeRecursoSugeridoUseCase,
+  GetRecursosSugeridosByAtividadeUseCase,
 } from './use-cases';
 
 export class AtividadeRecursoSugeridoController {
   private atividadeRecursoSugeridoRepository: PrismaAtividadeRecursoSugeridoRepository;
   private createAtividadeRecursoSugeridoUseCase: CreateAtividadeRecursoSugeridoUseCase;
   private deleteAtividadeRecursoSugeridoUseCase: DeleteAtividadeRecursoSugeridoUseCase;
+  private getRecursosSugeridosByAtividadeUseCase: GetRecursosSugeridosByAtividadeUseCase;
 
   constructor() {
     this.atividadeRecursoSugeridoRepository = new PrismaAtividadeRecursoSugeridoRepository();
@@ -19,6 +21,22 @@ export class AtividadeRecursoSugeridoController {
     this.deleteAtividadeRecursoSugeridoUseCase = new DeleteAtividadeRecursoSugeridoUseCase(
       this.atividadeRecursoSugeridoRepository
     );
+    this.getRecursosSugeridosByAtividadeUseCase = new GetRecursosSugeridosByAtividadeUseCase(
+      this.atividadeRecursoSugeridoRepository
+    );
+  }
+
+  async getByAtividade(req: Request, res: Response) {
+    try {
+      const { atividadeId } = req.params;
+      const recursos = await this.getRecursosSugeridosByAtividadeUseCase.execute(atividadeId);
+      return res.status(200).json(recursos);
+    } catch (error) {
+      if (error instanceof Error && error.message === 'Atividade não encontrada') {
+        return res.status(404).json({ message: error.message });
+      }
+      return res.status(500).json({ message: 'Erro ao buscar recursos sugeridos.' });
+    }
   }
 
   // Cria a associação

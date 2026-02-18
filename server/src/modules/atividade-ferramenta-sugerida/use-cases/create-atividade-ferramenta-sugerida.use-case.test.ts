@@ -12,6 +12,7 @@ describe('CreateAtividadeFerramentaSugeridaUseCase', () => {
       exists: jest.fn(),
       atividadeExists: jest.fn(),
       ferramentaExists: jest.fn(),
+      findByAtividade: jest.fn(),
     };
     useCase = new CreateAtividadeFerramentaSugeridaUseCase(mockRepository);
   });

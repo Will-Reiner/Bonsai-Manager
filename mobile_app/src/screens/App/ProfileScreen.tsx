@@ -88,6 +88,10 @@ const ProfileScreen = () => {
           </View>
         </View>
 
+        <TouchableOpacity style={styles.editButton} onPress={() => navigation.navigate('EditProfile')}>
+          <Text style={styles.editButtonText}>Editar Perfil</Text>
+        </TouchableOpacity>
+
         <TouchableOpacity style={styles.logoutButton} onPress={logout}>
           <Text style={styles.logoutButtonText}>Sair (Logout)</Text>
         </TouchableOpacity>
@@ -165,13 +169,26 @@ const styles = StyleSheet.create({
       color: theme.colors.subtext, 
       textAlign: 'center' 
     },
-    logoutButton: { 
-      backgroundColor: theme.colors.danger, 
-      margin: theme.spacing.medium, 
-      padding: theme.spacing.medium, 
-      borderRadius: 8, 
-      alignItems: 'center', 
-      marginTop: theme.spacing.large 
+    editButton: {
+      backgroundColor: theme.colors.primary,
+      margin: theme.spacing.medium,
+      padding: theme.spacing.medium,
+      borderRadius: 8,
+      alignItems: 'center',
+      marginTop: theme.spacing.large
+    },
+    editButtonText: {
+      color: theme.colors.card,
+      fontWeight: 'bold',
+      fontSize: theme.typography.body.fontSize
+    },
+    logoutButton: {
+      backgroundColor: theme.colors.danger,
+      margin: theme.spacing.medium,
+      padding: theme.spacing.medium,
+      borderRadius: 8,
+      alignItems: 'center',
+      marginTop: theme.spacing.small
     },
     logoutButtonText: { 
       color: theme.colors.card, 

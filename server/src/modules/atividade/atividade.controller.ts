@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import { parsePagination, buildPaginatedResponse } from '../../utils/pagination';
 import { createAtividadeSchema, updateAtividadeSchema, atividadeIdSchema } from './atividade.schema';
 import { CreateAtividadeUseCase } from './use-cases/create-atividade.use-case';
 import { GetAllAtividadesUseCase } from './use-cases/get-all-atividades.use-case';
@@ -37,6 +38,13 @@ export const atividadeController = {
   getAll: async (req: Request, res: Response) => {
     try {
       const atividades = await getAllAtividadesUseCase.execute();
+
+      if (req.query.page) {
+        const params = parsePagination(req.query);
+        const paginatedData = atividades.slice(params.skip, params.skip + params.take);
+        return res.json(buildPaginatedResponse(paginatedData, atividades.length, params));
+      }
+
       return res.json(atividades);
     } catch (error) {
       return res.status(500).json({ error });

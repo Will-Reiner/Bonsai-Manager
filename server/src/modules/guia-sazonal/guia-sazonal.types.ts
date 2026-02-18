@@ -30,6 +30,8 @@ export interface GuiaSazonalResponseDTO {
 
 export interface GuiaSazonalRepository {
   create(data: CreateGuiaSazonalDTO): Promise<GuiaSazonalResponseDTO>;
+  findAll(): Promise<GuiaSazonalResponseDTO[]>;
+  findByEspecie(especieId: string): Promise<GuiaSazonalResponseDTO[]>;
   update(especieId: string, atividadeId: string, estacao: Estacao, data: UpdateGuiaSazonalDTO): Promise<GuiaSazonalResponseDTO>;
   delete(data: DeleteGuiaSazonalDTO): Promise<void>;
   exists(especieId: string, atividadeId: string, estacao: Estacao): Promise<boolean>;

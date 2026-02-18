@@ -1,4 +1,7 @@
 import express from 'express';
+import path from 'path';
+import helmet from 'helmet';
+import cors from 'cors';
 import 'dotenv/config';
 import authRouter from './modules/auth/auth.router';
 import especieRouter from './modules/especie/especie.router';
@@ -20,12 +23,16 @@ import userRouter from './modules/user/user.router';
 // @ts-ignore
 import swaggerUi from 'swagger-ui-express';
 import swaggerSpec from './docs/swagger';
+import { errorMiddleware } from './middlewares/error.middleware';
 
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+app.use(helmet());
+app.use(cors());
 app.use(express.json());
+app.use('/uploads', express.static(path.resolve(__dirname, '..', 'uploads')));
 
 app.get('/', (_req, res) => {
   res.send('Bonsai API is running!');
@@ -52,6 +59,9 @@ app.use('/api/atividades-ferramentas-sugeridas', atividadeFerramentaSugeridaRout
 app.use('/api/guias-de-tecnicas', guiaDeTecnicasRouter);
 app.use('/api/atividades-recursos-sugeridos', atividadeRecursoSugeridoRouter);
 app.use('/api/users', userRouter);
+
+// Middleware global de tratamento de erros (deve ser o último middleware)
+app.use(errorMiddleware);
 
 app.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);

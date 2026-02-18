@@ -10,6 +10,7 @@ agendaRouter.use(authMiddleware);
 
 agendaRouter.post('/', agendaController.create.bind(agendaController));
 agendaRouter.get('/', agendaController.getAllByUser.bind(agendaController));
+agendaRouter.get('/:id', agendaController.getById.bind(agendaController));
 agendaRouter.put('/:id', agendaController.update.bind(agendaController));
 agendaRouter.delete('/:id', agendaController.delete.bind(agendaController));
 

@@ -1,6 +1,6 @@
 import { DeleteEspecieUseCase } from './delete-especie.use-case';
 import { EspecieRepository, EspecieWithRelationsResponseDTO } from '../especie.types';
-import { TipoPlanta, RecomendacaoTecnica, Estacao, MomentoIdeal } from '@prisma/client';
+import { TipoPlanta, RecomendacaoTecnica, Estacao, MomentoIdeal, StatusEspecie } from '@prisma/client';
 
 describe('DeleteEspecieUseCase', () => {
   let deleteEspecieUseCase: DeleteEspecieUseCase;
@@ -11,6 +11,7 @@ describe('DeleteEspecieUseCase', () => {
       create: jest.fn(),
       findAll: jest.fn(),
       findById: jest.fn(),
+      findByStatus: jest.fn(),
       update: jest.fn(),
       delete: jest.fn(),
       existsByNomeCientifico: jest.fn(),
@@ -30,6 +31,8 @@ describe('DeleteEspecieUseCase', () => {
       familia: 'Moraceae',
       origem: 'Ásia',
       tipoDePlanta: 'PERENE' as TipoPlanta,
+      status: 'VERIFICADO' as StatusEspecie,
+      criadoPorId: null,
       folhas: null,
       tronco: null,
       flores: null,
@@ -84,6 +87,8 @@ describe('DeleteEspecieUseCase', () => {
       familia: 'Cupressaceae',
       origem: 'China',
       tipoDePlanta: 'CONIFERA' as any,
+      status: 'VERIFICADO' as StatusEspecie,
+      criadoPorId: null,
       folhas: null,
       tronco: null,
       flores: null,

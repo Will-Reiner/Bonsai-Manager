@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import { parsePagination, buildPaginatedResponse } from '../../utils/pagination';
 import { prisma } from '../../lib/prisma';
 import { createPlantaSchema, updatePlantaSchema, plantaIdSchema } from './planta.schema';
 import { 
@@ -45,6 +46,13 @@ export const plantaController = {
     try {
       const usuarioId = req.user!.userId;
       const plantas = await getPlantasByUserUseCase.execute(usuarioId);
+
+      if (req.query.page) {
+        const params = parsePagination(req.query);
+        const paginatedData = plantas.slice(params.skip, params.skip + params.take);
+        return res.status(200).json(buildPaginatedResponse(paginatedData, plantas.length, params));
+      }
+
       return res.status(200).json(plantas);
     } catch (error: any) {
       return res.status(500).json({ error: error.message || 'Erro ao buscar plantas.' });

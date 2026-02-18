@@ -1,3 +1,4 @@
+import { StatusEspecie } from '@prisma/client';
 import { prisma } from '../../../lib/prisma';
 import {
   EspecieRepository,
@@ -24,6 +25,9 @@ export class PrismaEspecieRepository implements EspecieRepository {
     return await prisma.especie.findUnique({
       where: { id },
       include: {
+        criadoPor: {
+          select: { id: true, nome: true, nomePublico: true },
+        },
         guiasDeTecnicas: {
           include: {
             atividade: true,
@@ -35,6 +39,13 @@ export class PrismaEspecieRepository implements EspecieRepository {
           },
         },
       },
+    });
+  }
+
+  async findByStatus(status: StatusEspecie): Promise<EspecieResponseDTO[]> {
+    return await prisma.especie.findMany({
+      where: { status },
+      orderBy: { nomeComum: 'asc' },
     });
   }
 

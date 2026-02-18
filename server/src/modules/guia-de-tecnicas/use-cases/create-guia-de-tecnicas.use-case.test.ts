@@ -13,6 +13,8 @@ describe('CreateGuiaDeTecnicasUseCase', () => {
       exists: jest.fn(),
       especieExists: jest.fn(),
       atividadeExists: jest.fn(),
+      findByEspecie: jest.fn(),
+      findAll: jest.fn(),
     };
     useCase = new CreateGuiaDeTecnicasUseCase(mockRepository);
   });

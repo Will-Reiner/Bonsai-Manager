@@ -36,6 +36,28 @@ export class PrismaAmizadeRepository implements AmizadeRepository {
     return !!amizade;
   }
 
+  async findSeguidores(userId: string): Promise<any[]> {
+    return await prisma.amizade.findMany({
+      where: { seguidoId: userId },
+      include: {
+        seguidor: {
+          select: { id: true, nome: true, nomePublico: true, fotoPerfilUrl: true },
+        },
+      },
+    });
+  }
+
+  async findSeguindo(userId: string): Promise<any[]> {
+    return await prisma.amizade.findMany({
+      where: { seguidorId: userId },
+      include: {
+        seguido: {
+          select: { id: true, nome: true, nomePublico: true, fotoPerfilUrl: true },
+        },
+      },
+    });
+  }
+
   async userExists(userId: string): Promise<boolean> {
     const user = await prisma.usuario.findUnique({
       where: { id: userId },

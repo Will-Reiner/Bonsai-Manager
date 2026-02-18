@@ -11,6 +11,8 @@ describe('FollowUserUseCase', () => {
       unfollow: jest.fn(),
       existsAmizade: jest.fn(),
       userExists: jest.fn(),
+      findSeguindo: jest.fn(),
+      findSeguidores: jest.fn(),
     };
     followUserUseCase = new FollowUserUseCase(mockAmizadeRepository);
   });

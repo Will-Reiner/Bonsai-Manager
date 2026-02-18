@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import { parsePagination, buildPaginatedResponse } from '../../utils/pagination';
 import { createRecursoSchema, updateRecursoSchema, recursoIdSchema } from './recurso.schema';
 import { PrismaRecursoRepository } from './repositories/prisma-recurso.repository';
 import {
@@ -45,6 +46,13 @@ export class RecursoController {
     try {
       const usuarioId = req.user!.userId;
       const recursos = await this.getAllRecursosByUserUseCase.execute(usuarioId);
+
+      if (req.query.page) {
+        const params = parsePagination(req.query);
+        const paginatedData = recursos.slice(params.skip, params.skip + params.take);
+        return res.status(200).json(buildPaginatedResponse(paginatedData, recursos.length, params));
+      }
+
       return res.status(200).json(recursos);
     } catch (error) {
       return res.status(500).json({ error: 'Erro ao buscar recursos.' });

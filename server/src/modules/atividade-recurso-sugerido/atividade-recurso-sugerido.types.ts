@@ -19,4 +19,5 @@ export interface AtividadeRecursoSugeridoRepository {
   exists(atividadeId: string, tipoRecursoId: string): Promise<boolean>;
   atividadeExists(atividadeId: string): Promise<boolean>;
   tipoRecursoExists(tipoRecursoId: string): Promise<boolean>;
+  findByAtividade(atividadeId: string): Promise<any[]>;
 }

@@ -32,6 +32,13 @@ export class PrismaInspiracaoRepository implements InspiracaoRepository {
     });
   }
 
+  async findByPlanta(plantaId: string): Promise<any[]> {
+    return await prisma.inspiracao.findMany({
+      where: { plantaId },
+      include: { foto: true },
+    });
+  }
+
   async exists(plantaId: string, fotoId: string): Promise<boolean> {
     const inspiracao = await prisma.inspiracao.findUnique({
       where: {

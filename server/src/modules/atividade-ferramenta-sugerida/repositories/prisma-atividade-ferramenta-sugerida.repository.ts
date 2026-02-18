@@ -32,6 +32,13 @@ export class PrismaAtividadeFerramentaSugeridaRepository implements AtividadeFer
     });
   }
 
+  async findByAtividade(atividadeId: string): Promise<any[]> {
+    return await prisma.atividadeFerramentaSugerida.findMany({
+      where: { atividadeId },
+      include: { ferramenta: true },
+    });
+  }
+
   async exists(data: CreateAtividadeFerramentaSugeridaDTO): Promise<boolean> {
     const associacao = await prisma.atividadeFerramentaSugerida.findUnique({
       where: {

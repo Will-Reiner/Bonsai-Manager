@@ -51,8 +51,8 @@ const SpeciesDetailScreen = () => {
   return (
     <ScrollView style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.mainTitle}>{especie.nomeComum}</Text>
-        <Text style={styles.subtitle}>{especie.nomeCientifico}</Text>
+        <Text style={styles.mainTitle}>{especie.nomeComum || especie.nomeCientifico || 'Espécie'}</Text>
+        {especie.nomeCientifico && <Text style={styles.subtitle}>{especie.nomeCientifico}</Text>}
       </View>
       
       <DetailSection title="Família" content={especie.familia} />

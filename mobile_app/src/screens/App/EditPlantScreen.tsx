@@ -116,7 +116,7 @@ const EditPlantScreen = () => {
             {especies.map((especie) => (
               <Picker.Item
                 key={especie.id}
-                label={especie.nomeComum || especie.nomeCientifico}
+                label={especie.nomeComum || especie.nomeCientifico || 'Sem nome'}
                 value={especie.id}
               />
             ))}

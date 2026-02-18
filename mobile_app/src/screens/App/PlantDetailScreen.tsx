@@ -1,13 +1,16 @@
 import React, { useState, useCallback, useMemo } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator, FlatList, Alert, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, ActivityIndicator, FlatList, Alert, TouchableOpacity, Image, ScrollView as HScrollView } from 'react-native';
 import { RouteProp, useRoute, useFocusEffect, useNavigation } from '@react-navigation/native';
+import * as ImagePicker from 'expo-image-picker';
 import { plantaService } from '../../services/plantaService';
-import { agendaService } from '../../services/agendaService'; // Usaremos o serviço de agenda
-import { Planta, Agenda } from '../../types';
+import { agendaService } from '../../services/agendaService';
+import { fotoService } from '../../services/fotoService';
+import { Planta, Agenda, Foto } from '../../types';
 import { RootStackParamList } from '../../navigation/AppNavigator';
 import HistoryListItem from '../../components/HistoryListItem';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { theme } from '../../constants/theme';
+import { SERVER_URL } from '../../api';
 
 type PlantDetailScreenRouteProp = RouteProp<RootStackParamList, 'PlantDetail'>;
 type PlantDetailNavigationProp = NativeStackNavigationProp<RootStackParamList, 'PlantDetail'>;
@@ -18,8 +21,10 @@ const PlantDetailScreen = () => {
   const { plantaId } = route.params;
 
   const [planta, setPlanta] = useState<Planta | null>(null);
-  const [agenda, setAgenda] = useState<Agenda[]>([]); // Armazena todos os agendamentos da planta
+  const [agenda, setAgenda] = useState<Agenda[]>([]);
+  const [fotos, setFotos] = useState<Foto[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const carregarDados = useCallback(async () => {
@@ -38,6 +43,14 @@ const PlantDetailScreen = () => {
       // 3. Filtra a agenda para mostrar apenas itens desta planta
       const agendaDaPlanta = todosAgendamentos.filter(item => item.plantaId === plantaId);
       setAgenda(agendaDaPlanta);
+
+      // 4. Busca fotos da planta
+      try {
+        const fotosData = await fotoService.getFotosPorPlanta(plantaId);
+        setFotos(fotosData);
+      } catch {
+        // Fotos são opcionais, não bloqueia o carregamento
+      }
 
     } catch (err) {
       setError('Erro ao carregar os dados da planta.');
@@ -60,7 +73,72 @@ const PlantDetailScreen = () => {
                  .sort((a, b) => new Date(b.dataConcluida!).getTime() - new Date(a.dataConcluida!).getTime());
   }, [agenda]);
 
-  const handleDelete = () => { /* ... (código existente, sem alterações) ... */ };
+  const handleAddPhoto = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Permissão negada', 'Precisamos de acesso à galeria para adicionar fotos.');
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      quality: 0.8,
+      allowsEditing: true,
+    });
+
+    if (result.canceled) return;
+
+    setIsUploading(true);
+    try {
+      const newFoto = await fotoService.uploadFoto(result.assets[0].uri, plantaId);
+      setFotos(prev => [newFoto, ...prev]);
+    } catch {
+      Alert.alert('Erro', 'Não foi possível fazer upload da foto.');
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleDeletePhoto = (fotoId: string) => {
+    Alert.alert('Apagar Foto', 'Tem a certeza?', [
+      { text: 'Cancelar', style: 'cancel' },
+      {
+        text: 'Apagar',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await fotoService.deleteFoto(fotoId);
+            setFotos(prev => prev.filter(f => f.id !== fotoId));
+          } catch {
+            Alert.alert('Erro', 'Não foi possível apagar a foto.');
+          }
+        },
+      },
+    ]);
+  };
+
+  const handleDelete = () => {
+    Alert.alert(
+      'Confirmar Exclusão',
+      'Tem a certeza que deseja apagar esta planta? Esta ação não pode ser desfeita.',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Apagar',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await plantaService.deletePlanta(plantaId);
+              Alert.alert('Sucesso', 'Planta apagada com sucesso.');
+              navigation.goBack();
+            } catch (err) {
+              Alert.alert('Erro', 'Não foi possível apagar a planta.');
+            }
+          },
+        },
+      ]
+    );
+  };
   const handleEdit = () => navigation.navigate('EditPlant', { plantaId });
   const handleSchedule = () => navigation.navigate('ScheduleCare', { plantaId });
 
@@ -87,7 +165,7 @@ const PlantDetailScreen = () => {
     <>
       <View style={styles.header}>
         <Text style={styles.mainTitle}>{planta.nome || planta.especie.nomeComum}</Text>
-        <Text style={styles.subtitle}>{planta.especie.nomeCientifico}</Text>
+        {planta.especie.nomeCientifico && <Text style={styles.subtitle}>{planta.especie.nomeCientifico}</Text>}
       </View>
       <View style={styles.card}>
         {renderDetailRow('Modo de Aquisição', planta.modoAquisicao)}
@@ -97,6 +175,33 @@ const PlantDetailScreen = () => {
         <Text style={styles.cardTitle}>Notas e Visão de Futuro</Text>
         {renderDetailRow('Visão', planta.visao)}
         {renderDetailRow('Observações', planta.observacoes)}
+      </View>
+      <View style={styles.card}>
+        <View style={styles.photoHeaderRow}>
+          <Text style={styles.cardTitle}>Fotos</Text>
+          <TouchableOpacity style={styles.addPhotoButton} onPress={handleAddPhoto} disabled={isUploading}>
+            {isUploading ? (
+              <ActivityIndicator size="small" color={theme.colors.card} />
+            ) : (
+              <Text style={styles.addPhotoButtonText}>+ Adicionar</Text>
+            )}
+          </TouchableOpacity>
+        </View>
+        {fotos.length > 0 ? (
+          <HScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.photoScroll}>
+            {fotos.map((foto) => (
+              <TouchableOpacity key={foto.id} onLongPress={() => handleDeletePhoto(foto.id)} style={styles.photoItem}>
+                <Image
+                  source={{ uri: `${SERVER_URL}${foto.caminhoArquivo}` }}
+                  style={styles.photoImage}
+                />
+                {foto.titulo ? <Text style={styles.photoTitle} numberOfLines={1}>{foto.titulo}</Text> : null}
+              </TouchableOpacity>
+            ))}
+          </HScrollView>
+        ) : (
+          <Text style={styles.emptyPhotoText}>Nenhuma foto adicionada.</Text>
+        )}
       </View>
     </>
   );
@@ -231,10 +336,52 @@ const styles = StyleSheet.create({
     deleteButton: { 
         backgroundColor: theme.colors.danger 
     },
-    actionButtonText: { 
-        color: theme.colors.card, 
-        fontSize: 16, 
-        fontWeight: 'bold' 
+    actionButtonText: {
+        color: theme.colors.card,
+        fontSize: 16,
+        fontWeight: 'bold'
+    },
+    photoHeaderRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: theme.spacing.sm,
+    },
+    addPhotoButton: {
+        backgroundColor: theme.colors.primary,
+        paddingVertical: 6,
+        paddingHorizontal: 12,
+        borderRadius: 6,
+    },
+    addPhotoButtonText: {
+        color: theme.colors.card,
+        fontWeight: 'bold',
+        fontSize: 13,
+    },
+    photoScroll: {
+        marginTop: theme.spacing.xs,
+    },
+    photoItem: {
+        marginRight: theme.spacing.sm,
+        alignItems: 'center',
+    },
+    photoImage: {
+        width: 120,
+        height: 120,
+        borderRadius: 8,
+        backgroundColor: theme.colors.lightGray,
+    },
+    photoTitle: {
+        fontSize: 12,
+        color: theme.colors.subtext,
+        marginTop: 4,
+        maxWidth: 120,
+    },
+    emptyPhotoText: {
+        color: theme.colors.subtext,
+        fontSize: 14,
+        textAlign: 'center',
+        paddingVertical: theme.spacing.sm,
     },
 });
 

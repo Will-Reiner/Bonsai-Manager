@@ -6,18 +6,24 @@ import {
 
 export interface UpdateEspecieUseCaseRequest extends UpdateEspecieRequestDTO {
   id: string;
+  isAdmin?: boolean;
 }
 
 export class UpdateEspecieUseCase {
   constructor(private especieRepository: EspecieRepository) {}
 
   async execute(data: UpdateEspecieUseCaseRequest): Promise<EspecieResponseDTO> {
-    const { id, ...updateData } = data;
+    const { id, isAdmin, ...updateData } = data;
 
     // Verificar se a espécie existe
     const existingEspecie = await this.especieRepository.findById(id);
     if (!existingEspecie) {
       throw new Error('Espécie não encontrada.');
+    }
+
+    // Apenas administradores podem alterar o status
+    if (updateData.status && !isAdmin) {
+      throw new Error('Apenas administradores podem alterar o status da espécie.');
     }
 
     // Se está tentando alterar o nome científico, verificar se não existe outro com o mesmo nome

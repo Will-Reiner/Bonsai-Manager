@@ -2,12 +2,36 @@ import { Request, Response } from 'express';
 import { prisma } from '../../lib/prisma';
 import { amizadeSchema } from './amizade.schema';
 import { PrismaAmizadeRepository } from './repositories/prisma-amizade.repository';
-import { FollowUserUseCase, UnfollowUserUseCase } from './use-cases';
+import { FollowUserUseCase, UnfollowUserUseCase, GetSeguidoresUseCase, GetSeguindoUseCase } from './use-cases';
 
 export class AmizadeController {
   private amizadeRepository = new PrismaAmizadeRepository();
   private followUserUseCase = new FollowUserUseCase(this.amizadeRepository);
   private unfollowUserUseCase = new UnfollowUserUseCase(this.amizadeRepository);
+  private getSeguidoresUseCase = new GetSeguidoresUseCase(this.amizadeRepository);
+  private getSeguindoUseCase = new GetSeguindoUseCase(this.amizadeRepository);
+
+  async getSeguidores(req: Request, res: Response) {
+    try {
+      const userId = req.user!.userId;
+      const seguidores = await this.getSeguidoresUseCase.execute(userId);
+      res.status(200).json(seguidores);
+    } catch (error) {
+      console.error('Erro ao buscar seguidores:', error);
+      res.status(500).json({ message: 'Erro interno do servidor' });
+    }
+  }
+
+  async getSeguindo(req: Request, res: Response) {
+    try {
+      const userId = req.user!.userId;
+      const seguindo = await this.getSeguindoUseCase.execute(userId);
+      res.status(200).json(seguindo);
+    } catch (error) {
+      console.error('Erro ao buscar seguindo:', error);
+      res.status(500).json({ message: 'Erro interno do servidor' });
+    }
+  }
 
   async follow(req: Request, res: Response) {
     try {

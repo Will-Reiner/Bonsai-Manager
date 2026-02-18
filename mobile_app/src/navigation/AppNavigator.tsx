@@ -23,6 +23,7 @@ import SpeciesDetailScreen from '../screens/App/SpeciesDetailScreen';
 import TechniquesListScreen from '../screens/App/TechniquesListScreen';
 import TechniqueDetailScreen from '../screens/App/TechniqueDetailScreen';
 import ProfileScreen from '../screens/App/ProfileScreen';
+import EditProfileScreen from '../screens/App/EditProfileScreen';
 import CommunityScreen from '../screens/App/CommunityScreen';
 import PublicProfileScreen from '../screens/App/PublicProfileScreen';
 import UserListScreen from '../screens/App/UserListScreen';
@@ -46,6 +47,7 @@ export type RootStackParamList = {
   TechniqueDetail: { atividadeId: string; title: string };
   PublicProfile: { userId: string };
   UserList: { users: Partial<Usuario>[]; title: string };
+  EditProfile: undefined;
   Home: undefined; // Adicionado para evitar erro de tipo em CollectionScreen
 };
 
@@ -136,6 +138,7 @@ const AppNavigator = () => {
             <Stack.Screen name="TechniqueDetail" component={TechniqueDetailScreen} options={({ route }) => ({ title: route.params.title })} />
             <Stack.Screen name="PublicProfile" component={PublicProfileScreen} options={{ title: 'Perfil Público' }} />
             <Stack.Screen name="UserList" component={UserListScreen} options={({ route }) => ({ title: route.params.title })} />
+            <Stack.Screen name="EditProfile" component={EditProfileScreen} options={{ title: 'Editar Perfil' }} />
           </>
         ) : (
           <>

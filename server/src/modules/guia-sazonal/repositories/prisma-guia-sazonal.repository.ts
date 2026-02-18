@@ -9,6 +9,19 @@ import {
 } from '../guia-sazonal.types';
 
 export class PrismaGuiaSazonalRepository implements GuiaSazonalRepository {
+  async findAll(): Promise<GuiaSazonalResponseDTO[]> {
+    return await prisma.guiaSazonal.findMany({
+      include: { atividade: true, especie: true },
+    });
+  }
+
+  async findByEspecie(especieId: string): Promise<GuiaSazonalResponseDTO[]> {
+    return await prisma.guiaSazonal.findMany({
+      where: { especieId },
+      include: { atividade: true },
+    });
+  }
+
   async create(data: CreateGuiaSazonalDTO): Promise<GuiaSazonalResponseDTO> {
     return await prisma.guiaSazonal.create({
       data,

@@ -13,6 +13,8 @@ describe('UpdateGuiaSazonalUseCase', () => {
       exists: jest.fn(),
       especieExists: jest.fn(),
       atividadeExists: jest.fn(),
+      findByEspecie: jest.fn(),
+      findAll: jest.fn(),
     };
     useCase = new UpdateGuiaSazonalUseCase(mockRepository);
   });

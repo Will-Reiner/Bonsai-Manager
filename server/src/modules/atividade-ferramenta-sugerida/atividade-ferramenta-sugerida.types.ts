@@ -19,4 +19,5 @@ export interface AtividadeFerramentaSugeridaRepository {
   exists(data: CreateAtividadeFerramentaSugeridaDTO): Promise<boolean>;
   atividadeExists(atividadeId: string): Promise<boolean>;
   ferramentaExists(ferramentaId: string): Promise<boolean>;
+  findByAtividade(atividadeId: string): Promise<any[]>;
 }

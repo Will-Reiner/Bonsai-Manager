@@ -9,6 +9,7 @@ export type Estacao = 'PRIMAVERA' | 'VERAO' | 'OUTONO' | 'INVERNO';
 export type MomentoIdeal = 'DEVE_FAZER' | 'PODE_FAZER' | 'EVITAR';
 export type RecomendacaoTecnica = 'RECOMENDADA' | 'NAO_RECOMENDADA' | 'COM_CUIDADO';
 export type TipoPlanta = 'PERENE' | 'CADUCIFOLIA' | 'SEMI_CADUCA' | 'ARVORE' | 'ARBUSTO' | 'CONIFERA';
+export type StatusEspecie = 'VERIFICADO' | 'SUGERIDO';
 
 // --- INTERFACES DOS MODELOS ---
 
@@ -31,8 +32,10 @@ export interface Usuario {
 
 export interface Especie {
   id: string;
-  nomeCientifico: string;
+  nomeCientifico: string | null;
   nomeComum?: string | null;
+  status: StatusEspecie;
+  criadoPorId?: string | null;
   familia?: string | null;
   origem?: string | null;
   tipoDePlanta?: TipoPlanta | null;
@@ -156,6 +159,18 @@ export interface Inspiracao {
   plantaId: string;
   fotoId: string;
   foto?: Foto;
+}
+
+export interface AtividadeFerramentaSugerida {
+  atividadeId: string;
+  ferramentaId: string;
+  ferramenta?: Ferramenta;
+}
+
+export interface AtividadeRecursoSugerido {
+  atividadeId: string;
+  tipoRecursoId: string;
+  tipoRecurso?: TipoRecurso;
 }
 
 // --- DTOs (Data Transfer Objects) ---

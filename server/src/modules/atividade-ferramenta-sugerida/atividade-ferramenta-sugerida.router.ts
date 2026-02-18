@@ -5,9 +5,11 @@ import { adminMiddleware } from '../../middlewares/admin.middleware';
 const atividadeFerramentaSugeridaRouter = Router();
 const atividadeFerramentaSugeridaController = new AtividadeFerramentaSugeridaController();
 
-atividadeFerramentaSugeridaRouter.use(adminMiddleware);
+// Rota pública
+atividadeFerramentaSugeridaRouter.get('/atividade/:atividadeId', atividadeFerramentaSugeridaController.getByAtividade.bind(atividadeFerramentaSugeridaController));
 
-atividadeFerramentaSugeridaRouter.post('/:atividadeId/:ferramentaId', atividadeFerramentaSugeridaController.create.bind(atividadeFerramentaSugeridaController));
-atividadeFerramentaSugeridaRouter.delete('/:atividadeId/:ferramentaId', atividadeFerramentaSugeridaController.delete.bind(atividadeFerramentaSugeridaController));
+// Rotas protegidas (admin)
+atividadeFerramentaSugeridaRouter.post('/:atividadeId/:ferramentaId', adminMiddleware, atividadeFerramentaSugeridaController.create.bind(atividadeFerramentaSugeridaController));
+atividadeFerramentaSugeridaRouter.delete('/:atividadeId/:ferramentaId', adminMiddleware, atividadeFerramentaSugeridaController.delete.bind(atividadeFerramentaSugeridaController));
 
 export default atividadeFerramentaSugeridaRouter;

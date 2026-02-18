@@ -3,7 +3,6 @@ import { Foto } from '../types';
 
 /**
  * DTO para o upload de uma nova foto.
- * Reflete a nova estrutura da API.
  */
 export interface CreateFotoDTO {
   caminhoArquivo: string;
@@ -20,7 +19,6 @@ export interface UpdateFotoDTO {
   tags?: string;
 }
 
-
 /**
  * Busca todas as fotos de uma planta específica.
  */
@@ -30,11 +28,39 @@ const getFotosPorPlanta = async (plantaId: string): Promise<Foto[]> => {
 };
 
 /**
- * Faz o upload dos dados de uma nova foto.
+ * Faz o upload de uma imagem e cria o registo no servidor.
+ * Envia o arquivo via multipart/form-data.
+ */
+const uploadFoto = async (
+  imageUri: string,
+  plantaId?: string,
+  titulo?: string,
+): Promise<Foto> => {
+  const formData = new FormData();
+
+  // Extrair extensão e definir tipo MIME
+  const ext = imageUri.split('.').pop()?.toLowerCase() || 'jpg';
+  const mimeType = ext === 'png' ? 'image/png' : ext === 'webp' ? 'image/webp' : 'image/jpeg';
+
+  formData.append('foto', {
+    uri: imageUri,
+    name: `foto.${ext}`,
+    type: mimeType,
+  } as any);
+
+  if (plantaId) formData.append('plantaId', plantaId);
+  if (titulo) formData.append('titulo', titulo);
+
+  const response = await api.post('/fotos/upload', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+  return response.data;
+};
+
+/**
+ * Cria um registo de foto apenas com metadados (sem upload de arquivo).
  */
 const createFoto = async (data: CreateFotoDTO): Promise<Foto> => {
-  // Nota: O upload real do arquivo de imagem geralmente é um processo multipart/form-data.
-  // Por agora, este serviço apenas envia os metadados.
   const response = await api.post('/fotos', data);
   return response.data;
 };
@@ -56,6 +82,7 @@ const deleteFoto = async (id: string): Promise<void> => {
 
 export const fotoService = {
   getFotosPorPlanta,
+  uploadFoto,
   createFoto,
   updateFoto,
   deleteFoto,
