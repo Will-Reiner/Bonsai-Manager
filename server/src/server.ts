@@ -20,6 +20,7 @@ import atividadeFerramentaSugeridaRouter from './modules/atividade-ferramenta-su
 import { guiaDeTecnicasRouter } from './modules/guia-de-tecnicas/guia-de-tecnicas.router';
 import { atividadeRecursoSugeridoRouter } from './modules/atividade-recurso-sugerido/atividade-recurso-sugerido.router';
 import userRouter from './modules/user/user.router';
+import midiaRouter from './modules/midia/midia.router';
 // @ts-ignore
 import swaggerUi from 'swagger-ui-express';
 import swaggerSpec from './docs/swagger';
@@ -59,6 +60,7 @@ app.use('/api/atividades-ferramentas-sugeridas', atividadeFerramentaSugeridaRout
 app.use('/api/guias-de-tecnicas', guiaDeTecnicasRouter);
 app.use('/api/atividades-recursos-sugeridos', atividadeRecursoSugeridoRouter);
 app.use('/api/users', userRouter);
+app.use('/api/midia', midiaRouter);
 
 // Middleware global de tratamento de erros (deve ser o último middleware)
 app.use(errorMiddleware);

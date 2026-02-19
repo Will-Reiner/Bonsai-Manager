@@ -11,6 +11,8 @@ import HistoryListItem from '../../components/HistoryListItem';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { theme } from '../../constants/theme';
 import { SERVER_URL } from '../../api';
+import { useMediaUpload } from '../../hooks/useMediaUpload';
+import { UploadProgressBar } from '../../components/UploadProgressBar';
 
 type PlantDetailScreenRouteProp = RouteProp<RootStackParamList, 'PlantDetail'>;
 type PlantDetailNavigationProp = NativeStackNavigationProp<RootStackParamList, 'PlantDetail'>;
@@ -24,27 +26,23 @@ const PlantDetailScreen = () => {
   const [agenda, setAgenda] = useState<Agenda[]>([]);
   const [fotos, setFotos] = useState<Foto[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const { upload, isUploading, progress, phase, error: uploadError, reset: resetUpload } = useMediaUpload();
 
   const carregarDados = useCallback(async () => {
     if (!plantaId) return;
-    
+
     setIsLoading(true);
     setError(null);
     try {
-      // 1. Busca os dados da planta
       const dataPlanta = await plantaService.getPlantaById(plantaId);
       setPlanta(dataPlanta);
 
-      // 2. Busca TODA a agenda do usuário. No futuro, uma rota de API otimizada seria melhor.
       const todosAgendamentos = await agendaService.getMinhaAgenda();
-      
-      // 3. Filtra a agenda para mostrar apenas itens desta planta
       const agendaDaPlanta = todosAgendamentos.filter(item => item.plantaId === plantaId);
       setAgenda(agendaDaPlanta);
 
-      // 4. Busca fotos da planta
       try {
         const fotosData = await fotoService.getFotosPorPlanta(plantaId);
         setFotos(fotosData);
@@ -65,9 +63,7 @@ const PlantDetailScreen = () => {
       carregarDados();
     }, [carregarDados])
   );
-  
-  // Usamos useMemo para filtrar o histórico apenas quando a agenda mudar.
-  // Isso é mais eficiente do que filtrar a cada renderização.
+
   const historico = useMemo(() => {
     return agenda.filter(item => item.status === 'CONCLUIDO')
                  .sort((a, b) => new Date(b.dataConcluida!).getTime() - new Date(a.dataConcluida!).getTime());
@@ -82,20 +78,27 @@ const PlantDetailScreen = () => {
 
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ['images'],
-      quality: 0.8,
+      quality: 1,
       allowsEditing: true,
     });
 
     if (result.canceled) return;
 
-    setIsUploading(true);
+    const asset = result.assets[0];
+    const mimeType = asset.mimeType ?? 'image/jpeg';
+
     try {
-      const newFoto = await fotoService.uploadFoto(result.assets[0].uri, plantaId);
+      // 1. Comprime e faz upload direto para o R2
+      const { publicUrl } = await upload(asset.uri, mimeType);
+
+      // 2. Salva o registo no banco com a URL pública do R2
+      const newFoto = await fotoService.createFoto({ caminhoArquivo: publicUrl, plantaId });
       setFotos(prev => [newFoto, ...prev]);
-    } catch {
-      Alert.alert('Erro', 'Não foi possível fazer upload da foto.');
-    } finally {
-      setIsUploading(false);
+      resetUpload();
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Erro desconhecido.';
+      Alert.alert('Erro no upload', msg);
+      resetUpload();
     }
   };
 
@@ -139,8 +142,15 @@ const PlantDetailScreen = () => {
       ]
     );
   };
+
   const handleEdit = () => navigation.navigate('EditPlant', { plantaId });
   const handleSchedule = () => navigation.navigate('ScheduleCare', { plantaId });
+
+  // Resolve URI da foto: URLs R2 são absolutas; antigas são relativas ao servidor
+  const resolveFotoUri = (caminhoArquivo: string) => {
+    if (caminhoArquivo.startsWith('http')) return caminhoArquivo;
+    return `${SERVER_URL}${caminhoArquivo}`;
+  };
 
   if (isLoading) {
     return <View style={styles.centered}><ActivityIndicator size="large" /></View>;
@@ -187,12 +197,15 @@ const PlantDetailScreen = () => {
             )}
           </TouchableOpacity>
         </View>
+
+        <UploadProgressBar progress={progress} phase={phase} visible={isUploading} />
+
         {fotos.length > 0 ? (
           <HScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.photoScroll}>
             {fotos.map((foto) => (
               <TouchableOpacity key={foto.id} onLongPress={() => handleDeletePhoto(foto.id)} style={styles.photoItem}>
                 <Image
-                  source={{ uri: `${SERVER_URL}${foto.caminhoArquivo}` }}
+                  source={{ uri: resolveFotoUri(foto.caminhoArquivo) }}
                   style={styles.photoImage}
                 />
                 {foto.titulo ? <Text style={styles.photoTitle} numberOfLines={1}>{foto.titulo}</Text> : null}
@@ -205,7 +218,7 @@ const PlantDetailScreen = () => {
       </View>
     </>
   );
-  
+
   const ListFooter = () => (
     <View style={styles.actionsContainer}>
         <TouchableOpacity style={styles.actionButton} onPress={handleEdit}>
@@ -225,7 +238,7 @@ const PlantDetailScreen = () => {
         style={styles.container}
         data={historico}
         keyExtractor={(item) => item.id}
-        renderItem={({ item }) => <HistoryListItem item={item} />} // Passamos o item da agenda para o HistoryListItem
+        renderItem={({ item }) => <HistoryListItem item={item} />}
         ListHeaderComponent={
             <>
                 <ListHeader />
@@ -246,42 +259,42 @@ const PlantDetailScreen = () => {
 
 
 const styles = StyleSheet.create({
-    container: { 
-        flex: 1, 
-        backgroundColor: theme.colors.background 
+    container: {
+        flex: 1,
+        backgroundColor: theme.colors.background
     },
-    centered: { 
-        flex: 1, 
-        justifyContent: 'center', 
+    centered: {
+        flex: 1,
+        justifyContent: 'center',
         alignItems: 'center',
         backgroundColor: theme.colors.background
     },
-    centeredEmpty: { 
-        padding: theme.spacing.lg, 
-        alignItems: 'center' 
+    centeredEmpty: {
+        padding: theme.spacing.lg,
+        alignItems: 'center'
     },
-    header: { 
-        backgroundColor: theme.colors.card, 
-        padding: theme.spacing.lg, 
-        borderBottomWidth: 1, 
-        borderBottomColor: theme.colors.lightGray 
+    header: {
+        backgroundColor: theme.colors.card,
+        padding: theme.spacing.lg,
+        borderBottomWidth: 1,
+        borderBottomColor: theme.colors.lightGray
     },
-    mainTitle: { 
-        fontSize: 28, 
-        fontWeight: 'bold', 
-        color: theme.colors.text 
+    mainTitle: {
+        fontSize: 28,
+        fontWeight: 'bold',
+        color: theme.colors.text
     },
-    subtitle: { 
-        fontSize: 18, 
-        fontStyle: 'italic', 
-        color: theme.colors.subtext, 
-        marginTop: theme.spacing.xs 
+    subtitle: {
+        fontSize: 18,
+        fontStyle: 'italic',
+        color: theme.colors.subtext,
+        marginTop: theme.spacing.xs
     },
-    card: { 
-        backgroundColor: theme.colors.card, 
-        padding: theme.spacing.lg, 
-        marginHorizontal: theme.spacing.md, 
-        marginTop: theme.spacing.md, 
+    card: {
+        backgroundColor: theme.colors.card,
+        padding: theme.spacing.lg,
+        marginHorizontal: theme.spacing.md,
+        marginTop: theme.spacing.md,
         borderRadius: 8,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
@@ -289,52 +302,52 @@ const styles = StyleSheet.create({
         shadowRadius: 4,
         elevation: 3
     },
-    historyHeader: { 
-        marginTop: theme.spacing.lg, 
-        paddingHorizontal: theme.spacing.lg, 
-        paddingBottom: theme.spacing.sm 
+    historyHeader: {
+        marginTop: theme.spacing.lg,
+        paddingHorizontal: theme.spacing.lg,
+        paddingBottom: theme.spacing.sm
     },
-    cardTitle: { 
-        fontSize: 18, 
-        fontWeight: 'bold', 
-        color: theme.colors.text 
+    cardTitle: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        color: theme.colors.text
     },
-    detailRow: { 
-        marginBottom: theme.spacing.sm 
+    detailRow: {
+        marginBottom: theme.spacing.sm
     },
-    detailLabel: { 
-        fontSize: 14, 
-        color: theme.colors.subtext, 
-        marginBottom: theme.spacing.xs 
+    detailLabel: {
+        fontSize: 14,
+        color: theme.colors.subtext,
+        marginBottom: theme.spacing.xs
     },
-    detailValue: { 
-        fontSize: 16, 
-        color: theme.colors.text 
+    detailValue: {
+        fontSize: 16,
+        color: theme.colors.text
     },
-    errorText: { 
-        fontSize: 16, 
-        color: theme.colors.danger 
+    errorText: {
+        fontSize: 16,
+        color: theme.colors.danger
     },
-    actionsContainer: { 
-        flexDirection: 'row', 
-        justifyContent: 'space-around', 
-        padding: theme.spacing.lg, 
-        marginTop: theme.spacing.sm 
+    actionsContainer: {
+        flexDirection: 'row',
+        justifyContent: 'space-around',
+        padding: theme.spacing.lg,
+        marginTop: theme.spacing.sm
     },
-    actionButton: { 
-        backgroundColor: theme.colors.primary, 
-        paddingVertical: theme.spacing.sm, 
-        paddingHorizontal: theme.spacing.lg, 
-        borderRadius: 8, 
-        alignItems: 'center', 
-        flex: 1, 
-        marginHorizontal: theme.spacing.xs 
+    actionButton: {
+        backgroundColor: theme.colors.primary,
+        paddingVertical: theme.spacing.sm,
+        paddingHorizontal: theme.spacing.lg,
+        borderRadius: 8,
+        alignItems: 'center',
+        flex: 1,
+        marginHorizontal: theme.spacing.xs
     },
-    scheduleButton: { 
-        backgroundColor: theme.colors.accent 
+    scheduleButton: {
+        backgroundColor: theme.colors.accent
     },
-    deleteButton: { 
-        backgroundColor: theme.colors.danger 
+    deleteButton: {
+        backgroundColor: theme.colors.danger
     },
     actionButtonText: {
         color: theme.colors.card,

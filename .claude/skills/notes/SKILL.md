@@ -29,4 +29,4 @@ Concise bullet points grouped by theme. No file lists, no verbose explanations. 
 4. Keep it short — the summary is 1 sentence, the details are grouped bullet points
 5. No file paths unless critical. No package lists unless something new was installed.
 6. Write in Portuguese (without accents in the markdown, matching existing style)
-7. Mark as checked when done in the Claude.md TODO list
+7. After appending to NOTES.md, read `CLAUDE.md` and mark any TODO items that were completed in this session by appending ` - DONE` to the line (e.g. `- Midia storage management` → `- Midia storage management - DONE`). Only mark items that were actually implemented.

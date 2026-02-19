@@ -51,7 +51,6 @@ Implemente um módulo global de **Gerenciamento de Mídia** (Fotos e Vídeos) ut
 
 
 
-
 **foto na criacao da planta**
 
 Atualize o fluxo de **Criação de Planta** para suportar a definição de uma foto de capa no momento do cadastro. Adicione um componente de "Selecionar Capa" no topo do formulário. Integre com o hook de upload de midia.

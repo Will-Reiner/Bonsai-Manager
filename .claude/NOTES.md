@@ -61,3 +61,33 @@ Fluxo completo de sugestao e homologacao de especies — usuarios podem sugerir 
 - AddPlantScreen: modal "Sugerir Nova Especie" com campo nomeComum obrigatorio
 - SpeciesListScreen: badge "Sugerido" em especies nao verificadas
 - Correcao de null safety com optional chaining em PlantDetailScreen, SpeciesDetailScreen, EditPlantScreen e PlantListItem
+
+## Implementacao 2026-02-19
+
+### Resumo
+
+Modulo global de gerenciamento de midia com Cloudflare R2 via Presigned URLs — upload direto do dispositivo ao bucket, com compressao de imagem (WebP) e suporte a video com UI otimista.
+
+### Detalhes
+
+**Backend — Modulo `midia` (stateless)**
+- Novo S3Client apontando para R2 com `requestChecksumCalculation: 'when_required'` para evitar 403 por checksum automatico do SDK v3
+- Use case `GeneratePresignedUrlUseCase`: sanitiza nome, gera chave `media/<uuid>/<nome>`, assina PutObjectCommand com 5 min de TTL
+- Endpoint `POST /api/midia/presigned-url` protegido por `authMiddleware`, retorna `{ uploadUrl, publicUrl, key }`
+- 5 testes unitarios passando com mocks do AWS SDK
+
+**Frontend — Infraestrutura de upload**
+- `mediaCompressor.ts`: compressao de imagem para WebP 1080px; compressao de video 720p/2Mbps com fallback gracioso no Expo Go (react-native-compressor via require condicional); thumbnail de video via expo-video-thumbnails
+- `mediaService.ts`: `getPresignedUrl()` via Axios + `uploadToR2()` via XMLHttpRequest com `upload.onprogress` real; log de erro com status e body do R2
+- `useMediaUpload` hook: fluxo unificado imagem/video, UI otimista para thumbnail de video (disponivel ~2s antes do upload completar), progresso 0-100% com fases
+- `UploadProgressBar` component com `Animated.Value` para animacao suave, mostra fase e percentual
+
+**Integracao — PlantDetailScreen**
+- `handleAddPhoto` substituido: picker -> compressImage -> R2 presigned PUT -> `fotoService.createFoto(publicUrl)` -> banco
+- `resolveFotoUri` com retrocompatibilidade: fotos antigas (`/uploads/...`) e novas (URL R2 absoluta) funcionam lado a lado
+- `UploadProgressBar` integrado no card de fotos durante upload
+
+**Configuracao**
+- `.env.example` criado com variaveis R2
+- Scripts `android`/`ios` no `package.json` do mobile atualizados para `expo run:*` (dev-client)
+- `crypto.randomUUID` substituido por funcao inline (Node stdlib nao disponivel no RN)
