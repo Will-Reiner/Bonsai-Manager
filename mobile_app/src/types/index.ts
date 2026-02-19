@@ -10,6 +10,7 @@ export type MomentoIdeal = 'DEVE_FAZER' | 'PODE_FAZER' | 'EVITAR';
 export type RecomendacaoTecnica = 'RECOMENDADA' | 'NAO_RECOMENDADA' | 'COM_CUIDADO';
 export type TipoPlanta = 'PERENE' | 'CADUCIFOLIA' | 'SEMI_CADUCA' | 'ARVORE' | 'ARBUSTO' | 'CONIFERA';
 export type StatusEspecie = 'VERIFICADO' | 'SUGERIDO';
+export type TipoMidia = 'FOTO' | 'VIDEO';
 
 // --- INTERFACES DOS MODELOS ---
 
@@ -93,6 +94,8 @@ export interface Foto {
   createdAt: string;
   plantaId?: string | null;
   usuarioId: string;
+  tipo: TipoMidia;
+  thumbnailUrl?: string | null;
 }
 
 export interface TipoRecurso {

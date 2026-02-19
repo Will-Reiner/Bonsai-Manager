@@ -1,5 +1,6 @@
 import * as ImageManipulator from 'expo-image-manipulator';
 import * as VideoThumbnails from 'expo-video-thumbnails';
+import { Video as NativeVideo } from 'react-native-compressor';
 
 function generateUUID(): string {
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
@@ -7,15 +8,6 @@ function generateUUID(): string {
     const v = c === 'x' ? r : (r & 0x3) | 0x8;
     return v.toString(16);
   });
-}
-
-// react-native-compressor requer dev-client (módulo nativo).
-// No Expo Go, o módulo não está disponível e é substituído por um fallback.
-let NativeVideo: any = null;
-try {
-  NativeVideo = require('react-native-compressor').Video;
-} catch {
-  // Expo Go — compressão de vídeo indisponível
 }
 
 export interface CompressedImage {
@@ -48,16 +40,6 @@ export async function compressVideo(
   uri: string,
   onProgress: (progress: number) => void,
 ): Promise<CompressedVideo> {
-  if (!NativeVideo) {
-    // Fallback Expo Go: sem compressão, envia o vídeo original
-    onProgress(100);
-    return {
-      uri,
-      mimeType: 'video/mp4',
-      fileName: `${generateUUID()}.mp4`,
-    };
-  }
-
   const metadata = await NativeVideo.getVideoMetaData(uri);
 
   if (metadata.duration > 60) {

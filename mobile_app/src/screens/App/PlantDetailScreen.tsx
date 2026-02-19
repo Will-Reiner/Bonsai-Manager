@@ -1,5 +1,20 @@
 import React, { useState, useCallback, useMemo } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator, FlatList, Alert, TouchableOpacity, Image, ScrollView as HScrollView } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ActivityIndicator,
+  FlatList,
+  Alert,
+  TouchableOpacity,
+  Image,
+  ScrollView as HScrollView,
+  Modal,
+  Dimensions,
+  StatusBar,
+} from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { VideoView, useVideoPlayer } from 'expo-video';
 import { RouteProp, useRoute, useFocusEffect, useNavigation } from '@react-navigation/native';
 import * as ImagePicker from 'expo-image-picker';
 import { plantaService } from '../../services/plantaService';
@@ -17,6 +32,24 @@ import { UploadProgressBar } from '../../components/UploadProgressBar';
 type PlantDetailScreenRouteProp = RouteProp<RootStackParamList, 'PlantDetail'>;
 type PlantDetailNavigationProp = NativeStackNavigationProp<RootStackParamList, 'PlantDetail'>;
 
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
+
+// Componente separado para o player de vídeo — mantém o hook useVideoPlayer sem ser condicional
+const VideoPlayerView = ({ uri }: { uri: string }) => {
+  const player = useVideoPlayer(uri, p => {
+    p.play();
+  });
+  return (
+    <VideoView
+      player={player}
+      style={styles.mediaVideo}
+      nativeControls
+      allowsFullscreen
+      allowsPictureInPicture
+    />
+  );
+};
+
 const PlantDetailScreen = () => {
   const route = useRoute<PlantDetailScreenRouteProp>();
   const navigation = useNavigation<PlantDetailNavigationProp>();
@@ -27,8 +60,9 @@ const PlantDetailScreen = () => {
   const [fotos, setFotos] = useState<Foto[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedMedia, setSelectedMedia] = useState<Foto | null>(null);
 
-  const { upload, isUploading, progress, phase, error: uploadError, reset: resetUpload } = useMediaUpload();
+  const { upload, isUploading, progress, phase, reset: resetUpload } = useMediaUpload();
 
   const carregarDados = useCallback(async () => {
     if (!plantaId) return;
@@ -72,14 +106,13 @@ const PlantDetailScreen = () => {
   const handleAddPhoto = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') {
-      Alert.alert('Permissão negada', 'Precisamos de acesso à galeria para adicionar fotos.');
+      Alert.alert('Permissão negada', 'Precisamos de acesso à galeria para adicionar mídia.');
       return;
     }
 
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ['images'],
+      mediaTypes: ['images', 'videos'],
       quality: 1,
-      allowsEditing: true,
     });
 
     if (result.canceled) return;
@@ -88,11 +121,14 @@ const PlantDetailScreen = () => {
     const mimeType = asset.mimeType ?? 'image/jpeg';
 
     try {
-      // 1. Comprime e faz upload direto para o R2
-      const { publicUrl } = await upload(asset.uri, mimeType);
+      const { publicUrl, thumbnailUrl, tipo } = await upload(asset.uri, mimeType);
 
-      // 2. Salva o registo no banco com a URL pública do R2
-      const newFoto = await fotoService.createFoto({ caminhoArquivo: publicUrl, plantaId });
+      const newFoto = await fotoService.createFoto({
+        caminhoArquivo: publicUrl,
+        plantaId,
+        tipo: tipo === 'video' ? 'VIDEO' : 'FOTO',
+        thumbnailUrl,
+      });
       setFotos(prev => [newFoto, ...prev]);
       resetUpload();
     } catch (err) {
@@ -103,7 +139,7 @@ const PlantDetailScreen = () => {
   };
 
   const handleDeletePhoto = (fotoId: string) => {
-    Alert.alert('Apagar Foto', 'Tem a certeza?', [
+    Alert.alert('Apagar Mídia', 'Tem a certeza?', [
       { text: 'Cancelar', style: 'cancel' },
       {
         text: 'Apagar',
@@ -113,7 +149,7 @@ const PlantDetailScreen = () => {
             await fotoService.deleteFoto(fotoId);
             setFotos(prev => prev.filter(f => f.id !== fotoId));
           } catch {
-            Alert.alert('Erro', 'Não foi possível apagar a foto.');
+            Alert.alert('Erro', 'Não foi possível apagar a mídia.');
           }
         },
       },
@@ -188,7 +224,7 @@ const PlantDetailScreen = () => {
       </View>
       <View style={styles.card}>
         <View style={styles.photoHeaderRow}>
-          <Text style={styles.cardTitle}>Fotos</Text>
+          <Text style={styles.cardTitle}>Fotos & Vídeos</Text>
           <TouchableOpacity style={styles.addPhotoButton} onPress={handleAddPhoto} disabled={isUploading}>
             {isUploading ? (
               <ActivityIndicator size="small" color={theme.colors.card} />
@@ -203,17 +239,34 @@ const PlantDetailScreen = () => {
         {fotos.length > 0 ? (
           <HScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.photoScroll}>
             {fotos.map((foto) => (
-              <TouchableOpacity key={foto.id} onLongPress={() => handleDeletePhoto(foto.id)} style={styles.photoItem}>
-                <Image
-                  source={{ uri: resolveFotoUri(foto.caminhoArquivo) }}
-                  style={styles.photoImage}
-                />
+              <TouchableOpacity
+                key={foto.id}
+                onPress={() => setSelectedMedia(foto)}
+                onLongPress={() => handleDeletePhoto(foto.id)}
+                style={styles.photoItem}
+              >
+                {foto.tipo === 'VIDEO' ? (
+                  <View style={styles.videoThumbContainer}>
+                    <Image
+                      source={{ uri: foto.thumbnailUrl || resolveFotoUri(foto.caminhoArquivo) }}
+                      style={styles.photoImage}
+                    />
+                    <View style={styles.playIconOverlay}>
+                      <Ionicons name="play-circle" size={36} color="white" />
+                    </View>
+                  </View>
+                ) : (
+                  <Image
+                    source={{ uri: resolveFotoUri(foto.caminhoArquivo) }}
+                    style={styles.photoImage}
+                  />
+                )}
                 {foto.titulo ? <Text style={styles.photoTitle} numberOfLines={1}>{foto.titulo}</Text> : null}
               </TouchableOpacity>
             ))}
           </HScrollView>
         ) : (
-          <Text style={styles.emptyPhotoText}>Nenhuma foto adicionada.</Text>
+          <Text style={styles.emptyPhotoText}>Nenhuma mídia adicionada.</Text>
         )}
       </View>
     </>
@@ -234,26 +287,54 @@ const PlantDetailScreen = () => {
   );
 
   return (
-    <FlatList
-        style={styles.container}
-        data={historico}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => <HistoryListItem item={item} />}
-        ListHeaderComponent={
-            <>
-                <ListHeader />
-                <View style={styles.historyHeader}>
-                    <Text style={styles.cardTitle}>Histórico de Cuidados (Concluídos)</Text>
-                </View>
-            </>
-        }
-        ListFooterComponent={ListFooter}
-        ListEmptyComponent={
-            <View style={styles.centeredEmpty}>
-                <Text>Nenhum registo de histórico para esta planta.</Text>
-            </View>
-        }
-    />
+    <>
+      <FlatList
+          style={styles.container}
+          data={historico}
+          keyExtractor={(item) => item.id}
+          renderItem={({ item }) => <HistoryListItem item={item} />}
+          ListHeaderComponent={
+              <>
+                  <ListHeader />
+                  <View style={styles.historyHeader}>
+                      <Text style={styles.cardTitle}>Histórico de Cuidados (Concluídos)</Text>
+                  </View>
+              </>
+          }
+          ListFooterComponent={ListFooter}
+          ListEmptyComponent={
+              <View style={styles.centeredEmpty}>
+                  <Text>Nenhum registo de histórico para esta planta.</Text>
+              </View>
+          }
+      />
+
+      {/* Viewer de mídia em tela cheia */}
+      <Modal
+        visible={!!selectedMedia}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setSelectedMedia(null)}
+        statusBarTranslucent
+      >
+        <StatusBar backgroundColor="rgba(0,0,0,0.95)" barStyle="light-content" />
+        <View style={styles.mediaOverlay}>
+          <TouchableOpacity style={styles.mediaCloseBtn} onPress={() => setSelectedMedia(null)}>
+            <Ionicons name="close-circle" size={36} color="white" />
+          </TouchableOpacity>
+
+          {selectedMedia?.tipo === 'VIDEO' ? (
+            <VideoPlayerView uri={selectedMedia.caminhoArquivo} />
+          ) : selectedMedia ? (
+            <Image
+              source={{ uri: resolveFotoUri(selectedMedia.caminhoArquivo) }}
+              style={styles.mediaImage}
+              resizeMode="contain"
+            />
+          ) : null}
+        </View>
+      </Modal>
+    </>
   );
 };
 
@@ -395,6 +476,41 @@ const styles = StyleSheet.create({
         fontSize: 14,
         textAlign: 'center',
         paddingVertical: theme.spacing.sm,
+    },
+    videoThumbContainer: {
+        position: 'relative',
+    },
+    playIconOverlay: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: 'rgba(0,0,0,0.35)',
+        borderRadius: 8,
+    },
+    // Estilos do viewer em tela cheia
+    mediaOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.95)',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    mediaCloseBtn: {
+        position: 'absolute',
+        top: 48,
+        right: 16,
+        zIndex: 10,
+    },
+    mediaImage: {
+        width: SCREEN_WIDTH,
+        height: SCREEN_HEIGHT * 0.85,
+    },
+    mediaVideo: {
+        width: SCREEN_WIDTH,
+        height: SCREEN_WIDTH * (9 / 16),
     },
 });
 

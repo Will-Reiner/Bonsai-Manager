@@ -91,3 +91,43 @@ Modulo global de gerenciamento de midia com Cloudflare R2 via Presigned URLs —
 - `.env.example` criado com variaveis R2
 - Scripts `android`/`ios` no `package.json` do mobile atualizados para `expo run:*` (dev-client)
 - `crypto.randomUUID` substituido por funcao inline (Node stdlib nao disponivel no RN)
+
+## Implementacao 2026-02-19 (2)
+
+### Resumo
+
+Limpeza do modulo `foto` — remocao do upload multipart/multer — e extensao do modelo para suportar videos, com viewer de midia em tela cheia (fotos) e player nativo (videos) via `expo-video`. 221 testes, 75 suites — todos a passar.
+
+### Detalhes
+
+**Backend — Limpeza do upload local**
+- Removidos `multer` e `@types/multer` do `server/package.json`
+- `server/src/config/upload.ts` deletado
+- `FotoController.upload()` (handler multipart) removido
+- Rota `POST /api/fotos/upload` removida do router
+
+**Backend — Extensao do modelo `Foto` para midia generica**
+- Novo enum `TipoMidia { FOTO, VIDEO }` no schema Prisma
+- Campos `tipo TipoMidia @default(FOTO)` e `thumbnailUrl String?` adicionados ao model `Foto`
+- Migracao retrocompativel: registros existentes ficam como `FOTO`
+- `CreateFotoDTO` atualizado com `tipo?: 'FOTO' | 'VIDEO'` e `thumbnailUrl?: string`
+- `createFotoSchema` Zod atualizado com os mesmos campos opcionais
+
+**Frontend — fotoService**
+- `uploadFoto()` legado (multipart) removido do service e do objeto exportado
+- `CreateFotoDTO` atualizado com `tipo` e `thumbnailUrl`
+- Tipo `Foto` em `types/index.ts` atualizado com `tipo: TipoMidia` e `thumbnailUrl?: string | null`
+- Novo tipo `TipoMidia = 'FOTO' | 'VIDEO'` exportado
+
+**Frontend — PlantDetailScreen**
+- Picker de midia aceita imagens e videos (`mediaTypes: ['images', 'videos']`)
+- Apos upload, `tipo` e `thumbnailUrl` do resultado sao repassados para `createFoto()`
+- Galeria: videos exibem thumbnail com overlay semitransparente e icone play (Ionicons)
+- Tap em qualquer midia abre Modal em tela cheia (fundo escuro, botao X para fechar):
+  - Foto: `Image` com `resizeMode="contain"` ocupando a tela toda
+  - Video: player nativo via `expo-video` com controles, fullscreen e picture-in-picture
+- `VideoPlayerView` definido como componente separado (fora do principal) para manter `useVideoPlayer` sem ser condicional
+- Removido `Linking.openURL` (abria browser externo)
+- Long press continua sendo o gesto de exclusao
+
+**Pacotes instalados:** `expo-video ~3.0.16` (mobile) — requer rebuild do dev client (`npx expo run:android/ios`)

@@ -30,7 +30,8 @@
     "plugins": [
       "expo-asset",
       "expo-font",
-      "react-native-compressor"
+      "react-native-compressor",
+      "expo-video"
     ]
   }
 }

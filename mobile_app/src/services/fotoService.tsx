@@ -2,13 +2,15 @@ import api from '../api';
 import { Foto } from '../types';
 
 /**
- * DTO para o upload de uma nova foto.
+ * DTO para criar um novo registo de mídia.
  */
 export interface CreateFotoDTO {
   caminhoArquivo: string;
   plantaId?: string | null;
   titulo?: string;
   tags?: string;
+  tipo?: 'FOTO' | 'VIDEO';
+  thumbnailUrl?: string;
 }
 
 /**
@@ -28,37 +30,7 @@ const getFotosPorPlanta = async (plantaId: string): Promise<Foto[]> => {
 };
 
 /**
- * Faz o upload de uma imagem e cria o registo no servidor.
- * Envia o arquivo via multipart/form-data.
- */
-const uploadFoto = async (
-  imageUri: string,
-  plantaId?: string,
-  titulo?: string,
-): Promise<Foto> => {
-  const formData = new FormData();
-
-  // Extrair extensão e definir tipo MIME
-  const ext = imageUri.split('.').pop()?.toLowerCase() || 'jpg';
-  const mimeType = ext === 'png' ? 'image/png' : ext === 'webp' ? 'image/webp' : 'image/jpeg';
-
-  formData.append('foto', {
-    uri: imageUri,
-    name: `foto.${ext}`,
-    type: mimeType,
-  } as any);
-
-  if (plantaId) formData.append('plantaId', plantaId);
-  if (titulo) formData.append('titulo', titulo);
-
-  const response = await api.post('/fotos/upload', formData, {
-    headers: { 'Content-Type': 'multipart/form-data' },
-  });
-  return response.data;
-};
-
-/**
- * Cria um registo de foto apenas com metadados (sem upload de arquivo).
+ * Cria um registo de mídia com metadados (URL R2 já obtida via upload direto).
  */
 const createFoto = async (data: CreateFotoDTO): Promise<Foto> => {
   const response = await api.post('/fotos', data);
@@ -82,7 +54,6 @@ const deleteFoto = async (id: string): Promise<void> => {
 
 export const fotoService = {
   getFotosPorPlanta,
-  uploadFoto,
   createFoto,
   updateFoto,
   deleteFoto,

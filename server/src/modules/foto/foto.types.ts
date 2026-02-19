@@ -4,6 +4,8 @@ export interface CreateFotoDTO {
   titulo?: string;
   tags?: string;
   usuarioId: string;
+  tipo?: 'FOTO' | 'VIDEO';
+  thumbnailUrl?: string;
 }
 
 export interface UpdateFotoDTO {

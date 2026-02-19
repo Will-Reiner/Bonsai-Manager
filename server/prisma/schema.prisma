@@ -73,6 +73,11 @@ enum StatusEspecie {
   SUGERIDO
 }
 
+enum TipoMidia {
+  FOTO
+  VIDEO
+}
+
 
 // --- TABELAS PRINCIPAIS ---
 
@@ -176,17 +181,21 @@ model Atividade {
 }
 
 model Foto {
-  id             String   @id @default(uuid())
+  id             String     @id @default(uuid())
   caminhoArquivo String
   titulo         String?
   tags           String?
-  createdAt      DateTime @default(now())
+  createdAt      DateTime   @default(now())
 
   plantaId       String?
-  planta         Planta?  @relation(fields: [plantaId], references: [id], onDelete: Cascade)
-  
+  planta         Planta?    @relation(fields: [plantaId], references: [id], onDelete: Cascade)
+
   usuarioId      String
-  usuario        Usuario  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  usuario        Usuario    @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  // Campos de mídia
+  tipo           TipoMidia  @default(FOTO)
+  thumbnailUrl   String?    // apenas para vídeos: URL R2 da thumbnail WebP
 
   // Relacionamentos
   inspiracoes Inspiracao[]

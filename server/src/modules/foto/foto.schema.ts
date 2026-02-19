@@ -7,6 +7,8 @@ export const createFotoSchema = z.object({
     plantaId: z.string().uuid({ message: 'ID da planta inválido.' }).optional().nullable(),
     titulo: z.string().optional(),
     tags: z.string().optional(),
+    tipo: z.enum(['FOTO', 'VIDEO']).optional(),
+    thumbnailUrl: z.string().optional(),
   }),
 });
 
