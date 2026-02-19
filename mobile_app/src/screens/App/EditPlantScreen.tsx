@@ -13,9 +13,11 @@ import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { Picker } from '@react-native-picker/picker';
 import { especieService } from '../../services/especieService';
 import { plantaService, UpdatePlantaDTO } from '../../services/plantaService';
+import { fotoService } from '../../services/fotoService';
 import { Especie, ModoAquisicao, Planta } from '../../types';
 import { RootStackParamList } from '../../navigation/AppNavigator';
 import { theme } from '../../constants/theme';
+import { CoverPhotoPicker } from '../../components/CoverPhotoPicker';
 
 type EditPlantScreenRouteProp = RouteProp<RootStackParamList, 'EditPlant'>;
 
@@ -30,7 +32,10 @@ const EditPlantScreen = () => {
   const [modoAquisicao, setModoAquisicao] = useState<ModoAquisicao | null | undefined>();
   const [visao, setVisao] = useState('');
   const [observacoes, setObservacoes] = useState('');
-  
+  const [coverPublicUrl, setCoverPublicUrl] = useState<string | null>(null);
+  const [originalCoverUrl, setOriginalCoverUrl] = useState<string | null>(null);
+  const [isUploadingCover, setIsUploadingCover] = useState(false);
+
   const [especies, setEspecies] = useState<Especie[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isFetchingData, setIsFetchingData] = useState(true);
@@ -49,6 +54,8 @@ const EditPlantScreen = () => {
         setModoAquisicao(plantaData.modoAquisicao);
         setVisao(plantaData.visao || '');
         setObservacoes(plantaData.observacoes || '');
+        setCoverPublicUrl(plantaData.fotoCapaUrl || null);
+        setOriginalCoverUrl(plantaData.fotoCapaUrl || null);
         setEspecies(especiesData);
 
       } catch (error) {
@@ -74,10 +81,24 @@ const EditPlantScreen = () => {
       modoAquisicao,
       visao,
       observacoes,
+      fotoCapaUrl: coverPublicUrl,
     };
 
     try {
       await plantaService.updatePlanta(plantaId, plantaData);
+      // Criar registo Foto se houver nova foto de capa
+      if (coverPublicUrl && coverPublicUrl !== originalCoverUrl) {
+        try {
+          await fotoService.createFoto({
+            caminhoArquivo: coverPublicUrl,
+            plantaId,
+            titulo: 'Foto de capa',
+            tipo: 'FOTO',
+          });
+        } catch {
+          // Não bloquear o update se o registo da foto falhar
+        }
+      }
       Alert.alert('Sucesso', 'Planta atualizada com sucesso!');
       navigation.goBack();
     } catch (error) {
@@ -99,6 +120,12 @@ const EditPlantScreen = () => {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
+      <CoverPhotoPicker
+        currentImageUrl={coverPublicUrl}
+        onImageUploaded={(url) => { setCoverPublicUrl(url); setIsUploadingCover(false); }}
+        onImageRemoved={() => { setCoverPublicUrl(null); setIsUploadingCover(false); }}
+      />
+
       <Text style={styles.label}>Nome (Apelido)</Text>
       <TextInput
         style={styles.input}
@@ -157,9 +184,9 @@ const EditPlantScreen = () => {
       />
 
       <TouchableOpacity
-        style={[styles.button, isLoading && styles.buttonDisabled]}
+        style={[styles.button, (isLoading || isUploadingCover) && styles.buttonDisabled]}
         onPress={handleSubmit}
-        disabled={isLoading}
+        disabled={isLoading || isUploadingCover}
       >
         {isLoading ? (
           <ActivityIndicator color="#fff" />

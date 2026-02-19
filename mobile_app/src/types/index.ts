@@ -66,6 +66,7 @@ export interface Planta {
   modoAquisicao?: ModoAquisicao | null;
   visao?: string | null;
   observacoes?: string | null;
+  fotoCapaUrl?: string | null;
   plantaPublica: boolean;
   historicoPublico: boolean;
   createdAt: string;

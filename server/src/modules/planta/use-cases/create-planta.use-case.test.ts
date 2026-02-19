@@ -46,6 +46,7 @@ describe('CreatePlantaUseCase', () => {
       modoAquisicao: ModoAquisicao.SEMENTE,
       visao: 'Frente',
       observacoes: 'Planta jovem',
+      fotoCapaUrl: null,
       plantaPublica: true,
       historicoPublico: false,
       createdAt: new Date(),
@@ -99,6 +100,7 @@ describe('CreatePlantaUseCase', () => {
         modoAquisicao: null,
         visao: null,
         observacoes: null,
+        fotoCapaUrl: null,
         plantaPublica: false,
         historicoPublico: false,
       };
@@ -113,6 +115,32 @@ describe('CreatePlantaUseCase', () => {
       expect(mockEspecieRepository.existsById).toHaveBeenCalledWith('especie-123');
       expect(mockPlantaRepository.create).toHaveBeenCalledWith(minimalCreateDTO);
       expect(result).toEqual(minimalCreatedPlanta);
+    });
+
+    it('deve criar uma planta com fotoCapaUrl', async () => {
+      // Arrange
+      const createDTOWithCover: CreatePlantaRequestDTO = {
+        ...mockCreatePlantaDTO,
+        fotoCapaUrl: 'https://r2.example.com/cover.webp',
+      };
+
+      const plantaWithCover: PlantaWithEspecie = {
+        ...mockCreatedPlanta,
+        fotoCapaUrl: 'https://r2.example.com/cover.webp',
+      };
+
+      mockEspecieRepository.existsById.mockResolvedValue(true);
+      mockPlantaRepository.create.mockResolvedValue(plantaWithCover);
+
+      // Act
+      const result = await createPlantaUseCase.execute(createDTOWithCover);
+
+      // Assert
+      expect(mockPlantaRepository.create).toHaveBeenCalledWith({
+        ...createDTOWithCover,
+        dataAquisicao: new Date('2024-01-01T00:00:00.000Z'),
+      });
+      expect(result.fotoCapaUrl).toBe('https://r2.example.com/cover.webp');
     });
 
     it('deve propagar erro do repositório', async () => {

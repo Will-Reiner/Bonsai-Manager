@@ -12,6 +12,7 @@ export interface CreatePlantaDTO {
   modoAquisicao?: ModoAquisicao | null;
   visao?: string;
   observacoes?: string;
+  fotoCapaUrl?: string;
   plantaPublica?: boolean;
   historicoPublico?: boolean;
 }

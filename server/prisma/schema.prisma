@@ -145,6 +145,7 @@ model Planta {
   modoAquisicao    ModoAquisicao?
   visao            String?       @db.Text
   observacoes      String?       @db.Text
+  fotoCapaUrl      String?
   plantaPublica    Boolean       @default(false)
   historicoPublico Boolean       @default(false)
   createdAt        DateTime      @default(now())

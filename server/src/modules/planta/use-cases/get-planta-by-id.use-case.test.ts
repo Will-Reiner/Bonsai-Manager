@@ -32,6 +32,7 @@ describe('GetPlantaByIdUseCase', () => {
       modoAquisicao: ModoAquisicao.SEMENTE,
       visao: 'Frente',
       observacoes: 'Planta jovem',
+      fotoCapaUrl: null,
       plantaPublica: true,
       historicoPublico: false,
       createdAt: new Date(),

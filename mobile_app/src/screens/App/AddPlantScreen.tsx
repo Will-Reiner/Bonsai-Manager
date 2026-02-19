@@ -14,8 +14,10 @@ import { useNavigation } from '@react-navigation/native';
 import { Picker } from '@react-native-picker/picker';
 import { especieService } from '../../services/especieService';
 import { plantaService, CreatePlantaDTO } from '../../services/plantaService';
+import { fotoService } from '../../services/fotoService';
 import { Especie, ModoAquisicao } from '../../types';
 import { theme } from '../../constants/theme';
+import { CoverPhotoPicker } from '../../components/CoverPhotoPicker';
 
 const AddPlantScreen = () => {
   const navigation = useNavigation();
@@ -26,6 +28,8 @@ const AddPlantScreen = () => {
   const [modoAquisicao, setModoAquisicao] = useState<ModoAquisicao | undefined>();
   const [visao, setVisao] = useState('');
   const [observacoes, setObservacoes] = useState('');
+  const [coverPublicUrl, setCoverPublicUrl] = useState<string | undefined>();
+  const [isUploadingCover, setIsUploadingCover] = useState(false);
 
   // Estados de controlo
   const [especies, setEspecies] = useState<Especie[]>([]);
@@ -86,10 +90,24 @@ const AddPlantScreen = () => {
       modoAquisicao: modoAquisicao || undefined,
       visao: visao || undefined,
       observacoes: observacoes || undefined,
+      fotoCapaUrl: coverPublicUrl || undefined,
     };
 
     try {
-      await plantaService.createPlanta(plantaData);
+      const planta = await plantaService.createPlanta(plantaData);
+      // Criar registo Foto para a galeria
+      if (coverPublicUrl) {
+        try {
+          await fotoService.createFoto({
+            caminhoArquivo: coverPublicUrl,
+            plantaId: planta.id,
+            titulo: 'Foto de capa',
+            tipo: 'FOTO',
+          });
+        } catch {
+          // Não bloquear a criação da planta se o registo da foto falhar
+        }
+      }
       Alert.alert('Sucesso', 'Planta adicionada à sua coleção!');
       navigation.goBack();
     } catch (error) {
@@ -102,6 +120,11 @@ const AddPlantScreen = () => {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
+      <CoverPhotoPicker
+        onImageUploaded={(url) => { setCoverPublicUrl(url); setIsUploadingCover(false); }}
+        onImageRemoved={() => { setCoverPublicUrl(undefined); setIsUploadingCover(false); }}
+      />
+
       <Text style={styles.label}>Nome (Apelido)</Text>
       <TextInput
         style={styles.input}
@@ -172,9 +195,9 @@ const AddPlantScreen = () => {
       />
 
       <TouchableOpacity
-        style={[styles.button, isLoading && styles.buttonDisabled]}
+        style={[styles.button, (isLoading || isUploadingCover) && styles.buttonDisabled]}
         onPress={handleSubmit}
-        disabled={isLoading}
+        disabled={isLoading || isUploadingCover}
       >
         {isLoading ? (
           <ActivityIndicator color="#fff" />

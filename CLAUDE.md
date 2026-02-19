@@ -125,7 +125,7 @@ Navigation structure: unauthenticated users see Login/Register; authenticated us
 - Species suggestion - DONE
 - Midia storage management - DONE
 - Improve error logs for api
-- Add photos while creating a plant
+- Add photos while creating a plant - DONE
 - Virtual styling for future vision
 - Lack of recurrence on the events
 - Register multiple tasks

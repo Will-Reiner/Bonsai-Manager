@@ -131,3 +131,23 @@ Limpeza do modulo `foto` — remocao do upload multipart/multer — e extensao d
 - Long press continua sendo o gesto de exclusao
 
 **Pacotes instalados:** `expo-video ~3.0.16` (mobile) — requer rebuild do dev client (`npx expo run:android/ios`)
+
+## Implementacao 2026-02-19 (3)
+
+### Resumo
+
+Foto de capa na criacao e edicao de planta — campo `fotoCapaUrl` no modelo Planta com componente reutilizavel `CoverPhotoPicker` integrado nos formularios. 222 testes, 75 suites — todos a passar.
+
+### Detalhes
+
+**Backend**
+- Novo campo `fotoCapaUrl String?` no modelo `Planta` (schema Prisma + migracao aplicada)
+- Campo propagado em todos os DTOs (Create/Update Request e Repository), `PlantaWithEspecie`, Zod schemas e `PrismaPlantaRepository` (data + select em create, findMany, findById, update)
+- Novo teste para criacao de planta com `fotoCapaUrl`; mocks atualizados em todos os 5 ficheiros de teste
+
+**Frontend**
+- Tipo `Planta` e `CreatePlantaDTO` atualizados com `fotoCapaUrl`
+- Novo componente `CoverPhotoPicker`: picker de imagem, upload via `useMediaUpload`, preview com botoes trocar/remover, `UploadProgressBar` integrado
+- `AddPlantScreen`: `CoverPhotoPicker` no topo do formulario, `fotoCapaUrl` enviado no DTO, registo `Foto` criado apos criacao da planta (para aparecer na galeria)
+- `EditPlantScreen`: mesma integracao com carregamento da capa existente, so cria novo registo `Foto` se a capa mudou
+- Botao submit desabilitado durante upload em ambos os ecras

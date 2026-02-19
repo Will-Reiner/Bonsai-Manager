@@ -47,6 +47,7 @@ describe('UpdatePlantaUseCase', () => {
       modoAquisicao: ModoAquisicao.ESTACA,
       visao: 'Lateral',
       observacoes: 'Observações atualizadas',
+      fotoCapaUrl: null,
       plantaPublica: false,
       historicoPublico: true,
       createdAt: new Date(),
