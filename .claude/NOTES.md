@@ -151,3 +151,43 @@ Foto de capa na criacao e edicao de planta — campo `fotoCapaUrl` no modelo Pla
 - `AddPlantScreen`: `CoverPhotoPicker` no topo do formulario, `fotoCapaUrl` enviado no DTO, registo `Foto` criado apos criacao da planta (para aparecer na galeria)
 - `EditPlantScreen`: mesma integracao com carregamento da capa existente, so cria novo registo `Foto` se a capa mudou
 - Botao submit desabilitado durante upload em ambos os ecras
+
+## Implementacao 2026-02-20
+
+### Resumo
+
+Estilizacao virtual ("Paint" para Bonsai) — editor de desenho Skia sobre fotos existentes para planejar visualmente o futuro dos bonsais, substituindo o campo de texto `visao` por imagens anotadas. 222 testes, 75 suites — todos a passar.
+
+### Detalhes
+
+**Banco de Dados**
+- Novo valor `VISAO_FUTURA` no enum `TipoMidia`, campo `descricao Text?` no model `Foto`, campo `visao` removido do model `Planta`
+- Migracao `20260220120000_add_visao_futura` criada manualmente e aplicada via `prisma migrate deploy`
+
+**Backend — Modulo Foto**
+- `descricao` adicionado aos DTOs (`CreateFotoDTO`, `UpdateFotoDTO`), schemas Zod (create e update) e tipos
+- `VISAO_FUTURA` adicionado ao enum no schema Zod de criacao
+- Repositorio e use cases ja propagam dados genericamente, sem alteracao necessaria
+
+**Backend — Modulo Planta**
+- `visao` removido de todos os DTOs (Request e Repository), `PlantaWithEspecie`, schemas Zod, `PrismaPlantaRepository` (data e select), Swagger
+- `UpdatePlantaUseCase` corrigido: retorno `Promise<Planta>` (Prisma) trocado por `Promise<PlantaWithEspecie>` (tipo customizado)
+- Todos os mocks de teste atualizados (5 ficheiros)
+
+**Frontend — DrawingEditor (novo componente)**
+- Canvas Skia (`@shopify/react-native-skia` v2) com imagem de fundo via `useImage`
+- Paleta de 5 cores, 3 espessuras de pincel, desfazer/limpar
+- Gestos via `onResponder*` do React Native, cada traco = novo `SkPath`
+- Snapshot via `useCanvasRef().makeImageSnapshot()`, gravacao com `expo-file-system/next` (API `File`/`Paths` do SDK 54)
+- Campo de descricao textual da visao futura
+
+**Frontend — PlantDetailScreen**
+- Secao "Visao de Futuro" redesenhada: botao "Criar Esboco", seletor de foto base (modal), exibicao da visao mais recente com descricao
+- Galeria de fotos filtra `VISAO_FUTURA` (nao mistura com fotos regulares)
+- Fluxo: selecionar foto base -> desenhar -> salvar -> upload R2 -> `createFoto(tipo: VISAO_FUTURA)`
+
+**Frontend — Formularios**
+- Campo de texto "Visao de Futuro" removido de `AddPlantScreen` e `EditPlantScreen`
+- `visao` removido dos tipos `Planta`, `CreatePlantaDTO`, `UpdatePlantaDTO`
+
+**Dependencias instaladas:** `@shopify/react-native-skia`, `react-native-reanimated`, `expo-file-system` (mobile)

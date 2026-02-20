@@ -22,7 +22,7 @@
 
 
 
-**armazenamento de midia**
+**armazenamento de midia** OKKKKKKKKKKKKK
 
 Implemente um módulo global de **Gerenciamento de Mídia** (Fotos e Vídeos) utilizando Cloudflare R2 e upload via Presigned URLs.
 
@@ -51,14 +51,14 @@ Implemente um módulo global de **Gerenciamento de Mídia** (Fotos e Vídeos) ut
 
 
 
-**foto na criacao da planta**
+**foto na criacao da planta** OKKKKKKKKKKKKKK
 
 Atualize o fluxo de **Criação de Planta** para suportar a definição de uma foto de capa no momento do cadastro. Adicione um componente de "Selecionar Capa" no topo do formulário. Integre com o hook de upload de midia.
 
 
 
 
-**Estilização Virtual**
+**Estilização Virtual** OKKKKKKKKKKKKKK
 
 Implemente a funcionalidade de Estilização Virtual ("Paint" para Bonsai), permitindo que o usuário desenhe esboços sobre fotos existentes de suas plantas para planejar o futuro.
 

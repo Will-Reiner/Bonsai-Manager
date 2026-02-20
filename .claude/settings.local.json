@@ -8,7 +8,10 @@
       "Bash(if not exist \"C:\\\\Users\\\\willi\\\\Cursor Projects\\\\Bonsai_Manager\\\\server\\\\uploads\" mkdir \"C:\\\\Users\\\\willi\\\\Cursor Projects\\\\Bonsai_Manager\\\\server\\\\uploads\")",
       "mcp__ide__getDiagnostics",
       "Bash(docker compose:*)",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "Bash(node -e:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
     ]
   }
 }

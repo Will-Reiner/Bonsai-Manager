@@ -126,6 +126,6 @@ Navigation structure: unauthenticated users see Login/Register; authenticated us
 - Midia storage management - DONE
 - Improve error logs for api
 - Add photos while creating a plant - DONE
-- Virtual styling for future vision
+- Virtual styling for future vision - DONE
 - Lack of recurrence on the events
 - Register multiple tasks
