@@ -76,6 +76,7 @@ enum StatusEspecie {
 enum TipoMidia {
   FOTO
   VIDEO
+  VISAO_FUTURA
 }
 
 
@@ -143,7 +144,6 @@ model Planta {
   nome             String?
   dataAquisicao    DateTime?
   modoAquisicao    ModoAquisicao?
-  visao            String?       @db.Text
   observacoes      String?       @db.Text
   fotoCapaUrl      String?
   plantaPublica    Boolean       @default(false)
@@ -196,6 +196,7 @@ model Foto {
 
   // Campos de mídia
   tipo           TipoMidia  @default(FOTO)
+  descricao      String?    @db.Text
   thumbnailUrl   String?    // apenas para vídeos: URL R2 da thumbnail WebP
 
   // Relacionamentos

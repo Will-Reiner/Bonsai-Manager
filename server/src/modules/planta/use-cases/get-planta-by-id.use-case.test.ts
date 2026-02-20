@@ -30,7 +30,6 @@ describe('GetPlantaByIdUseCase', () => {
       nome: 'Minha Planta',
       dataAquisicao: new Date('2024-01-01'),
       modoAquisicao: ModoAquisicao.SEMENTE,
-      visao: 'Frente',
       observacoes: 'Planta jovem',
       fotoCapaUrl: null,
       plantaPublica: true,

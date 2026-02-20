@@ -30,7 +30,6 @@ const EditPlantScreen = () => {
   const [nome, setNome] = useState('');
   const [especieId, setEspecieId] = useState<string | undefined>();
   const [modoAquisicao, setModoAquisicao] = useState<ModoAquisicao | null | undefined>();
-  const [visao, setVisao] = useState('');
   const [observacoes, setObservacoes] = useState('');
   const [coverPublicUrl, setCoverPublicUrl] = useState<string | null>(null);
   const [originalCoverUrl, setOriginalCoverUrl] = useState<string | null>(null);
@@ -52,7 +51,6 @@ const EditPlantScreen = () => {
         setNome(plantaData.nome || '');
         setEspecieId(plantaData.especieId);
         setModoAquisicao(plantaData.modoAquisicao);
-        setVisao(plantaData.visao || '');
         setObservacoes(plantaData.observacoes || '');
         setCoverPublicUrl(plantaData.fotoCapaUrl || null);
         setOriginalCoverUrl(plantaData.fotoCapaUrl || null);
@@ -79,7 +77,6 @@ const EditPlantScreen = () => {
       especieId,
       nome,
       modoAquisicao,
-      visao,
       observacoes,
       fotoCapaUrl: coverPublicUrl,
     };
@@ -165,15 +162,6 @@ const EditPlantScreen = () => {
         </Picker>
       </View>
 
-      <Text style={styles.label}>Visão de Futuro</Text>
-      <TextInput
-        style={[styles.input, styles.textArea]}
-        placeholder="Descreva como imagina esta planta no futuro"
-        value={visao}
-        onChangeText={setVisao}
-        multiline
-      />
-      
       <Text style={styles.label}>Observações Gerais</Text>
       <TextInput
         style={[styles.input, styles.textArea]}

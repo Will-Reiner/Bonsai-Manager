@@ -9,7 +9,8 @@ export interface CreateFotoDTO {
   plantaId?: string | null;
   titulo?: string;
   tags?: string;
-  tipo?: 'FOTO' | 'VIDEO';
+  tipo?: 'FOTO' | 'VIDEO' | 'VISAO_FUTURA';
+  descricao?: string;
   thumbnailUrl?: string;
 }
 
@@ -19,6 +20,7 @@ export interface CreateFotoDTO {
 export interface UpdateFotoDTO {
   titulo?: string;
   tags?: string;
+  descricao?: string;
 }
 
 /**

@@ -7,7 +7,6 @@ export interface CreatePlantaRequestDTO {
   nome?: string;
   dataAquisicao?: string | null;
   modoAquisicao?: ModoAquisicao | null;
-  visao?: string;
   observacoes?: string;
   fotoCapaUrl?: string;
   plantaPublica?: boolean;
@@ -19,7 +18,6 @@ export interface UpdatePlantaRequestDTO {
   nome?: string;
   dataAquisicao?: string | null;
   modoAquisicao?: ModoAquisicao | null;
-  visao?: string;
   observacoes?: string;
   fotoCapaUrl?: string | null;
   plantaPublica?: boolean;
@@ -33,7 +31,6 @@ export interface CreatePlantaDTO {
   nome?: string;
   dataAquisicao?: Date | null;
   modoAquisicao?: ModoAquisicao | null;
-  visao?: string;
   observacoes?: string;
   fotoCapaUrl?: string;
   plantaPublica?: boolean;
@@ -45,7 +42,6 @@ export interface UpdatePlantaDTO {
   nome?: string;
   dataAquisicao?: Date | null;
   modoAquisicao?: ModoAquisicao | null;
-  visao?: string;
   observacoes?: string;
   fotoCapaUrl?: string | null;
   plantaPublica?: boolean;
@@ -59,7 +55,6 @@ export interface PlantaWithEspecie {
   nome: string | null;
   dataAquisicao: Date | null;
   modoAquisicao: ModoAquisicao | null;
-  visao: string | null;
   observacoes: string | null;
   fotoCapaUrl: string | null;
   plantaPublica: boolean;

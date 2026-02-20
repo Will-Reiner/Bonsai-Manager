@@ -26,7 +26,6 @@ const AddPlantScreen = () => {
   const [nome, setNome] = useState('');
   const [especieId, setEspecieId] = useState<string | undefined>();
   const [modoAquisicao, setModoAquisicao] = useState<ModoAquisicao | undefined>();
-  const [visao, setVisao] = useState('');
   const [observacoes, setObservacoes] = useState('');
   const [coverPublicUrl, setCoverPublicUrl] = useState<string | undefined>();
   const [isUploadingCover, setIsUploadingCover] = useState(false);
@@ -88,7 +87,6 @@ const AddPlantScreen = () => {
       especieId,
       nome: nome || undefined,
       modoAquisicao: modoAquisicao || undefined,
-      visao: visao || undefined,
       observacoes: observacoes || undefined,
       fotoCapaUrl: coverPublicUrl || undefined,
     };
@@ -175,15 +173,6 @@ const AddPlantScreen = () => {
           <Picker.Item label="Compra" value="COMPRA" />
         </Picker>
       </View>
-
-      <Text style={styles.label}>Visão de Futuro</Text>
-      <TextInput
-        style={[styles.input, styles.textArea]}
-        placeholder="Descreva como imagina esta planta no futuro"
-        value={visao}
-        onChangeText={setVisao}
-        multiline
-      />
 
       <Text style={styles.label}>Observações Gerais</Text>
       <TextInput

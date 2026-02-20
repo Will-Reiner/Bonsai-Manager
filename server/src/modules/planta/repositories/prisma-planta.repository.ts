@@ -12,7 +12,7 @@ export class PrismaPlantaRepository implements PlantaRepository {
         nome: data.nome,
         dataAquisicao: data.dataAquisicao,
         modoAquisicao: data.modoAquisicao,
-        visao: data.visao,
+
         observacoes: data.observacoes,
         fotoCapaUrl: data.fotoCapaUrl,
         plantaPublica: data.plantaPublica ?? false,
@@ -25,7 +25,7 @@ export class PrismaPlantaRepository implements PlantaRepository {
         nome: true,
         dataAquisicao: true,
         modoAquisicao: true,
-        visao: true,
+
         observacoes: true,
         fotoCapaUrl: true,
         plantaPublica: true,
@@ -54,7 +54,7 @@ export class PrismaPlantaRepository implements PlantaRepository {
         nome: true,
         dataAquisicao: true,
         modoAquisicao: true,
-        visao: true,
+
         observacoes: true,
         fotoCapaUrl: true,
         plantaPublica: true,
@@ -87,7 +87,7 @@ export class PrismaPlantaRepository implements PlantaRepository {
         nome: true,
         dataAquisicao: true,
         modoAquisicao: true,
-        visao: true,
+
         observacoes: true,
         fotoCapaUrl: true,
         plantaPublica: true,
@@ -115,7 +115,7 @@ export class PrismaPlantaRepository implements PlantaRepository {
         nome: data.nome,
         dataAquisicao: data.dataAquisicao,
         modoAquisicao: data.modoAquisicao,
-        visao: data.visao,
+
         observacoes: data.observacoes,
         fotoCapaUrl: data.fotoCapaUrl,
         plantaPublica: data.plantaPublica,
@@ -128,7 +128,7 @@ export class PrismaPlantaRepository implements PlantaRepository {
         nome: true,
         dataAquisicao: true,
         modoAquisicao: true,
-        visao: true,
+
         observacoes: true,
         fotoCapaUrl: true,
         plantaPublica: true,

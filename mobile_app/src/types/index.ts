@@ -10,7 +10,7 @@ export type MomentoIdeal = 'DEVE_FAZER' | 'PODE_FAZER' | 'EVITAR';
 export type RecomendacaoTecnica = 'RECOMENDADA' | 'NAO_RECOMENDADA' | 'COM_CUIDADO';
 export type TipoPlanta = 'PERENE' | 'CADUCIFOLIA' | 'SEMI_CADUCA' | 'ARVORE' | 'ARBUSTO' | 'CONIFERA';
 export type StatusEspecie = 'VERIFICADO' | 'SUGERIDO';
-export type TipoMidia = 'FOTO' | 'VIDEO';
+export type TipoMidia = 'FOTO' | 'VIDEO' | 'VISAO_FUTURA';
 
 // --- INTERFACES DOS MODELOS ---
 
@@ -64,7 +64,6 @@ export interface Planta {
   nome?: string | null;
   dataAquisicao?: string | null;
   modoAquisicao?: ModoAquisicao | null;
-  visao?: string | null;
   observacoes?: string | null;
   fotoCapaUrl?: string | null;
   plantaPublica: boolean;
@@ -96,6 +95,7 @@ export interface Foto {
   plantaId?: string | null;
   usuarioId: string;
   tipo: TipoMidia;
+  descricao?: string | null;
   thumbnailUrl?: string | null;
 }
 

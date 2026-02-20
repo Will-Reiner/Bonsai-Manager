@@ -4,13 +4,15 @@ export interface CreateFotoDTO {
   titulo?: string;
   tags?: string;
   usuarioId: string;
-  tipo?: 'FOTO' | 'VIDEO';
+  tipo?: 'FOTO' | 'VIDEO' | 'VISAO_FUTURA';
+  descricao?: string;
   thumbnailUrl?: string;
 }
 
 export interface UpdateFotoDTO {
   titulo?: string;
   tags?: string;
+  descricao?: string;
 }
 
 export interface FotoRepository {

@@ -31,7 +31,7 @@ describe('CreatePlantaUseCase', () => {
       nome: 'Minha Planta',
       dataAquisicao: '2024-01-01T00:00:00.000Z',
       modoAquisicao: ModoAquisicao.SEMENTE,
-      visao: 'Frente',
+
       observacoes: 'Planta jovem',
       plantaPublica: true,
       historicoPublico: false,
@@ -44,7 +44,7 @@ describe('CreatePlantaUseCase', () => {
       nome: 'Minha Planta',
       dataAquisicao: new Date('2024-01-01'),
       modoAquisicao: ModoAquisicao.SEMENTE,
-      visao: 'Frente',
+
       observacoes: 'Planta jovem',
       fotoCapaUrl: null,
       plantaPublica: true,
@@ -98,7 +98,7 @@ describe('CreatePlantaUseCase', () => {
         nome: null,
         dataAquisicao: null,
         modoAquisicao: null,
-        visao: null,
+
         observacoes: null,
         fotoCapaUrl: null,
         plantaPublica: false,

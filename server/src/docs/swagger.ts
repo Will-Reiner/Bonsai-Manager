@@ -52,7 +52,6 @@ const swaggerDefinition = {
           nome: { type: 'string', nullable: true },
           dataAquisicao: { type: 'string', format: 'date-time', nullable: true },
           modoAquisicao: { type: 'string', nullable: true },
-          visao: { type: 'string', nullable: true },
           observacoes: { type: 'string', nullable: true },
           plantaPublica: { type: 'boolean' },
           historicoPublico: { type: 'boolean' },

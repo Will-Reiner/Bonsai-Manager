@@ -1,5 +1,4 @@
 import { UpdatePlantaRequestDTO, UpdatePlantaDTO, PlantaWithEspecie, PlantaRepository, EspecieRepository } from '../types/planta.types';
-import { Planta } from '@prisma/client';
 
 export class UpdatePlantaUseCase {
   constructor(
@@ -7,7 +6,7 @@ export class UpdatePlantaUseCase {
     private especieRepository: EspecieRepository
   ) {}
 
-  async execute(id: string, usuarioId: string, data: UpdatePlantaRequestDTO): Promise<Planta> {
+  async execute(id: string, usuarioId: string, data: UpdatePlantaRequestDTO): Promise<PlantaWithEspecie> {
     // Verificar se a planta existe e pertence ao usuário
     const plantaExists = await this.plantaRepository.existsByIdAndUser(id, usuarioId);
     if (!plantaExists) {

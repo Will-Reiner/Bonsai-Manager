@@ -10,7 +10,6 @@ export interface CreatePlantaDTO {
   nome?: string;
   dataAquisicao?: string | null; // Formato 'YYYY-MM-DDTHH:mm:ss.sssZ'
   modoAquisicao?: ModoAquisicao | null;
-  visao?: string;
   observacoes?: string;
   fotoCapaUrl?: string;
   plantaPublica?: boolean;

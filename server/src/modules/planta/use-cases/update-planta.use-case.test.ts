@@ -32,7 +32,7 @@ describe('UpdatePlantaUseCase', () => {
       nome: 'Nome Atualizado',
       dataAquisicao: '2024-02-01T00:00:00.000Z',
       modoAquisicao: ModoAquisicao.ESTACA,
-      visao: 'Lateral',
+
       observacoes: 'Observações atualizadas',
       plantaPublica: false,
       historicoPublico: true,
@@ -45,7 +45,7 @@ describe('UpdatePlantaUseCase', () => {
       nome: 'Nome Atualizado',
       dataAquisicao: new Date('2024-02-01'),
       modoAquisicao: ModoAquisicao.ESTACA,
-      visao: 'Lateral',
+
       observacoes: 'Observações atualizadas',
       fotoCapaUrl: null,
       plantaPublica: false,

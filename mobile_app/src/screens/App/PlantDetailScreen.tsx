@@ -28,6 +28,7 @@ import { theme } from '../../constants/theme';
 import { SERVER_URL } from '../../api';
 import { useMediaUpload } from '../../hooks/useMediaUpload';
 import { UploadProgressBar } from '../../components/UploadProgressBar';
+import { DrawingEditor } from '../../components/DrawingEditor';
 
 type PlantDetailScreenRouteProp = RouteProp<RootStackParamList, 'PlantDetail'>;
 type PlantDetailNavigationProp = NativeStackNavigationProp<RootStackParamList, 'PlantDetail'>;
@@ -63,6 +64,10 @@ const PlantDetailScreen = () => {
   const [selectedMedia, setSelectedMedia] = useState<Foto | null>(null);
 
   const { upload, isUploading, progress, phase, reset: resetUpload } = useMediaUpload();
+
+  const [showDrawingEditor, setShowDrawingEditor] = useState(false);
+  const [drawingBaseImage, setDrawingBaseImage] = useState<string>('');
+  const [showBaseImagePicker, setShowBaseImagePicker] = useState(false);
 
   const carregarDados = useCallback(async () => {
     if (!plantaId) return;
@@ -102,6 +107,56 @@ const PlantDetailScreen = () => {
     return agenda.filter(item => item.status === 'CONCLUIDO')
                  .sort((a, b) => new Date(b.dataConcluida!).getTime() - new Date(a.dataConcluida!).getTime());
   }, [agenda]);
+
+  // Separar fotos de visão futura das fotos regulares
+  const visaoFutura = useMemo(() => {
+    const visoes = fotos.filter(f => f.tipo === 'VISAO_FUTURA');
+    return visoes.length > 0 ? visoes[0] : null; // Mais recente (já vem desc por createdAt)
+  }, [fotos]);
+
+  const fotosGaleria = useMemo(() => {
+    return fotos.filter(f => f.tipo !== 'VISAO_FUTURA');
+  }, [fotos]);
+
+  const openDrawingEditor = () => {
+    const fotosDisponiveis = fotos.filter(f => f.tipo === 'FOTO');
+    if (fotosDisponiveis.length === 0) {
+      Alert.alert('Sem fotos', 'Adicione pelo menos uma foto à planta para criar um esboço de visão.');
+      return;
+    }
+    if (fotosDisponiveis.length === 1) {
+      setDrawingBaseImage(resolveFotoUri(fotosDisponiveis[0].caminhoArquivo));
+      setShowDrawingEditor(true);
+    } else {
+      setShowBaseImagePicker(true);
+    }
+  };
+
+  const handleSelectBaseImage = (foto: Foto) => {
+    setDrawingBaseImage(resolveFotoUri(foto.caminhoArquivo));
+    setShowBaseImagePicker(false);
+    setShowDrawingEditor(true);
+  };
+
+  const handleSaveDrawing = async (localImageUri: string, descricao: string) => {
+    setShowDrawingEditor(false);
+    try {
+      const { publicUrl } = await upload(localImageUri, 'image/png');
+      const newFoto = await fotoService.createFoto({
+        caminhoArquivo: publicUrl,
+        plantaId,
+        tipo: 'VISAO_FUTURA',
+        descricao: descricao || undefined,
+        titulo: 'Visão de Futuro',
+      });
+      setFotos(prev => [newFoto, ...prev]);
+      resetUpload();
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Erro desconhecido.';
+      Alert.alert('Erro no upload', msg);
+      resetUpload();
+    }
+  };
 
   const handleAddPhoto = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -218,8 +273,20 @@ const PlantDetailScreen = () => {
         {renderDetailRow('Data de Aquisição', planta.dataAquisicao ? new Date(planta.dataAquisicao) : null)}
       </View>
       <View style={styles.card}>
-        <Text style={styles.cardTitle}>Notas e Visão de Futuro</Text>
-        {renderDetailRow('Visão', planta.visao)}
+        <View style={styles.photoHeaderRow}>
+          <Text style={styles.cardTitle}>Visão de Futuro</Text>
+          <TouchableOpacity style={styles.addPhotoButton} onPress={openDrawingEditor}>
+            <Text style={styles.addPhotoButtonText}>+ Criar Esboço</Text>
+          </TouchableOpacity>
+        </View>
+        {visaoFutura ? (
+          <View>
+            <Image source={{ uri: resolveFotoUri(visaoFutura.caminhoArquivo) }} style={styles.visaoImage} />
+            {visaoFutura.descricao ? <Text style={styles.visaoDescricao}>{visaoFutura.descricao}</Text> : null}
+          </View>
+        ) : (
+          <Text style={styles.emptyPhotoText}>Nenhum esboço de visão criado.</Text>
+        )}
         {renderDetailRow('Observações', planta.observacoes)}
       </View>
       <View style={styles.card}>
@@ -236,9 +303,9 @@ const PlantDetailScreen = () => {
 
         <UploadProgressBar progress={progress} phase={phase} visible={isUploading} />
 
-        {fotos.length > 0 ? (
+        {fotosGaleria.length > 0 ? (
           <HScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.photoScroll}>
-            {fotos.map((foto) => (
+            {fotosGaleria.map((foto) => (
               <TouchableOpacity
                 key={foto.id}
                 onPress={() => setSelectedMedia(foto)}
@@ -307,6 +374,48 @@ const PlantDetailScreen = () => {
                   <Text>Nenhum registo de histórico para esta planta.</Text>
               </View>
           }
+      />
+
+      {/* Seletor de foto base para o editor de desenho */}
+      <Modal
+        visible={showBaseImagePicker}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowBaseImagePicker(false)}
+      >
+        <View style={styles.mediaOverlay}>
+          <View style={styles.baseImagePickerContainer}>
+            <Text style={styles.baseImagePickerTitle}>Escolha uma foto como base</Text>
+            <HScrollView horizontal showsHorizontalScrollIndicator={false}>
+              {fotos.filter(f => f.tipo === 'FOTO').map((foto) => (
+                <TouchableOpacity
+                  key={foto.id}
+                  style={styles.baseImagePickerItem}
+                  onPress={() => handleSelectBaseImage(foto)}
+                >
+                  <Image
+                    source={{ uri: resolveFotoUri(foto.caminhoArquivo) }}
+                    style={styles.baseImagePickerPhoto}
+                  />
+                </TouchableOpacity>
+              ))}
+            </HScrollView>
+            <TouchableOpacity
+              style={styles.baseImagePickerCancel}
+              onPress={() => setShowBaseImagePicker(false)}
+            >
+              <Text style={styles.baseImagePickerCancelText}>Cancelar</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Editor de desenho */}
+      <DrawingEditor
+        visible={showDrawingEditor}
+        imageUrl={drawingBaseImage}
+        onSave={handleSaveDrawing}
+        onClose={() => setShowDrawingEditor(false)}
       />
 
       {/* Viewer de mídia em tela cheia */}
@@ -511,6 +620,51 @@ const styles = StyleSheet.create({
     mediaVideo: {
         width: SCREEN_WIDTH,
         height: SCREEN_WIDTH * (9 / 16),
+    },
+    visaoImage: {
+        width: '100%',
+        height: 200,
+        borderRadius: 8,
+        marginTop: theme.spacing.sm,
+        backgroundColor: theme.colors.lightGray,
+    },
+    visaoDescricao: {
+        fontSize: 14,
+        color: theme.colors.subtext,
+        marginTop: theme.spacing.sm,
+        fontStyle: 'italic',
+    },
+    baseImagePickerContainer: {
+        backgroundColor: theme.colors.card,
+        margin: theme.spacing.lg,
+        borderRadius: 12,
+        padding: theme.spacing.lg,
+    },
+    baseImagePickerTitle: {
+        fontSize: 17,
+        fontWeight: 'bold',
+        color: theme.colors.text,
+        marginBottom: theme.spacing.md,
+        textAlign: 'center',
+    },
+    baseImagePickerItem: {
+        marginRight: theme.spacing.sm,
+    },
+    baseImagePickerPhoto: {
+        width: 120,
+        height: 120,
+        borderRadius: 8,
+        backgroundColor: theme.colors.lightGray,
+    },
+    baseImagePickerCancel: {
+        marginTop: theme.spacing.md,
+        alignItems: 'center',
+        paddingVertical: theme.spacing.sm,
+    },
+    baseImagePickerCancelText: {
+        color: theme.colors.danger,
+        fontSize: 16,
+        fontWeight: '600',
     },
 });
 
