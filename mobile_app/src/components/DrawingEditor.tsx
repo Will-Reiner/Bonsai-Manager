@@ -1,4 +1,4 @@
-import React, { useRef, useState, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -15,9 +15,10 @@ import {
   Skia,
   Image as SkiaImage,
   useImage,
+  useCanvasRef,
   SkPath,
 } from '@shopify/react-native-skia';
-import * as FileSystem from 'expo-file-system';
+import { File, Paths } from 'expo-file-system/next';
 import { theme } from '../constants/theme';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
@@ -57,8 +58,8 @@ export const DrawingEditor: React.FC<DrawingEditorProps> = ({
   onSave,
   onClose,
 }) => {
-  const canvasRef = useRef<any>(null);
-  const backgroundImage = useImage(imageUrl);
+  const canvasRef = useCanvasRef();
+  const backgroundImage = useImage(imageUrl || undefined);
 
   const [paths, setPaths] = useState<DrawingPath[]>([]);
   const [currentPath, setCurrentPath] = useState<SkPath | null>(null);
@@ -103,28 +104,38 @@ export const DrawingEditor: React.FC<DrawingEditorProps> = ({
   };
 
   const handleSave = async () => {
-    if (!canvasRef.current) return;
+    if (!canvasRef.current) {
+      Alert.alert('Erro', 'Canvas não está pronto.');
+      return;
+    }
 
     setIsSaving(true);
     try {
       const snapshot = canvasRef.current.makeImageSnapshot();
       if (!snapshot) {
         Alert.alert('Erro', 'Não foi possível capturar o desenho.');
+        setIsSaving(false);
         return;
       }
 
       const base64 = snapshot.encodeToBase64();
-      const fileName = `visao_futura_${Date.now()}.png`;
-      const filePath = `${FileSystem.cacheDirectory}${fileName}`;
+      if (!base64) {
+        Alert.alert('Erro', 'Falha ao codificar imagem.');
+        setIsSaving(false);
+        return;
+      }
 
-      await FileSystem.writeAsStringAsync(filePath, base64, {
-        encoding: FileSystem.EncodingType.Base64,
-      });
+      const fileName = `visao_futura_${Date.now()}.png`;
+      const file = new File(Paths.cache, fileName);
+      file.write(base64, { encoding: 'base64' });
+      const filePath = file.uri;
 
       onSave(filePath, descricao);
       resetState();
     } catch (err) {
-      Alert.alert('Erro', 'Não foi possível salvar o esboço.');
+      const msg = err instanceof Error ? err.message : 'Erro desconhecido';
+      console.error('[DrawingEditor] Erro ao salvar:', err);
+      Alert.alert('Erro', `Não foi possível salvar o esboço: ${msg}`);
     } finally {
       setIsSaving(false);
     }
