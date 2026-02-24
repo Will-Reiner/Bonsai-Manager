@@ -25,21 +25,23 @@ import { RootStackParamList } from '../../navigation/AppNavigator';
 import HistoryListItem from '../../components/HistoryListItem';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { theme } from '../../constants/theme';
-import { SERVER_URL } from '../../api';
+import { resolveMediaUri } from '../../utils/resolveMediaUri';
+import { calculatePlantAge } from '../../utils/dateHelpers';
 import { useMediaUpload } from '../../hooks/useMediaUpload';
 import { UploadProgressBar } from '../../components/UploadProgressBar';
 import { DrawingEditor } from '../../components/DrawingEditor';
+import ThreeDotsMenu from '../../components/ThreeDotsMenu';
+import NextCareCard from '../../components/NextCareCard';
+import SectionHeader from '../../components/SectionHeader';
 
 type PlantDetailScreenRouteProp = RouteProp<RootStackParamList, 'PlantDetail'>;
 type PlantDetailNavigationProp = NativeStackNavigationProp<RootStackParamList, 'PlantDetail'>;
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
-// Componente separado para o player de vídeo — mantém o hook useVideoPlayer sem ser condicional
+// Componente separado para o player de vídeo
 const VideoPlayerView = ({ uri }: { uri: string }) => {
-  const player = useVideoPlayer(uri, p => {
-    p.play();
-  });
+  const player = useVideoPlayer(uri, p => { p.play(); });
   return (
     <VideoView
       player={player}
@@ -71,7 +73,6 @@ const PlantDetailScreen = () => {
 
   const carregarDados = useCallback(async () => {
     if (!plantaId) return;
-
     setIsLoading(true);
     setError(null);
     try {
@@ -86,37 +87,84 @@ const PlantDetailScreen = () => {
         const fotosData = await fotoService.getFotosPorPlanta(plantaId);
         setFotos(fotosData);
       } catch {
-        // Fotos são opcionais, não bloqueia o carregamento
+        // Fotos são opcionais
       }
-
     } catch (err) {
       setError('Erro ao carregar os dados da planta.');
-      Alert.alert('Erro', 'Não foi possível carregar os dados completos da planta.');
     } finally {
       setIsLoading(false);
     }
   }, [plantaId]);
 
-  useFocusEffect(
-    useCallback(() => {
-      carregarDados();
-    }, [carregarDados])
-  );
+  useFocusEffect(useCallback(() => { carregarDados(); }, [carregarDados]));
 
   const historico = useMemo(() => {
-    return agenda.filter(item => item.status === 'CONCLUIDO')
-                 .sort((a, b) => new Date(b.dataConcluida!).getTime() - new Date(a.dataConcluida!).getTime());
+    return agenda
+      .filter(item => item.status === 'CONCLUIDO')
+      .sort((a, b) => new Date(b.dataConcluida!).getTime() - new Date(a.dataConcluida!).getTime())
+      .slice(0, 3);
   }, [agenda]);
 
-  // Separar fotos de visão futura das fotos regulares
   const visaoFutura = useMemo(() => {
     const visoes = fotos.filter(f => f.tipo === 'VISAO_FUTURA');
-    return visoes.length > 0 ? visoes[0] : null; // Mais recente (já vem desc por createdAt)
+    return visoes.length > 0 ? visoes[0] : null;
   }, [fotos]);
 
   const fotosGaleria = useMemo(() => {
-    return fotos.filter(f => f.tipo !== 'VISAO_FUTURA');
+    return fotos.filter(f => f.tipo !== 'VISAO_FUTURA').slice(0, 4);
   }, [fotos]);
+
+  // Próximas atividades agendadas (pendentes)
+  const nextCareData = useMemo(() => {
+    const pendentes = agenda
+      .filter(a => a.status === 'PENDENTE')
+      .sort((a, b) => new Date(a.dataAgendada).getTime() - new Date(b.dataAgendada).getTime());
+
+    const find = (keyword: string) => {
+      const item = pendentes.find(a => (a.atividade?.nome || '').toLowerCase().includes(keyword));
+      return item ? item.dataAgendada : null;
+    };
+
+    return {
+      adubacao: find('aduba'),
+      transplante: find('transplant'),
+      estilizacao: find('poda') || find('aramacao') || find('estiliza'),
+    };
+  }, [agenda]);
+
+  const handleEdit = () => navigation.navigate('EditPlant', { plantaId });
+  const handleSchedule = () => navigation.navigate('ScheduleCare', { plantaId });
+  const handleDelete = () => {
+    Alert.alert('Confirmar Exclusão', 'Tem a certeza que deseja apagar esta planta?', [
+      { text: 'Cancelar', style: 'cancel' },
+      {
+        text: 'Apagar',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await plantaService.deletePlanta(plantaId);
+            Alert.alert('Sucesso', 'Planta apagada com sucesso.');
+            navigation.goBack();
+          } catch {
+            Alert.alert('Erro', 'Não foi possível apagar a planta.');
+          }
+        },
+      },
+    ]);
+  };
+
+  // Configure header com ThreeDotsMenu (deve ficar antes dos early returns)
+  React.useLayoutEffect(() => {
+    navigation.setOptions({
+      headerRight: () => (
+        <ThreeDotsMenu items={[
+          { label: 'Editar', icon: 'pencil', onPress: handleEdit },
+          { label: 'Agendar', icon: 'calendar-plus', onPress: handleSchedule },
+          { label: 'Apagar', icon: 'delete', onPress: handleDelete, destructive: true },
+        ]} />
+      ),
+    });
+  }, [navigation, plantaId]);
 
   const openDrawingEditor = () => {
     const fotosDisponiveis = fotos.filter(f => f.tipo === 'FOTO');
@@ -125,7 +173,7 @@ const PlantDetailScreen = () => {
       return;
     }
     if (fotosDisponiveis.length === 1) {
-      setDrawingBaseImage(resolveFotoUri(fotosDisponiveis[0].caminhoArquivo));
+      setDrawingBaseImage(resolveMediaUri(fotosDisponiveis[0].caminhoArquivo));
       setShowDrawingEditor(true);
     } else {
       setShowBaseImagePicker(true);
@@ -133,7 +181,7 @@ const PlantDetailScreen = () => {
   };
 
   const handleSelectBaseImage = (foto: Foto) => {
-    setDrawingBaseImage(resolveFotoUri(foto.caminhoArquivo));
+    setDrawingBaseImage(resolveMediaUri(foto.caminhoArquivo));
     setShowBaseImagePicker(false);
     setShowDrawingEditor(true);
   };
@@ -164,12 +212,7 @@ const PlantDetailScreen = () => {
       Alert.alert('Permissão negada', 'Precisamos de acesso à galeria para adicionar mídia.');
       return;
     }
-
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ['images', 'videos'],
-      quality: 1,
-    });
-
+    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images', 'videos'], quality: 1 });
     if (result.canceled) return;
 
     const asset = result.assets[0];
@@ -177,7 +220,6 @@ const PlantDetailScreen = () => {
 
     try {
       const { publicUrl, thumbnailUrl, tipo } = await upload(asset.uri, mimeType);
-
       const newFoto = await fotoService.createFoto({
         caminhoArquivo: publicUrl,
         plantaId,
@@ -211,199 +253,158 @@ const PlantDetailScreen = () => {
     ]);
   };
 
-  const handleDelete = () => {
-    Alert.alert(
-      'Confirmar Exclusão',
-      'Tem a certeza que deseja apagar esta planta? Esta ação não pode ser desfeita.',
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        {
-          text: 'Apagar',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await plantaService.deletePlanta(plantaId);
-              Alert.alert('Sucesso', 'Planta apagada com sucesso.');
-              navigation.goBack();
-            } catch (err) {
-              Alert.alert('Erro', 'Não foi possível apagar a planta.');
-            }
-          },
-        },
-      ]
-    );
-  };
-
-  const handleEdit = () => navigation.navigate('EditPlant', { plantaId });
-  const handleSchedule = () => navigation.navigate('ScheduleCare', { plantaId });
-
-  // Resolve URI da foto: URLs R2 são absolutas; antigas são relativas ao servidor
-  const resolveFotoUri = (caminhoArquivo: string) => {
-    if (caminhoArquivo.startsWith('http')) return caminhoArquivo;
-    return `${SERVER_URL}${caminhoArquivo}`;
-  };
-
   if (isLoading) {
-    return <View style={styles.centered}><ActivityIndicator size="large" /></View>;
+    return <View style={styles.centered}><ActivityIndicator size="large" color={theme.colors.primary} /></View>;
   }
 
   if (error || !planta) {
     return <View style={styles.centered}><Text style={styles.errorText}>{error || 'Planta não encontrada.'}</Text></View>;
   }
 
-  const renderDetailRow = (label: string, value?: string | null | Date) => {
-    if (!value) return null;
-    const displayValue = value instanceof Date ? value.toLocaleDateString('pt-BR') : value;
-    return (
-      <View style={styles.detailRow}>
-        <Text style={styles.detailLabel}>{label}</Text>
-        <Text style={styles.detailValue}>{displayValue}</Text>
-      </View>
-    );
-  };
+  const displayName = planta.nome || planta.especie?.nomeComum || 'Sem nome';
+  const age = calculatePlantAge(planta.dataAquisicao);
 
   const ListHeader = () => (
     <>
-      <View style={styles.header}>
-        <Text style={styles.mainTitle}>{planta.nome || planta.especie.nomeComum}</Text>
-        {planta.especie.nomeCientifico && <Text style={styles.subtitle}>{planta.especie.nomeCientifico}</Text>}
+      {/* Foto de capa full-width */}
+      {planta.fotoCapaUrl ? (
+        <Image
+          source={{ uri: resolveMediaUri(planta.fotoCapaUrl) }}
+          style={styles.coverImage}
+          resizeMode="cover"
+        />
+      ) : (
+        <View style={styles.coverPlaceholder}>
+          <Ionicons name="leaf" size={48} color={theme.colors.primaryLight} />
+        </View>
+      )}
+
+      {/* Card de informações */}
+      <View style={styles.infoCard}>
+        <Text style={styles.plantName}>{displayName}</Text>
+        {planta.especie?.nomeCientifico && (
+          <Text style={styles.scientificName}>{planta.especie.nomeCientifico}</Text>
+        )}
+        <View style={styles.infoRow}>
+          {planta.modoAquisicao && (
+            <View style={styles.infoPill}>
+              <Text style={styles.infoPillText}>{planta.modoAquisicao}</Text>
+            </View>
+          )}
+          <View style={styles.infoPill}>
+            <Text style={styles.infoPillText}>{age}</Text>
+          </View>
+          <View style={styles.infoPill}>
+            <Text style={styles.infoPillText}>#{planta.id.slice(0, 6)}</Text>
+          </View>
+        </View>
+        {planta.observacoes && (
+          <Text style={styles.observacoes}>{planta.observacoes}</Text>
+        )}
       </View>
-      <View style={styles.card}>
-        {renderDetailRow('Modo de Aquisição', planta.modoAquisicao)}
-        {renderDetailRow('Data de Aquisição', planta.dataAquisicao ? new Date(planta.dataAquisicao) : null)}
+
+      {/* 3 Cards de próximas atividades */}
+      <View style={styles.nextCareRow}>
+        <NextCareCard label="Adubação" date={nextCareData.adubacao} icon="flask" />
+        <NextCareCard label="Transplante" date={nextCareData.transplante} icon="shovel" />
+        <NextCareCard label="Estilização" date={nextCareData.estilizacao} icon="content-cut" />
       </View>
+
+      {/* Visão de Futuro */}
       <View style={styles.card}>
         <View style={styles.photoHeaderRow}>
           <Text style={styles.cardTitle}>Visão de Futuro</Text>
-          <TouchableOpacity style={styles.addPhotoButton} onPress={openDrawingEditor}>
-            <Text style={styles.addPhotoButtonText}>+ Criar Esboço</Text>
+          <TouchableOpacity style={styles.smallButton} onPress={openDrawingEditor}>
+            <Text style={styles.smallButtonText}>+ Criar Esboço</Text>
           </TouchableOpacity>
         </View>
         {visaoFutura ? (
           <View>
-            <Image source={{ uri: resolveFotoUri(visaoFutura.caminhoArquivo) }} style={styles.visaoImage} />
+            <Image source={{ uri: resolveMediaUri(visaoFutura.caminhoArquivo) }} style={styles.visaoImage} />
             {visaoFutura.descricao ? <Text style={styles.visaoDescricao}>{visaoFutura.descricao}</Text> : null}
           </View>
         ) : (
           <Text style={styles.emptyPhotoText}>Nenhum esboço de visão criado.</Text>
         )}
-        {renderDetailRow('Observações', planta.observacoes)}
       </View>
+
+      {/* Seção Fotos */}
+      <SectionHeader
+        title="Fotos"
+        actionLabel="Todas"
+        onAction={() => navigation.navigate('PhotoGallery', { plantaId, plantaNome: displayName })}
+      />
+
       <View style={styles.card}>
-        <View style={styles.photoHeaderRow}>
-          <Text style={styles.cardTitle}>Fotos & Vídeos</Text>
-          <TouchableOpacity style={styles.addPhotoButton} onPress={handleAddPhoto} disabled={isUploading}>
-            {isUploading ? (
-              <ActivityIndicator size="small" color={theme.colors.card} />
-            ) : (
-              <Text style={styles.addPhotoButtonText}>+ Adicionar</Text>
-            )}
-          </TouchableOpacity>
-        </View>
-
         <UploadProgressBar progress={progress} phase={phase} visible={isUploading} />
-
         {fotosGaleria.length > 0 ? (
-          <HScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.photoScroll}>
+          <View style={styles.photoGrid}>
             {fotosGaleria.map((foto) => (
               <TouchableOpacity
                 key={foto.id}
                 onPress={() => setSelectedMedia(foto)}
                 onLongPress={() => handleDeletePhoto(foto.id)}
-                style={styles.photoItem}
+                style={styles.photoGridItem}
               >
-                {foto.tipo === 'VIDEO' ? (
-                  <View style={styles.videoThumbContainer}>
-                    <Image
-                      source={{ uri: foto.thumbnailUrl || resolveFotoUri(foto.caminhoArquivo) }}
-                      style={styles.photoImage}
-                    />
-                    <View style={styles.playIconOverlay}>
-                      <Ionicons name="play-circle" size={36} color="white" />
-                    </View>
+                <Image
+                  source={{ uri: foto.tipo === 'VIDEO' && foto.thumbnailUrl ? foto.thumbnailUrl : resolveMediaUri(foto.caminhoArquivo) }}
+                  style={styles.photoGridImage}
+                />
+                {foto.tipo === 'VIDEO' && (
+                  <View style={styles.playIconOverlay}>
+                    <Ionicons name="play-circle" size={28} color="white" />
                   </View>
-                ) : (
-                  <Image
-                    source={{ uri: resolveFotoUri(foto.caminhoArquivo) }}
-                    style={styles.photoImage}
-                  />
                 )}
-                {foto.titulo ? <Text style={styles.photoTitle} numberOfLines={1}>{foto.titulo}</Text> : null}
               </TouchableOpacity>
             ))}
-          </HScrollView>
+          </View>
         ) : (
           <Text style={styles.emptyPhotoText}>Nenhuma mídia adicionada.</Text>
         )}
+        <TouchableOpacity style={[styles.smallButton, { marginTop: theme.spacing.sm }]} onPress={handleAddPhoto} disabled={isUploading}>
+          <Text style={styles.smallButtonText}>+ Adicionar</Text>
+        </TouchableOpacity>
       </View>
-    </>
-  );
 
-  const ListFooter = () => (
-    <View style={styles.actionsContainer}>
-        <TouchableOpacity style={styles.actionButton} onPress={handleEdit}>
-            <Text style={styles.actionButtonText}>Editar</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={[styles.actionButton, styles.scheduleButton]} onPress={handleSchedule}>
-            <Text style={styles.actionButtonText}>Agendar</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={[styles.actionButton, styles.deleteButton]} onPress={handleDelete}>
-            <Text style={styles.actionButtonText}>Apagar</Text>
-        </TouchableOpacity>
-    </View>
+      {/* Seção Histórico */}
+      <SectionHeader
+        title="Histórico"
+        actionLabel="Todos"
+        onAction={() => navigation.navigate('Tasks')}
+      />
+    </>
   );
 
   return (
     <>
       <FlatList
-          style={styles.container}
-          data={historico}
-          keyExtractor={(item) => item.id}
-          renderItem={({ item }) => <HistoryListItem item={item} />}
-          ListHeaderComponent={
-              <>
-                  <ListHeader />
-                  <View style={styles.historyHeader}>
-                      <Text style={styles.cardTitle}>Histórico de Cuidados (Concluídos)</Text>
-                  </View>
-              </>
-          }
-          ListFooterComponent={ListFooter}
-          ListEmptyComponent={
-              <View style={styles.centeredEmpty}>
-                  <Text>Nenhum registo de histórico para esta planta.</Text>
-              </View>
-          }
+        style={styles.containerList}
+        data={historico}
+        keyExtractor={item => item.id}
+        renderItem={({ item }) => <HistoryListItem item={item} />}
+        ListHeaderComponent={ListHeader}
+        ListEmptyComponent={
+          <View style={styles.centeredEmpty}>
+            <Text style={styles.emptyPhotoText}>Nenhum registo de histórico para esta planta.</Text>
+          </View>
+        }
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: theme.spacing.xl }}
       />
 
       {/* Seletor de foto base para o editor de desenho */}
-      <Modal
-        visible={showBaseImagePicker}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setShowBaseImagePicker(false)}
-      >
+      <Modal visible={showBaseImagePicker} transparent animationType="fade" onRequestClose={() => setShowBaseImagePicker(false)}>
         <View style={styles.mediaOverlay}>
           <View style={styles.baseImagePickerContainer}>
             <Text style={styles.baseImagePickerTitle}>Escolha uma foto como base</Text>
             <HScrollView horizontal showsHorizontalScrollIndicator={false}>
               {fotos.filter(f => f.tipo === 'FOTO').map((foto) => (
-                <TouchableOpacity
-                  key={foto.id}
-                  style={styles.baseImagePickerItem}
-                  onPress={() => handleSelectBaseImage(foto)}
-                >
-                  <Image
-                    source={{ uri: resolveFotoUri(foto.caminhoArquivo) }}
-                    style={styles.baseImagePickerPhoto}
-                  />
+                <TouchableOpacity key={foto.id} style={styles.baseImagePickerItem} onPress={() => handleSelectBaseImage(foto)}>
+                  <Image source={{ uri: resolveMediaUri(foto.caminhoArquivo) }} style={styles.baseImagePickerPhoto} />
                 </TouchableOpacity>
               ))}
             </HScrollView>
-            <TouchableOpacity
-              style={styles.baseImagePickerCancel}
-              onPress={() => setShowBaseImagePicker(false)}
-            >
+            <TouchableOpacity style={styles.baseImagePickerCancel} onPress={() => setShowBaseImagePicker(false)}>
               <Text style={styles.baseImagePickerCancelText}>Cancelar</Text>
             </TouchableOpacity>
           </View>
@@ -419,24 +420,17 @@ const PlantDetailScreen = () => {
       />
 
       {/* Viewer de mídia em tela cheia */}
-      <Modal
-        visible={!!selectedMedia}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setSelectedMedia(null)}
-        statusBarTranslucent
-      >
+      <Modal visible={!!selectedMedia} transparent animationType="fade" onRequestClose={() => setSelectedMedia(null)} statusBarTranslucent>
         <StatusBar backgroundColor="rgba(0,0,0,0.95)" barStyle="light-content" />
         <View style={styles.mediaOverlay}>
           <TouchableOpacity style={styles.mediaCloseBtn} onPress={() => setSelectedMedia(null)}>
             <Ionicons name="close-circle" size={36} color="white" />
           </TouchableOpacity>
-
           {selectedMedia?.tipo === 'VIDEO' ? (
-            <VideoPlayerView uri={selectedMedia.caminhoArquivo} />
+            <VideoPlayerView uri={resolveMediaUri(selectedMedia.caminhoArquivo)} />
           ) : selectedMedia ? (
             <Image
-              source={{ uri: resolveFotoUri(selectedMedia.caminhoArquivo) }}
+              source={{ uri: resolveMediaUri(selectedMedia.caminhoArquivo) }}
               style={styles.mediaImage}
               resizeMode="contain"
             />
@@ -447,225 +441,213 @@ const PlantDetailScreen = () => {
   );
 };
 
-
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: theme.colors.background
-    },
-    centered: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-        backgroundColor: theme.colors.background
-    },
-    centeredEmpty: {
-        padding: theme.spacing.lg,
-        alignItems: 'center'
-    },
-    header: {
-        backgroundColor: theme.colors.card,
-        padding: theme.spacing.lg,
-        borderBottomWidth: 1,
-        borderBottomColor: theme.colors.lightGray
-    },
-    mainTitle: {
-        fontSize: 28,
-        fontWeight: 'bold',
-        color: theme.colors.text
-    },
-    subtitle: {
-        fontSize: 18,
-        fontStyle: 'italic',
-        color: theme.colors.subtext,
-        marginTop: theme.spacing.xs
-    },
-    card: {
-        backgroundColor: theme.colors.card,
-        padding: theme.spacing.lg,
-        marginHorizontal: theme.spacing.md,
-        marginTop: theme.spacing.md,
-        borderRadius: 8,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-        elevation: 3
-    },
-    historyHeader: {
-        marginTop: theme.spacing.lg,
-        paddingHorizontal: theme.spacing.lg,
-        paddingBottom: theme.spacing.sm
-    },
-    cardTitle: {
-        fontSize: 18,
-        fontWeight: 'bold',
-        color: theme.colors.text
-    },
-    detailRow: {
-        marginBottom: theme.spacing.sm
-    },
-    detailLabel: {
-        fontSize: 14,
-        color: theme.colors.subtext,
-        marginBottom: theme.spacing.xs
-    },
-    detailValue: {
-        fontSize: 16,
-        color: theme.colors.text
-    },
-    errorText: {
-        fontSize: 16,
-        color: theme.colors.danger
-    },
-    actionsContainer: {
-        flexDirection: 'row',
-        justifyContent: 'space-around',
-        padding: theme.spacing.lg,
-        marginTop: theme.spacing.sm
-    },
-    actionButton: {
-        backgroundColor: theme.colors.primary,
-        paddingVertical: theme.spacing.sm,
-        paddingHorizontal: theme.spacing.lg,
-        borderRadius: 8,
-        alignItems: 'center',
-        flex: 1,
-        marginHorizontal: theme.spacing.xs
-    },
-    scheduleButton: {
-        backgroundColor: theme.colors.accent
-    },
-    deleteButton: {
-        backgroundColor: theme.colors.danger
-    },
-    actionButtonText: {
-        color: theme.colors.card,
-        fontSize: 16,
-        fontWeight: 'bold'
-    },
-    photoHeaderRow: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: theme.spacing.sm,
-    },
-    addPhotoButton: {
-        backgroundColor: theme.colors.primary,
-        paddingVertical: 6,
-        paddingHorizontal: 12,
-        borderRadius: 6,
-    },
-    addPhotoButtonText: {
-        color: theme.colors.card,
-        fontWeight: 'bold',
-        fontSize: 13,
-    },
-    photoScroll: {
-        marginTop: theme.spacing.xs,
-    },
-    photoItem: {
-        marginRight: theme.spacing.sm,
-        alignItems: 'center',
-    },
-    photoImage: {
-        width: 120,
-        height: 120,
-        borderRadius: 8,
-        backgroundColor: theme.colors.lightGray,
-    },
-    photoTitle: {
-        fontSize: 12,
-        color: theme.colors.subtext,
-        marginTop: 4,
-        maxWidth: 120,
-    },
-    emptyPhotoText: {
-        color: theme.colors.subtext,
-        fontSize: 14,
-        textAlign: 'center',
-        paddingVertical: theme.spacing.sm,
-    },
-    videoThumbContainer: {
-        position: 'relative',
-    },
-    playIconOverlay: {
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        justifyContent: 'center',
-        alignItems: 'center',
-        backgroundColor: 'rgba(0,0,0,0.35)',
-        borderRadius: 8,
-    },
-    // Estilos do viewer em tela cheia
-    mediaOverlay: {
-        flex: 1,
-        backgroundColor: 'rgba(0,0,0,0.95)',
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    mediaCloseBtn: {
-        position: 'absolute',
-        top: 48,
-        right: 16,
-        zIndex: 10,
-    },
-    mediaImage: {
-        width: SCREEN_WIDTH,
-        height: SCREEN_HEIGHT * 0.85,
-    },
-    mediaVideo: {
-        width: SCREEN_WIDTH,
-        height: SCREEN_WIDTH * (9 / 16),
-    },
-    visaoImage: {
-        width: '100%',
-        height: 200,
-        borderRadius: 8,
-        marginTop: theme.spacing.sm,
-        backgroundColor: theme.colors.lightGray,
-    },
-    visaoDescricao: {
-        fontSize: 14,
-        color: theme.colors.subtext,
-        marginTop: theme.spacing.sm,
-        fontStyle: 'italic',
-    },
-    baseImagePickerContainer: {
-        backgroundColor: theme.colors.card,
-        margin: theme.spacing.lg,
-        borderRadius: 12,
-        padding: theme.spacing.lg,
-    },
-    baseImagePickerTitle: {
-        fontSize: 17,
-        fontWeight: 'bold',
-        color: theme.colors.text,
-        marginBottom: theme.spacing.md,
-        textAlign: 'center',
-    },
-    baseImagePickerItem: {
-        marginRight: theme.spacing.sm,
-    },
-    baseImagePickerPhoto: {
-        width: 120,
-        height: 120,
-        borderRadius: 8,
-        backgroundColor: theme.colors.lightGray,
-    },
-    baseImagePickerCancel: {
-        marginTop: theme.spacing.md,
-        alignItems: 'center',
-        paddingVertical: theme.spacing.sm,
-    },
-    baseImagePickerCancelText: {
-        color: theme.colors.danger,
-        fontSize: 16,
-        fontWeight: '600',
-    },
+  containerList: {
+    flex: 1,
+    backgroundColor: theme.colors.background,
+  },
+  centered: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: theme.colors.background,
+  },
+  centeredEmpty: {
+    padding: theme.spacing.lg,
+    alignItems: 'center',
+  },
+  errorText: {
+    fontSize: 16,
+    color: theme.colors.danger,
+  },
+  coverImage: {
+    width: '100%',
+    height: 220,
+    backgroundColor: theme.colors.lightGray,
+  },
+  coverPlaceholder: {
+    width: '100%',
+    height: 160,
+    backgroundColor: theme.colors.primaryLight,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  infoCard: {
+    backgroundColor: theme.colors.card,
+    marginHorizontal: theme.spacing.md,
+    marginTop: -24,
+    borderRadius: theme.borderRadius.lg,
+    padding: theme.spacing.lg,
+    ...theme.shadows.medium,
+  },
+  plantName: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: theme.colors.text,
+  },
+  scientificName: {
+    fontSize: 15,
+    fontStyle: 'italic',
+    color: theme.colors.subtext,
+    marginTop: theme.spacing.xs,
+  },
+  infoRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginTop: theme.spacing.sm,
+    gap: 8,
+  },
+  infoPill: {
+    backgroundColor: theme.colors.primaryLight,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: theme.borderRadius.xl,
+  },
+  infoPillText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: theme.colors.primaryDark,
+  },
+  observacoes: {
+    fontSize: 14,
+    color: theme.colors.subtext,
+    marginTop: theme.spacing.sm,
+    lineHeight: 20,
+  },
+  nextCareRow: {
+    flexDirection: 'row',
+    marginHorizontal: theme.spacing.md,
+    marginTop: theme.spacing.md,
+  },
+  card: {
+    backgroundColor: theme.colors.card,
+    padding: theme.spacing.md,
+    marginHorizontal: theme.spacing.md,
+    marginTop: theme.spacing.sm,
+    borderRadius: theme.borderRadius.md,
+    ...theme.shadows.soft,
+  },
+  cardTitle: {
+    fontSize: 17,
+    fontWeight: 'bold',
+    color: theme.colors.text,
+  },
+  photoHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: theme.spacing.sm,
+  },
+  smallButton: {
+    backgroundColor: theme.colors.primary,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: theme.borderRadius.sm,
+    alignSelf: 'flex-start',
+  },
+  smallButtonText: {
+    color: theme.colors.card,
+    fontWeight: 'bold',
+    fontSize: 13,
+  },
+  photoGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  photoGridItem: {
+    width: (SCREEN_WIDTH - theme.spacing.md * 2 - theme.spacing.md * 2 - 8) / 2,
+    height: (SCREEN_WIDTH - theme.spacing.md * 2 - theme.spacing.md * 2 - 8) / 2,
+    borderRadius: theme.borderRadius.sm,
+    overflow: 'hidden',
+    backgroundColor: theme.colors.lightGray,
+  },
+  photoGridImage: {
+    width: '100%',
+    height: '100%',
+  },
+  playIconOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.35)',
+  },
+  emptyPhotoText: {
+    color: theme.colors.subtext,
+    fontSize: 14,
+    textAlign: 'center',
+    paddingVertical: theme.spacing.sm,
+  },
+  visaoImage: {
+    width: '100%',
+    height: 200,
+    borderRadius: theme.borderRadius.sm,
+    marginTop: theme.spacing.sm,
+    backgroundColor: theme.colors.lightGray,
+  },
+  visaoDescricao: {
+    fontSize: 14,
+    color: theme.colors.subtext,
+    marginTop: theme.spacing.sm,
+    fontStyle: 'italic',
+  },
+  // Modais
+  mediaOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.95)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  mediaCloseBtn: {
+    position: 'absolute',
+    top: 48,
+    right: 16,
+    zIndex: 10,
+  },
+  mediaImage: {
+    width: SCREEN_WIDTH,
+    height: SCREEN_HEIGHT * 0.85,
+  },
+  mediaVideo: {
+    width: SCREEN_WIDTH,
+    height: SCREEN_WIDTH * (9 / 16),
+  },
+  baseImagePickerContainer: {
+    backgroundColor: theme.colors.card,
+    margin: theme.spacing.lg,
+    borderRadius: theme.borderRadius.md,
+    padding: theme.spacing.lg,
+  },
+  baseImagePickerTitle: {
+    fontSize: 17,
+    fontWeight: 'bold',
+    color: theme.colors.text,
+    marginBottom: theme.spacing.md,
+    textAlign: 'center',
+  },
+  baseImagePickerItem: {
+    marginRight: theme.spacing.sm,
+  },
+  baseImagePickerPhoto: {
+    width: 120,
+    height: 120,
+    borderRadius: theme.borderRadius.sm,
+    backgroundColor: theme.colors.lightGray,
+  },
+  baseImagePickerCancel: {
+    marginTop: theme.spacing.md,
+    alignItems: 'center',
+    paddingVertical: theme.spacing.sm,
+  },
+  baseImagePickerCancelText: {
+    color: theme.colors.danger,
+    fontSize: 16,
+    fontWeight: '600',
+  },
 });
 
 export default PlantDetailScreen;

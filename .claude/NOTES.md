@@ -191,3 +191,37 @@ Estilizacao virtual ("Paint" para Bonsai) — editor de desenho Skia sobre fotos
 - `visao` removido dos tipos `Planta`, `CreatePlantaDTO`, `UpdatePlantaDTO`
 
 **Dependencias instaladas:** `@shopify/react-native-skia`, `react-native-reanimated`, `expo-file-system` (mobile)
+
+## Implementacao 2026-02-24
+
+### Resumo
+
+Redesign completo do frontend mobile — nova navegacao com 5 tabs (Home, Colecao, +, Enciclopedia, Comunidade), Home inteligente com dados agregados, e visual botanico com carousels, grids e cards de prioridade.
+
+### Detalhes
+
+**Fase 1 — Fundacao (tema + componentes)**
+- Theme expandido: novas cores (primaryLight, primaryDark, surface, border, prioridade), borderRadius, shadows reutilizaveis, tipografia (h3, subtitle, caption, button)
+- 8 componentes compartilhados: ProfileAvatar, SectionHeader, Carousel (auto-rotativo com dots), FilterChips, PlantGridItem (card com foto 70%), StatisticsCard, TaskCard, UnderConstructionScreen
+- Utilitarios: `dateHelpers.ts` (estacoes hemisferico sul, idade de planta, overdue, dica sazonal), `resolveMediaUri.ts` (extrai logica duplicada)
+
+**Fase 2 — Navegacao + Home**
+- CustomTabBar com botao "+" central elevado e QuickActionSheet (modal com 3 acoes rapidas)
+- AppNavigator reestruturado: 5 tabs (Home, Colecao, AddAction placeholder, Enciclopedia, Comunidade), tabs Agenda/Inventario/Profile removidas
+- Novas rotas stack: Tasks, Settings, Inventory, PhotoGallery
+- HomeScreen: header com avatar + nome, card de estacao com progresso, cards de tarefas por prioridade (atraso, transplante, adubacao, atencao), placeholder gamificacao, dicas sazonais
+- homeService: agrega plantaService + agendaService com estatisticas derivadas
+- TasksScreen: lista filtrada com FilterChips de prioridade e categoria, conclusao inline
+
+**Fase 3 — Colecao + Detalhes**
+- CollectionScreen reescrita: carousel de plantas recentes com foto, StatisticsCard (plantas/especies/concluidos), FilterChips por tipo de planta, grid 2 colunas com PlantGridItem
+- PlantDetailScreen reescrita: foto de capa full-width, card info com pills (aquisicao, idade, id), 3 NextCareCards (adubacao, transplante, estilizacao), grid de fotos 2x2 com link para galeria, historico limitado a 3, ThreeDotsMenu no header
+- PhotoGalleryScreen: galeria completa com grid, upload, viewer fullscreen
+- Componentes: NextCareCard, ThreeDotsMenu (popup com opcoes)
+
+**Fase 4 — Enciclopedia + Settings + Comunidade**
+- EncyclopediaScreen reescrita: carousel de leituras recomendadas, FilterChips (Todos/Especies/Tecnicas), cards com icone + tempo estimado de leitura
+- SettingsScreen: absorve ProfileScreen (perfil, estatisticas, link inventario, admin, logout)
+- CommunityScreen substituida por UnderConstructionScreen
+
+**Arquivos:** 20 criados (13 componentes, 4 telas, 3 utils/services), 6 modificados. Zero erros de tipo introduzidos.

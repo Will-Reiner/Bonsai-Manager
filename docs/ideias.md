@@ -1,6 +1,11 @@
 - "visaoFutura" ter toda uma funcionalidade de esboço para ajudar o bonsaista a ter uma visao mais agucada de onde ele pode chegar.
 - fazer recursos e frontend pensando no joguinho de fazenda do facebook, bem bonitinho e legal
 - upload massivo de fotos e videos com checagem se tamanho antes
+- mudar visualmente o botao de + quando estiver em detalhes de uma planta para ele fazer alteracoes diretamente nela (ex: adicao de foto, adicao de tarefa, adicao de recurso, etc)
+
+- usar estações do ano como marcacoes temporais
+- criar metas anuais/estações (ex: até final do verão quero ter transplantado 30 plantas, ou até o final do ano quero ter aramação 100% das minhas plantas)
+- gamificacao de tarefas concluidas durante o passar do tempo (badges)
 
 
 
