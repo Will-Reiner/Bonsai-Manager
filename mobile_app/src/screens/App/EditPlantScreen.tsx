@@ -18,6 +18,7 @@ import { Especie, ModoAquisicao, Planta } from '../../types';
 import { RootStackParamList } from '../../navigation/AppNavigator';
 import { theme } from '../../constants/theme';
 import { CoverPhotoPicker } from '../../components/CoverPhotoPicker';
+import { usePreferencias } from '../../context/PreferenciasContext';
 
 type EditPlantScreenRouteProp = RouteProp<RootStackParamList, 'EditPlant'>;
 
@@ -25,9 +26,11 @@ const EditPlantScreen = () => {
   const navigation = useNavigation();
   const route = useRoute<EditPlantScreenRouteProp>();
   const { plantaId } = route.params;
-  
+  const { preferencias } = usePreferencias();
+
   // Estados do formulário alinhados com a nova estrutura
   const [nome, setNome] = useState('');
+  const [identificador, setIdentificador] = useState('');
   const [especieId, setEspecieId] = useState<string | undefined>();
   const [modoAquisicao, setModoAquisicao] = useState<ModoAquisicao | null | undefined>();
   const [observacoes, setObservacoes] = useState('');
@@ -49,6 +52,7 @@ const EditPlantScreen = () => {
 
         // Popula o formulário com os dados da planta
         setNome(plantaData.nome || '');
+        setIdentificador(plantaData.identificador || '');
         setEspecieId(plantaData.especieId);
         setModoAquisicao(plantaData.modoAquisicao);
         setObservacoes(plantaData.observacoes || '');
@@ -76,6 +80,7 @@ const EditPlantScreen = () => {
     const plantaData: UpdatePlantaDTO = {
       especieId,
       nome,
+      identificador: identificador || undefined,
       modoAquisicao,
       observacoes,
       fotoCapaUrl: coverPublicUrl,
@@ -123,13 +128,29 @@ const EditPlantScreen = () => {
         onImageRemoved={() => { setCoverPublicUrl(null); setIsUploadingCover(false); }}
       />
 
-      <Text style={styles.label}>Nome (Apelido)</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="Ex: Meu Junípero"
-        value={nome}
-        onChangeText={setNome}
-      />
+      {preferencias.usa_nome_planta === 'true' && (
+        <>
+          <Text style={styles.label}>Nome (Apelido)</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Ex: Meu Junípero"
+            value={nome}
+            onChangeText={setNome}
+          />
+        </>
+      )}
+
+      {preferencias.usa_identificador === 'true' && (
+        <>
+          <Text style={styles.label}>Identificador (Plaquinha)</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Ex: 001, A-12..."
+            value={identificador}
+            onChangeText={setIdentificador}
+          />
+        </>
+      )}
 
       <Text style={styles.label}>Espécie *</Text>
       <View style={styles.pickerContainer}>

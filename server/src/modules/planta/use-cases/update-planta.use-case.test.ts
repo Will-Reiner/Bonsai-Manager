@@ -43,6 +43,7 @@ describe('UpdatePlantaUseCase', () => {
       especieId: 'especie-123',
       usuarioId: 'user-123',
       nome: 'Nome Atualizado',
+      identificador: null,
       dataAquisicao: new Date('2024-02-01'),
       modoAquisicao: ModoAquisicao.ESTACA,
 

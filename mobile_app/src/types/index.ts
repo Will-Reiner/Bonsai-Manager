@@ -62,6 +62,7 @@ export interface Especie {
 export interface Planta {
   id: string;
   nome?: string | null;
+  identificador?: string | null;
   dataAquisicao?: string | null;
   modoAquisicao?: ModoAquisicao | null;
   observacoes?: string | null;
@@ -198,3 +199,31 @@ export interface UpdateAgendaDTO {
     quantidadeUtilizada: number;
   }[];
 }
+
+// --- PREFERÊNCIAS ---
+
+export type AdubacaoModo = 'GERAL' | 'INDIVIDUAL' | 'NAO_ADUBA';
+export type AdubacaoFrequencia = 'SEMANAL' | 'QUINZENAL' | 'MENSAL' | 'OUTRO';
+
+export interface Preferencias {
+  usa_identificador: string;
+  usa_nome_planta: string;
+  gerencia_rega: string;
+  adubacao_modo: string;
+  adubacao_frequencia: string;
+  periodo_pos_transplante_dias: string;
+  atividades_rastreadas: string;
+  onboarding_concluido: string;
+  [chave: string]: string;
+}
+
+export const PREFERENCIAS_DEFAULTS: Preferencias = {
+  usa_identificador: 'false',
+  usa_nome_planta: 'false',
+  gerencia_rega: 'false',
+  adubacao_modo: 'GERAL',
+  adubacao_frequencia: 'MENSAL',
+  periodo_pos_transplante_dias: '90',
+  atividades_rastreadas: '[]',
+  onboarding_concluido: 'false',
+};

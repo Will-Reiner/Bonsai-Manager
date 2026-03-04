@@ -129,3 +129,4 @@ Navigation structure: unauthenticated users see Login/Register; authenticated us
 - Virtual styling for future vision - DONE
 - Lack of recurrence on the events
 - Register multiple tasks
+- Onboarding questions for especification - DONE

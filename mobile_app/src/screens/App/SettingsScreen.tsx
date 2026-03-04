@@ -97,6 +97,7 @@ const SettingsScreen = () => {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Ferramentas</Text>
           <SettingsRow icon="archive-outline" label="Inventário" onPress={() => navigation.navigate('Inventory')} />
+          <SettingsRow icon="tune-variant" label="Preferências de Cuidado" onPress={() => navigation.navigate('Preferencias')} />
         </View>
 
         {displayUser?.role === 'ADMIN' && (

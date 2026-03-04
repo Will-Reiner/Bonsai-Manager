@@ -18,12 +18,15 @@ import { fotoService } from '../../services/fotoService';
 import { Especie, ModoAquisicao } from '../../types';
 import { theme } from '../../constants/theme';
 import { CoverPhotoPicker } from '../../components/CoverPhotoPicker';
+import { usePreferencias } from '../../context/PreferenciasContext';
 
 const AddPlantScreen = () => {
   const navigation = useNavigation();
+  const { preferencias } = usePreferencias();
 
   // Estados do formulário alinhados com o novo DTO
   const [nome, setNome] = useState('');
+  const [identificador, setIdentificador] = useState('');
   const [especieId, setEspecieId] = useState<string | undefined>();
   const [modoAquisicao, setModoAquisicao] = useState<ModoAquisicao | undefined>();
   const [observacoes, setObservacoes] = useState('');
@@ -86,6 +89,7 @@ const AddPlantScreen = () => {
     const plantaData: CreatePlantaDTO = {
       especieId,
       nome: nome || undefined,
+      identificador: identificador || undefined,
       modoAquisicao: modoAquisicao || undefined,
       observacoes: observacoes || undefined,
       fotoCapaUrl: coverPublicUrl || undefined,
@@ -123,13 +127,29 @@ const AddPlantScreen = () => {
         onImageRemoved={() => { setCoverPublicUrl(undefined); setIsUploadingCover(false); }}
       />
 
-      <Text style={styles.label}>Nome (Apelido)</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="Ex: Meu Junípero"
-        value={nome}
-        onChangeText={setNome}
-      />
+      {preferencias.usa_nome_planta === 'true' && (
+        <>
+          <Text style={styles.label}>Nome (Apelido)</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Ex: Meu Junípero"
+            value={nome}
+            onChangeText={setNome}
+          />
+        </>
+      )}
+
+      {preferencias.usa_identificador === 'true' && (
+        <>
+          <Text style={styles.label}>Identificador (Plaquinha)</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Ex: 001, A-12..."
+            value={identificador}
+            onChangeText={setIdentificador}
+          />
+        </>
+      )}
 
       <Text style={styles.label}>Espécie *</Text>
       <View style={styles.pickerContainer}>

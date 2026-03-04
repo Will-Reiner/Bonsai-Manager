@@ -29,11 +29,14 @@ import UserListScreen from '../screens/App/UserListScreen';
 import TasksScreen from '../screens/App/TasksScreen';
 import SettingsScreen from '../screens/App/SettingsScreen';
 import PhotoGalleryScreen from '../screens/App/PhotoGalleryScreen';
+import OnboardingScreen from '../screens/Onboarding/OnboardingScreen';
+import PreferenciasScreen from '../screens/App/PreferenciasScreen';
 
 // Import custom tab bar
 import CustomTabBar from '../components/CustomTabBar';
 
 import { useAuth } from '../context/AuthContext';
+import { usePreferencias } from '../context/PreferenciasContext';
 import { Usuario } from '../types';
 
 // Tipos para o navegador principal (Stack)
@@ -41,6 +44,7 @@ export type RootStackParamList = {
   MainTabs: undefined;
   Login: undefined;
   Register: undefined;
+  Onboarding: undefined;
   PlantDetail: { plantaId: string };
   AddPlant: undefined;
   EditPlant: { plantaId: string };
@@ -57,6 +61,7 @@ export type RootStackParamList = {
   Settings: undefined;
   Inventory: undefined;
   PhotoGallery: { plantaId: string; plantaNome?: string };
+  Preferencias: undefined;
   Home: undefined;
 };
 
@@ -93,8 +98,9 @@ const MainTabs = () => {
 
 const AppNavigator = () => {
   const { authState } = useAuth();
+  const { isOnboardingComplete, isLoading: isLoadingPrefs } = usePreferencias();
 
-  if (authState.isLoading) {
+  if (authState.isLoading || (authState.isAuthenticated && isLoadingPrefs)) {
     return (
       <View style={{ flex: 1, justifyContent: 'center' }}>
         <ActivityIndicator size="large" color={theme.colors.primary} />
@@ -105,7 +111,18 @@ const AppNavigator = () => {
   return (
     <NavigationContainer>
       <Stack.Navigator>
-        {authState.isAuthenticated ? (
+        {!authState.isAuthenticated ? (
+          <>
+            <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
+            <Stack.Screen name="Register" component={RegisterScreen} options={{ title: 'Criar Conta' }} />
+          </>
+        ) : !isOnboardingComplete ? (
+          <Stack.Screen
+            name="Onboarding"
+            component={OnboardingScreen}
+            options={{ headerShown: false, gestureEnabled: false }}
+          />
+        ) : (
           <>
             <Stack.Screen name="MainTabs" component={MainTabs} options={{ headerShown: false }} />
             <Stack.Screen name="PlantDetail" component={PlantDetailScreen} options={{ title: 'Detalhes da Planta' }} />
@@ -124,11 +141,7 @@ const AppNavigator = () => {
             <Stack.Screen name="Settings" component={SettingsScreen} options={{ title: 'Configurações' }} />
             <Stack.Screen name="Inventory" component={InventoryScreen} options={{ title: 'Inventário' }} />
             <Stack.Screen name="PhotoGallery" component={PhotoGalleryScreen} options={{ title: 'Galeria de Fotos' }} />
-          </>
-        ) : (
-          <>
-            <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
-            <Stack.Screen name="Register" component={RegisterScreen} options={{ title: 'Criar Conta' }} />
+            <Stack.Screen name="Preferencias" component={PreferenciasScreen} options={{ title: 'Preferências de Cuidado' }} />
           </>
         )}
       </Stack.Navigator>

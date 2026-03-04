@@ -225,3 +225,46 @@ Redesign completo do frontend mobile — nova navegacao com 5 tabs (Home, Coleca
 - CommunityScreen substituida por UnderConstructionScreen
 
 **Arquivos:** 20 criados (13 componentes, 4 telas, 3 utils/services), 6 modificados. Zero erros de tipo introduzidos.
+
+## Implementacao 2026-03-03
+
+### Resumo
+
+Sistema de preferencias do bonsaista com onboarding wizard (5 telas) e tela de edicao posterior — modelo chave-valor extensivel no backend, contexto global com cache no frontend, campos condicionais nos formularios de planta. 227 testes, 78 suites — todos a passar.
+
+### Detalhes
+
+**Banco de Dados**
+- Novo modelo `PreferenciaUsuario` (chave-valor com `@@unique([usuarioId, chave])`) e relacao com `Usuario`
+- Campo `identificador String?` adicionado ao modelo `Planta` com `@@unique([usuarioId, identificador])`
+- Migracao criada manualmente e aplicada via `prisma migrate deploy`
+
+**Backend — Modulo `preferencia` (novo)**
+- Tipos, schemas Zod, repositorio Prisma com `upsert` e `$transaction` para lote
+- 3 use cases: `GetPreferencias`, `UpsertPreferencia`, `UpsertPreferenciasEmLote`
+- 5 testes unitarios com mocks (AAA pattern)
+- 3 endpoints: `GET /api/preferencias`, `PUT /api/preferencias` (lote), `PUT /api/preferencias/:chave`
+
+**Backend — Modulo `planta` atualizado**
+- `identificador` adicionado a todos os DTOs, schemas Zod, `PlantaWithEspecie`, repositorio (data + select)
+- 4 ficheiros de teste atualizados com `identificador: null` nos mocks
+
+**Frontend — Contexto e Servicos**
+- `preferenciaService.ts`: get/update preferencias via API
+- `PreferenciasContext.tsx`: carrega ao login, cache AsyncStorage, expoe `isOnboardingComplete`, `updatePreferencias`
+- Tipos `Preferencias` e `PREFERENCIAS_DEFAULTS` em `types/index.ts`
+
+**Frontend — Onboarding (5 telas)**
+- Tela 1 (Identificacao): tags/plaquinhas e nomes — cards com radio buttons
+- Tela 2 (Rega): gerenciar rega pelo app ou nao
+- Tela 3 (Adubacao): modo (geral/individual/nao aduba), frequencia (chips), periodo pos-transplante
+- Tela 4 (Atividades): multi-select com grid de checkboxes, carregado dinamicamente da API
+- Tela 5 (Resumo): mensagem de boas-vindas com botao "Comecar"
+- Wrapper `OnboardingScreen` com progress dots e estado local
+
+**Frontend — Navegacao e Integracao**
+- `AppNavigator`: fluxo condicional `!auth -> Login | !onboarding -> Onboarding | -> MainTabs`
+- `App.tsx` envolvido com `PreferenciasProvider`
+- `PreferenciasScreen`: formulario editavel com switches e chips (acessivel via Configuracoes)
+- `SettingsScreen`: novo link "Preferencias de Cuidado"
+- `AddPlantScreen` e `EditPlantScreen`: campos `nome` e `identificador` condicionais baseados em preferencias

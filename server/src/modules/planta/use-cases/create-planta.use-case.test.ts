@@ -42,6 +42,7 @@ describe('CreatePlantaUseCase', () => {
       especieId: 'especie-123',
       usuarioId: 'user-123',
       nome: 'Minha Planta',
+      identificador: null,
       dataAquisicao: new Date('2024-01-01'),
       modoAquisicao: ModoAquisicao.SEMENTE,
 

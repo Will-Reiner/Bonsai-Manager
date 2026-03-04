@@ -5,6 +5,7 @@ export interface CreatePlantaRequestDTO {
   especieId: string;
   usuarioId: string;
   nome?: string;
+  identificador?: string;
   dataAquisicao?: string | null;
   modoAquisicao?: ModoAquisicao | null;
   observacoes?: string;
@@ -16,6 +17,7 @@ export interface CreatePlantaRequestDTO {
 export interface UpdatePlantaRequestDTO {
   especieId?: string;
   nome?: string;
+  identificador?: string | null;
   dataAquisicao?: string | null;
   modoAquisicao?: ModoAquisicao | null;
   observacoes?: string;
@@ -29,6 +31,7 @@ export interface CreatePlantaDTO {
   especieId: string;
   usuarioId: string;
   nome?: string;
+  identificador?: string;
   dataAquisicao?: Date | null;
   modoAquisicao?: ModoAquisicao | null;
   observacoes?: string;
@@ -40,6 +43,7 @@ export interface CreatePlantaDTO {
 export interface UpdatePlantaDTO {
   especieId?: string;
   nome?: string;
+  identificador?: string | null;
   dataAquisicao?: Date | null;
   modoAquisicao?: ModoAquisicao | null;
   observacoes?: string;
@@ -53,6 +57,7 @@ export interface PlantaWithEspecie {
   especieId: string;
   usuarioId: string;
   nome: string | null;
+  identificador: string | null;
   dataAquisicao: Date | null;
   modoAquisicao: ModoAquisicao | null;
   observacoes: string | null;

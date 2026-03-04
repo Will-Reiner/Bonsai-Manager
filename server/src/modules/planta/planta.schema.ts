@@ -8,6 +8,7 @@ export const createPlantaSchema = z.object({
   body: z.object({
     especieId: z.string().uuid({ message: 'O ID da espécie é obrigatório.' }),
     nome: z.string().optional(),
+    identificador: z.string().optional(),
     dataAquisicao: z.string().datetime().optional().nullable(),
     modoAquisicao: ModoAquisicaoEnum.optional().nullable(),
     observacoes: z.string().optional(),
@@ -22,6 +23,7 @@ export const updatePlantaSchema = z.object({
   body: z.object({
     especieId: z.string().uuid().optional(),
     nome: z.string().optional(),
+    identificador: z.string().optional().nullable(),
     dataAquisicao: z.string().datetime().optional().nullable(),
     modoAquisicao: ModoAquisicaoEnum.optional().nullable(),
     observacoes: z.string().optional(),

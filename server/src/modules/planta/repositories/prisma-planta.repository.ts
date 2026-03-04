@@ -10,6 +10,7 @@ export class PrismaPlantaRepository implements PlantaRepository {
         especieId: data.especieId,
         usuarioId: data.usuarioId,
         nome: data.nome,
+        identificador: data.identificador,
         dataAquisicao: data.dataAquisicao,
         modoAquisicao: data.modoAquisicao,
 
@@ -23,6 +24,7 @@ export class PrismaPlantaRepository implements PlantaRepository {
         especieId: true,
         usuarioId: true,
         nome: true,
+        identificador: true,
         dataAquisicao: true,
         modoAquisicao: true,
 
@@ -52,6 +54,7 @@ export class PrismaPlantaRepository implements PlantaRepository {
         especieId: true,
         usuarioId: true,
         nome: true,
+        identificador: true,
         dataAquisicao: true,
         modoAquisicao: true,
 
@@ -85,6 +88,7 @@ export class PrismaPlantaRepository implements PlantaRepository {
         especieId: true,
         usuarioId: true,
         nome: true,
+        identificador: true,
         dataAquisicao: true,
         modoAquisicao: true,
 
@@ -113,6 +117,7 @@ export class PrismaPlantaRepository implements PlantaRepository {
       data: {
         especieId: data.especieId,
         nome: data.nome,
+        identificador: data.identificador,
         dataAquisicao: data.dataAquisicao,
         modoAquisicao: data.modoAquisicao,
 
@@ -126,6 +131,7 @@ export class PrismaPlantaRepository implements PlantaRepository {
         especieId: true,
         usuarioId: true,
         nome: true,
+        identificador: true,
         dataAquisicao: true,
         modoAquisicao: true,
 

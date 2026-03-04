@@ -104,6 +104,7 @@ model Usuario {
   seguindo           Amizade[] @relation("Seguidor")
   seguidores         Amizade[] @relation("Seguido")
   especiesSugeridas  Especie[]
+  preferencias       PreferenciaUsuario[]
 }
 
 model Especie {
@@ -142,6 +143,7 @@ model Especie {
 model Planta {
   id               String        @id @default(uuid())
   nome             String?
+  identificador    String?
   dataAquisicao    DateTime?
   modoAquisicao    ModoAquisicao?
   observacoes      String?       @db.Text
@@ -153,7 +155,7 @@ model Planta {
 
   usuarioId        String
   usuario          Usuario       @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
-  
+
   especieId        String
   especie          Especie       @relation(fields: [especieId], references: [id])
 
@@ -161,6 +163,8 @@ model Planta {
   fotos       Foto[]
   agendas     Agenda[]
   inspiracoes Inspiracao[]
+
+  @@unique([usuarioId, identificador])
 }
 
 model Atividade {
@@ -330,9 +334,23 @@ model AtividadeRecursoSugerido {
 model AtividadeFerramentaSugerida {
   atividadeId  String
   ferramentaId String
-  
+
   atividade    Atividade  @relation(fields: [atividadeId], references: [id], onDelete: Cascade)
   ferramenta   Ferramenta @relation(fields: [ferramentaId], references: [id], onDelete: Cascade)
 
   @@id([atividadeId, ferramentaId])
+}
+
+model PreferenciaUsuario {
+  id        String   @id @default(uuid())
+  chave     String
+  valor     String
+
+  usuarioId String
+  usuario   Usuario  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([usuarioId, chave])
 }

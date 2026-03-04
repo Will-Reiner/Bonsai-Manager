@@ -8,6 +8,7 @@ import { Planta, ModoAquisicao } from '../types';
 export interface CreatePlantaDTO {
   especieId: string;
   nome?: string;
+  identificador?: string;
   dataAquisicao?: string | null; // Formato 'YYYY-MM-DDTHH:mm:ss.sssZ'
   modoAquisicao?: ModoAquisicao | null;
   observacoes?: string;
