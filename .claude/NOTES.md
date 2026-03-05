@@ -268,3 +268,35 @@ Sistema de preferencias do bonsaista com onboarding wizard (5 telas) e tela de e
 - `PreferenciasScreen`: formulario editavel com switches e chips (acessivel via Configuracoes)
 - `SettingsScreen`: novo link "Preferencias de Cuidado"
 - `AddPlantScreen` e `EditPlantScreen`: campos `nome` e `identificador` condicionais baseados em preferencias
+
+## Implementacao 2026-03-05
+
+### Resumo
+
+Redesign completo da tela de Tarefas — UI moderna com secoes agrupadas por tempo, stats cards, FAB para intervencoes ad-hoc, e modais bottom sheet para conclusao e registro rapido.
+
+### Detalhes
+
+**Backend**
+- `fotoCapaUrl` adicionado ao select de planta no repositorio de agenda (`findManyByUser` e `findByIdAndUser`)
+
+**Frontend — Novos componentes**
+- `activityIcons.ts`: mapeamento de nomes de atividade para icones MaterialCommunityIcons com busca parcial
+- `QuickInterventionModal`: bottom sheet para intervencoes ad-hoc — selecao horizontal de plantas (cards com foto), chips de atividades com icones, toggle "Ja realizado?" (cria agenda concluida ou pendente)
+
+**Frontend — Componentes redesenhados**
+- `TaskListItem`: thumbnail da planta (48x48), icone + nome da atividade, nome da planta em destaque, badge pill colorido com status, data relativa ("Hoje", "Ontem", "Em 3 dias"), botao circular de check visivel sem expansao
+- `CompleteTaskModal`: convertido para bottom sheet com handle bar, header com icone da atividade, campo "Recursos Utilizados" removido, botoes arredondados
+
+**Frontend — TasksScreen reescrita**
+- 3 stat cards horizontais (Em Atraso/Hoje/Proximas) com contadores e cores
+- Filtros de categoria em fileira unica de FilterChips
+- SectionList agrupada por tempo (Em Atraso, Hoje, Esta Semana, Proximas, Concluidos colapsavel)
+- FAB (60x60) verde para abrir QuickInterventionModal
+- Estado vazio motivacional com icone de folha
+- Suporte a `route.params.openIntervention` para abrir modal via navegacao
+
+**Navegacao e limpeza**
+- `Tasks` param type atualizado para aceitar `{ openIntervention?: boolean }`
+- `QuickActionSheet` "Registrar Intervencao" agora navega com `openIntervention: true`
+- `AgendaScreen.tsx` deletada (nao era usada em nenhum lugar da navegacao)

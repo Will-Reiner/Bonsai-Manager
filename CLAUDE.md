@@ -44,6 +44,7 @@ docker compose exec api npx prisma studio   # visual DB editor on port 5555
 
 ```bash
 cd mobile_app && npm install
+cd mobile_app && npx expo run:android    # if there's new dependencies
 cd mobile_app && npx expo start          # Metro Bundler
 cd mobile_app && npm run android
 cd mobile_app && npm run ios
