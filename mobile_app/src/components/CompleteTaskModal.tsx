@@ -9,10 +9,15 @@ import {
   Alert,
   ActivityIndicator,
   ScrollView,
+  Pressable,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
-import { Agenda, UpdateAgendaDTO } from '../types'; // Importamos o DTO
-import { agendaService } from '../services/agendaService'; // Usamos apenas o agendaService
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { Agenda, UpdateAgendaDTO } from '../types';
+import { agendaService } from '../services/agendaService';
 import { theme } from '../constants/theme';
+import { getActivityIcon } from '../utils/activityIcons';
 
 interface CompleteTaskModalProps {
   isVisible: boolean;
@@ -28,42 +33,35 @@ const CompleteTaskModal: React.FC<CompleteTaskModalProps> = ({
   agendaItem,
 }) => {
   const [detalhes, setDetalhes] = useState('');
-  // O campo 'recursosUtilizados' agora será mais complexo, mas para a UI vamos manter como texto por enquanto
-  const [recursosUtilizadosTexto, setRecursosUtilizadosTexto] = useState('');
   const [observacaoFutura, setObservacaoFutura] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Limpa o formulário sempre que o modal for fechado e reaberto
   useEffect(() => {
     if (isVisible) {
       setDetalhes('');
-      setRecursosUtilizadosTexto('');
       setObservacaoFutura('');
     }
   }, [isVisible]);
 
+  if (!agendaItem) return null;
 
-  if (!agendaItem) {
-    return null;
-  }
+  const atividadeNome = agendaItem.atividade?.nome || 'Atividade';
+  const plantaNome = agendaItem.planta?.nome || agendaItem.planta?.especie?.nomeComum || 'Planta';
+  const activityIcon = getActivityIcon(atividadeNome);
 
   const handleCompleteTask = async () => {
     setIsSubmitting(true);
     try {
-      // 1. Montamos o DTO com os novos dados para a API
       const updateData: UpdateAgendaDTO = {
         status: 'CONCLUIDO',
         dataConcluida: new Date().toISOString(),
         detalhes: detalhes || undefined,
         observacaoFutura: observacaoFutura || undefined,
-        // No futuro, aqui construiremos o array de recursos utilizados
       };
 
-      // 2. Chamamos a função de ATUALIZAÇÃO da agenda
       await agendaService.updateAgendamento(agendaItem.id, updateData);
-
       Alert.alert('Sucesso', 'Tarefa concluída e registrada no histórico!');
-      onTaskCompleted(); // Chama a função para fechar o modal e atualizar a lista
+      onTaskCompleted();
     } catch (error) {
       Alert.alert('Erro', 'Não foi possível concluir a tarefa.');
     } finally {
@@ -78,139 +76,176 @@ const CompleteTaskModal: React.FC<CompleteTaskModalProps> = ({
       visible={isVisible}
       onRequestClose={onClose}
     >
-      <View style={styles.centeredView}>
-        <ScrollView contentContainerStyle={styles.scrollContainer}>
-            <View style={styles.modalView}>
-              <Text style={styles.modalTitle}>Concluir: {agendaItem.atividade?.nome}</Text>
-              <Text style={styles.modalSubtitle}>Para: {agendaItem.planta?.nome || 'Planta'}</Text>
+      <Pressable style={styles.overlay} onPress={onClose}>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          style={styles.keyboardView}
+        >
+          <Pressable style={styles.sheet} onPress={(e) => e.stopPropagation()}>
+            <ScrollView bounces={false} showsVerticalScrollIndicator={false}>
+              {/* Handle bar */}
+              <View style={styles.handleBar} />
 
+              {/* Header com ícone + info */}
+              <View style={styles.header}>
+                <View style={styles.headerIcon}>
+                  <MaterialCommunityIcons name={activityIcon as any} size={24} color={theme.colors.primary} />
+                </View>
+                <View style={styles.headerInfo}>
+                  <Text style={styles.headerTitle}>{atividadeNome}</Text>
+                  <Text style={styles.headerSubtitle}>{plantaNome}</Text>
+                </View>
+              </View>
+
+              {/* Campos */}
               <Text style={styles.label}>Detalhes da Realização</Text>
               <TextInput
                 style={[styles.input, styles.textArea]}
                 placeholder="Ex: Podei 3 galhos, apliquei pasta cicatrizante..."
+                placeholderTextColor={theme.colors.lightGray}
                 value={detalhes}
                 onChangeText={setDetalhes}
                 multiline
-              />
-
-              <Text style={styles.label}>Recursos Utilizados</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="Ex: Tesoura, pasta cicatrizante, 50g de adubo."
-                value={recursosUtilizadosTexto}
-                onChangeText={setRecursosUtilizadosTexto}
-                editable={false} // Desativado por enquanto
               />
 
               <Text style={styles.label}>Observações para o Futuro</Text>
               <TextInput
                 style={styles.input}
                 placeholder="Ex: Verificar brotação em 2 semanas."
+                placeholderTextColor={theme.colors.lightGray}
                 value={observacaoFutura}
                 onChangeText={setObservacaoFutura}
               />
 
-              <View style={styles.buttonContainer}>
-                <TouchableOpacity style={[styles.button, styles.buttonClose]} onPress={onClose}>
-                  <Text style={styles.textStyle}>Cancelar</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[styles.button, styles.buttonComplete, isSubmitting && styles.buttonDisabled]}
-                  onPress={handleCompleteTask}
-                  disabled={isSubmitting}
-                >
-                  {isSubmitting ? <ActivityIndicator color="#fff" /> : <Text style={styles.textStyle}>Concluir Tarefa</Text>}
-                </TouchableOpacity>
-              </View>
-            </View>
-        </ScrollView>
-      </View>
+              {/* Botões */}
+              <TouchableOpacity
+                style={[styles.submitButton, isSubmitting && styles.buttonDisabled]}
+                onPress={handleCompleteTask}
+                disabled={isSubmitting}
+                activeOpacity={0.8}
+              >
+                {isSubmitting ? (
+                  <ActivityIndicator color="#fff" />
+                ) : (
+                  <>
+                    <MaterialCommunityIcons name="check-circle" size={20} color="#fff" />
+                    <Text style={styles.submitText}>Concluir Tarefa</Text>
+                  </>
+                )}
+              </TouchableOpacity>
+
+              <TouchableOpacity style={styles.cancelButton} onPress={onClose}>
+                <Text style={styles.cancelText}>Cancelar</Text>
+              </TouchableOpacity>
+            </ScrollView>
+          </Pressable>
+        </KeyboardAvoidingView>
+      </Pressable>
     </Modal>
   );
 };
 
 const styles = StyleSheet.create({
-  centeredView: {
+  overlay: {
     flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    justifyContent: 'flex-end',
+  },
+  keyboardView: {
+    justifyContent: 'flex-end',
+  },
+  sheet: {
+    backgroundColor: theme.colors.card,
+    borderTopLeftRadius: theme.borderRadius.xl,
+    borderTopRightRadius: theme.borderRadius.xl,
+    padding: theme.spacing.lg,
+    paddingBottom: theme.spacing.xl + 16,
+    maxHeight: '80%',
+  },
+  handleBar: {
+    width: 40,
+    height: 4,
+    backgroundColor: theme.colors.lightGray,
+    borderRadius: 2,
+    alignSelf: 'center',
+    marginBottom: theme.spacing.lg,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: theme.spacing.lg,
+  },
+  headerIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: theme.borderRadius.md,
+    backgroundColor: theme.colors.primaryLight,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    marginRight: theme.spacing.md,
   },
-  scrollContainer: {
-    flexGrow: 1,
-    justifyContent: 'center'
+  headerInfo: {
+    flex: 1,
   },
-  modalView: {
-    margin: theme.spacing.lg,
-    backgroundColor: theme.colors.card,
-    borderRadius: 20,
-    padding: theme.spacing.xl,
-    alignItems: 'stretch',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 5,
-    width: '90%',
-  },
-  modalTitle: { 
-    marginBottom: 4, 
-    fontSize: 20, 
+  headerTitle: {
+    fontSize: 18,
     fontWeight: 'bold',
-    color: theme.colors.text
+    color: theme.colors.text,
   },
-  modalSubtitle: { 
-    marginBottom: theme.spacing.md, 
-    fontSize: 16, 
-    color: theme.colors.textSecondary 
+  headerSubtitle: {
+    fontSize: 14,
+    color: theme.colors.subtext,
+    marginTop: 2,
   },
-  label: { 
-    fontSize: 16, 
-    fontWeight: 'bold', 
-    color: theme.colors.text, 
-    marginBottom: 8 
+  label: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: theme.colors.text,
+    marginBottom: 6,
   },
-  input: { 
-    backgroundColor: theme.colors.background, 
-    borderRadius: 8, 
-    paddingHorizontal: theme.spacing.md, 
-    height: 50, 
-    fontSize: 16, 
-    marginBottom: theme.spacing.md, 
-    borderWidth: 1, 
-    borderColor: theme.colors.lightGray,
-    color: theme.colors.text
+  input: {
+    backgroundColor: theme.colors.background,
+    borderRadius: theme.borderRadius.md,
+    paddingHorizontal: theme.spacing.md,
+    height: 48,
+    fontSize: 15,
+    marginBottom: theme.spacing.md,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    color: theme.colors.text,
   },
-  textArea: { 
-    height: 100, 
-    textAlignVertical: 'top', 
-    paddingTop: theme.spacing.md 
+  textArea: {
+    height: 90,
+    textAlignVertical: 'top',
+    paddingTop: theme.spacing.md,
   },
-  buttonContainer: { 
-    flexDirection: 'row', 
-    justifyContent: 'space-between', 
-    marginTop: theme.spacing.sm 
+  submitButton: {
+    backgroundColor: theme.colors.success,
+    borderRadius: theme.borderRadius.xl,
+    paddingVertical: 14,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: theme.spacing.sm,
   },
-  button: { 
-    borderRadius: 10, 
-    padding: theme.spacing.sm, 
-    elevation: 2, 
-    flex: 1, 
-    marginHorizontal: 5 
+  buttonDisabled: {
+    backgroundColor: theme.colors.lightGray,
   },
-  buttonComplete: { 
-    backgroundColor: theme.colors.success 
+  submitText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
   },
-  buttonClose: { 
-    backgroundColor: theme.colors.textSecondary 
+  cancelButton: {
+    paddingVertical: 12,
+    alignItems: 'center',
+    marginTop: theme.spacing.xs,
   },
-  buttonDisabled: { 
-    backgroundColor: theme.colors.lightGray 
-  },
-  textStyle: { 
-    color: 'white', 
-    fontWeight: 'bold', 
-    textAlign: 'center' 
+  cancelText: {
+    color: theme.colors.subtext,
+    fontSize: 15,
+    fontWeight: '500',
   },
 });
 

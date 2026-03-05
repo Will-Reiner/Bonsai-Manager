@@ -51,8 +51,7 @@ const QuickActionSheet: React.FC<QuickActionSheetProps> = ({ visible, onClose, n
         break;
       }
       case 'addCare':
-        // Precisa selecionar planta — navega para a Agenda que tem modal de seleção
-        navigation.navigate('Tasks');
+        navigation.navigate('Tasks', { openIntervention: true });
         break;
     }
   };

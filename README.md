@@ -87,7 +87,7 @@ Para que a aplicação no seu telemóvel consiga comunicar com o backend que est
 Ainda na pasta mobile-app, execute:  
 
 ```bash
-npx expo start
+npx expo run:android  
 
 ```
 

@@ -57,7 +57,7 @@ export type RootStackParamList = {
   PublicProfile: { userId: string };
   UserList: { users: Partial<Usuario>[]; title: string };
   EditProfile: undefined;
-  Tasks: undefined;
+  Tasks: { openIntervention?: boolean } | undefined;
   Settings: undefined;
   Inventory: undefined;
   PhotoGallery: { plantaId: string; plantaNome?: string };

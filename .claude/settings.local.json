@@ -15,7 +15,11 @@
       "mcp__stitch__list_projects",
       "mcp__stitch__list_screens",
       "mcp__stitch__get_screen",
-      "WebFetch(domain:contribution.usercontent.google.com)"
+      "WebFetch(domain:contribution.usercontent.google.com)",
+      "Bash(npx jest:*)",
+      "Bash(npx prisma:*)",
+      "Bash(DATABASE_URL=\"postgresql://bonsai_user:bonsai_password@localhost:5432/bonsai_db\" npx prisma:*)",
+      "Bash(DATABASE_URL=\"postgresql://bonsai_user:bonsai_pass@localhost:5432/bonsai_db?schema=public\" npx prisma:*)"
     ]
   }
 }
