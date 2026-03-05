@@ -1,13 +1,12 @@
 import { Router } from 'express';
-import { inspiracaoController } from './inspiracao.controller';
+import { InspiracaoController } from './inspiracao.controller';
 import { authMiddleware } from '../../middlewares/auth.middleware';
 
-const inspiracaoRouter = Router();
+const router = Router();
+const controller = new InspiracaoController();
 
-// Todas as operações neste módulo exigem que o usuário esteja autenticado
-inspiracaoRouter.use(authMiddleware);
+router.get('/planta/:plantaId', authMiddleware, controller.getByPlanta);
+router.post('/:plantaId/:fotoId', authMiddleware, controller.add);
+router.delete('/:plantaId/:fotoId', authMiddleware, controller.remove);
 
-inspiracaoRouter.post('/:plantaId/:fotoId', inspiracaoController.add);
-inspiracaoRouter.delete('/:plantaId/:fotoId', inspiracaoController.remove);
-
-export default inspiracaoRouter;
+export { router as inspiracaoRouter };

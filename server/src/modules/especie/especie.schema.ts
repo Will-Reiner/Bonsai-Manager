@@ -1,17 +1,20 @@
 import { z } from 'zod';
 
-// Replicamos o Enum do Prisma para validação com Zod
+// Replicamos os Enums do Prisma para validação com Zod
 const TipoPlantaEnum = z.enum([
-  'PERENE', 'CADUCIFOLIA', 'SEMI_CADUCA', 
+  'PERENE', 'CADUCIFOLIA', 'SEMI_CADUCA',
   'ARVORE', 'ARBUSTO', 'CONIFERA'
 ]);
 
+const StatusEspecieEnum = z.enum(['VERIFICADO', 'SUGERIDO']);
+
 const baseEspecieSchema = {
-  nomeCientifico: z.string().min(3, { message: 'O nome científico deve ter pelo menos 3 caracteres.' }),
+  nomeCientifico: z.string().min(3, { message: 'O nome científico deve ter pelo menos 3 caracteres.' }).optional(),
   nomeComum: z.string().optional(),
   familia: z.string().optional(),
   origem: z.string().optional(),
   tipoDePlanta: TipoPlantaEnum.optional(),
+  status: StatusEspecieEnum.optional(),
   folhas: z.string().optional(),
   tronco: z.string().optional(),
   flores: z.string().optional(),
@@ -35,10 +38,7 @@ export const createEspecieSchema = z.object({
 
 export const updateEspecieSchema = z.object({
   // No update, todos os campos são opcionais
-  body: z.object({
-    ...baseEspecieSchema,
-    nomeCientifico: baseEspecieSchema.nomeCientifico.optional(), // Sobrescreve para ser opcional
-  }),
+  body: z.object(baseEspecieSchema),
   params: z.object({
     id: z.string().uuid({ message: 'ID da espécie inválido.' }),
   }),

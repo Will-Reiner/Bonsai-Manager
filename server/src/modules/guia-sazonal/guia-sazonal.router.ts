@@ -1,14 +1,17 @@
 import { Router } from 'express';
-import { guiaSazonalController } from './guia-sazonal.controller';
+import { GuiaSazonalController } from './guia-sazonal.controller';
 import { adminMiddleware } from '../../middlewares/admin.middleware';
 
-const guiaSazonalRouter = Router();
+const router = Router();
+const controller = new GuiaSazonalController();
 
-// Todas as operações neste módulo exigem privilégios de administrador
-guiaSazonalRouter.use(adminMiddleware);
+// Rotas públicas
+router.get('/', controller.getAll);
+router.get('/especie/:especieId', controller.getByEspecie);
 
-guiaSazonalRouter.post('/', guiaSazonalController.create);
-guiaSazonalRouter.put('/:especieId/:atividadeId/:estacao', guiaSazonalController.update);
-guiaSazonalRouter.delete('/:especieId/:atividadeId/:estacao', guiaSazonalController.delete);
+// Rotas protegidas (admin)
+router.post('/', adminMiddleware, controller.create);
+router.put('/:especieId/:atividadeId/:estacao', adminMiddleware, controller.update);
+router.delete('/:especieId/:atividadeId/:estacao', adminMiddleware, controller.delete);
 
-export default guiaSazonalRouter;
+export { router as guiaSazonalRouter };

@@ -68,6 +68,17 @@ enum TipoPlanta {
   CONIFERA
 }
 
+enum StatusEspecie {
+  VERIFICADO
+  SUGERIDO
+}
+
+enum TipoMidia {
+  FOTO
+  VIDEO
+  VISAO_FUTURA
+}
+
 
 // --- TABELAS PRINCIPAIS ---
 
@@ -87,20 +98,23 @@ model Usuario {
   role               Role      @default(USER)
 
   // Relacionamentos
-  plantas    Planta[]
-  recursos   Recurso[]
-  fotos      Foto[]
-  seguindo   Amizade[] @relation("Seguidor")
-  seguidores Amizade[] @relation("Seguido")
+  plantas            Planta[]
+  recursos           Recurso[]
+  fotos              Foto[]
+  seguindo           Amizade[] @relation("Seguidor")
+  seguidores         Amizade[] @relation("Seguido")
+  especiesSugeridas  Especie[]
+  preferencias       PreferenciaUsuario[]
 }
 
 model Especie {
   id                 String   @id @default(uuid())
-  nomeCientifico     String   @unique
+  nomeCientifico     String?  @unique
   nomeComum          String?
   familia            String?
   origem             String?
   tipoDePlanta       TipoPlanta?
+  status             StatusEspecie @default(SUGERIDO)
   folhas             String?  @db.Text
   tronco             String?  @db.Text
   flores             String?  @db.Text
@@ -117,6 +131,9 @@ model Especie {
   linhasDeRaciocinio String?  @db.Text
   observacoes        String?  @db.Text
 
+  criadoPorId        String?
+  criadoPor          Usuario? @relation(fields: [criadoPorId], references: [id], onDelete: SetNull)
+
   // Relacionamentos
   plantas          Planta[]
   guiasDeTecnicas  GuiaDeTecnicas[]
@@ -126,10 +143,11 @@ model Especie {
 model Planta {
   id               String        @id @default(uuid())
   nome             String?
+  identificador    String?
   dataAquisicao    DateTime?
   modoAquisicao    ModoAquisicao?
-  visao            String?       @db.Text
   observacoes      String?       @db.Text
+  fotoCapaUrl      String?
   plantaPublica    Boolean       @default(false)
   historicoPublico Boolean       @default(false)
   createdAt        DateTime      @default(now())
@@ -137,7 +155,7 @@ model Planta {
 
   usuarioId        String
   usuario          Usuario       @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
-  
+
   especieId        String
   especie          Especie       @relation(fields: [especieId], references: [id])
 
@@ -145,6 +163,8 @@ model Planta {
   fotos       Foto[]
   agendas     Agenda[]
   inspiracoes Inspiracao[]
+
+  @@unique([usuarioId, identificador])
 }
 
 model Atividade {
@@ -166,17 +186,22 @@ model Atividade {
 }
 
 model Foto {
-  id             String   @id @default(uuid())
+  id             String     @id @default(uuid())
   caminhoArquivo String
   titulo         String?
   tags           String?
-  createdAt      DateTime @default(now())
+  createdAt      DateTime   @default(now())
 
   plantaId       String?
-  planta         Planta?  @relation(fields: [plantaId], references: [id], onDelete: Cascade)
-  
+  planta         Planta?    @relation(fields: [plantaId], references: [id], onDelete: Cascade)
+
   usuarioId      String
-  usuario        Usuario  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  usuario        Usuario    @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  // Campos de mídia
+  tipo           TipoMidia  @default(FOTO)
+  descricao      String?    @db.Text
+  thumbnailUrl   String?    // apenas para vídeos: URL R2 da thumbnail WebP
 
   // Relacionamentos
   inspiracoes Inspiracao[]
@@ -309,9 +334,23 @@ model AtividadeRecursoSugerido {
 model AtividadeFerramentaSugerida {
   atividadeId  String
   ferramentaId String
-  
+
   atividade    Atividade  @relation(fields: [atividadeId], references: [id], onDelete: Cascade)
   ferramenta   Ferramenta @relation(fields: [ferramentaId], references: [id], onDelete: Cascade)
 
   @@id([atividadeId, ferramentaId])
+}
+
+model PreferenciaUsuario {
+  id        String   @id @default(uuid())
+  chave     String
+  valor     String
+
+  usuarioId String
+  usuario   Usuario  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([usuarioId, chave])
 }

@@ -5,9 +5,9 @@ services:
     container_name: bonsai_db
     restart: always
     environment:
-      POSTGRES_USER: bonsai_user
-      POSTGRES_PASSWORD: bonsai_pass
-      POSTGRES_DB: bonsai_db
+      POSTGRES_USER: ${POSTGRES_USER:-bonsai_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-bonsai_pass}
+      POSTGRES_DB: ${POSTGRES_DB:-bonsai_db}
     ports:
       # Expõe a porta do banco para podermos acessá-lo localmente se necessário
       - '5432:5432'
@@ -32,14 +32,17 @@ services:
       - ./server:/app
       # Volume anônimo para evitar que o node_modules local sobrescreva o do container
       - /app/node_modules
+      # Persistir uploads de fotos
+      - bonsai_uploads:/app/uploads
     env_file:
       # Carrega as variáveis de ambiente do arquivo .env
       - ./server/.env
     environment:
       SWAGGER_SERVER_URL: http://localhost:3000
       PORT: 3000
-      JWT_SECRET: changeme_dev_secret
-      DATABASE_URL: postgresql://bonsai_user:bonsai_pass@db:5432/bonsai_db?schema=public
+      JWT_SECRET: ${JWT_SECRET:-changeme_dev_secret}
+      DATABASE_URL: postgresql://${POSTGRES_USER:-bonsai_user}:${POSTGRES_PASSWORD:-bonsai_pass}@db:5432/${POSTGRES_DB:-bonsai_db}?schema=public
 
 volumes:
   postgres_data:
+  bonsai_uploads:

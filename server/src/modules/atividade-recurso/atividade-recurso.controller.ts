@@ -1,145 +1,125 @@
 import { Request, Response } from 'express';
-import { prisma } from '../../lib/prisma';
 import { 
   createAtividadeRecursoSchema, 
   atividadeRecursoIdSchema, 
   atividadeIdSchema,
   tipoRecursoIdSchema
 } from './atividade-recurso.schema';
+import { PrismaAtividadeRecursoRepository } from './repositories/prisma-atividade-recurso.repository';
+import {
+  CreateAtividadeRecursoUseCase,
+  GetRecursosByAtividadeUseCase,
+  GetAtividadesByTipoRecursoUseCase,
+  DeleteAtividadeRecursoUseCase,
+} from './use-cases';
 
-export const atividadeRecursoController = {
+export class AtividadeRecursoController {
+  private atividadeRecursoRepository: PrismaAtividadeRecursoRepository;
+  private createAtividadeRecursoUseCase: CreateAtividadeRecursoUseCase;
+  private getRecursosByAtividadeUseCase: GetRecursosByAtividadeUseCase;
+  private getAtividadesByTipoRecursoUseCase: GetAtividadesByTipoRecursoUseCase;
+  private deleteAtividadeRecursoUseCase: DeleteAtividadeRecursoUseCase;
+
+  constructor() {
+    this.atividadeRecursoRepository = new PrismaAtividadeRecursoRepository();
+    this.createAtividadeRecursoUseCase = new CreateAtividadeRecursoUseCase(
+      this.atividadeRecursoRepository
+    );
+    this.getRecursosByAtividadeUseCase = new GetRecursosByAtividadeUseCase(
+      this.atividadeRecursoRepository
+    );
+    this.getAtividadesByTipoRecursoUseCase = new GetAtividadesByTipoRecursoUseCase(
+      this.atividadeRecursoRepository
+    );
+    this.deleteAtividadeRecursoUseCase = new DeleteAtividadeRecursoUseCase(
+      this.atividadeRecursoRepository
+    );
+  }
+
   // Associar um tipo de recurso a uma atividade
-  create: async (req: Request, res: Response) => {
+  async create(req: Request, res: Response) {
     try {
-      const data = createAtividadeRecursoSchema.parse(req).body;
+      const { body } = createAtividadeRecursoSchema.parse(req);
       
-      // Verificar se a atividade existe
-      const atividade = await prisma.atividade.findUnique({
-        where: { id: data.atividadeId },
-      });
-      
-      if (!atividade) {
-        return res.status(404).json({ message: 'Atividade não encontrada.' });
-      }
-      
-      // Verificar se o tipo de recurso existe
-      const tipoRecurso = await prisma.tipoRecurso.findUnique({
-        where: { id: data.tipoRecursoId },
-      });
-      
-      if (!tipoRecurso) {
-        return res.status(404).json({ message: 'Tipo de recurso não encontrado.' });
-      }
-      
-      // Verificar se a associação já existe
-      const associacaoExistente = await prisma.atividadeRecursoNecessario.findUnique({
-        where: {
-          atividadeId_tipoRecursoId: {
-            atividadeId: data.atividadeId,
-            tipoRecursoId: data.tipoRecursoId,
-          },
-        },
-      });
-      
-      if (associacaoExistente) {
-        return res.status(409).json({ message: 'Esta associação já existe.' });
-      }
-      
-      // Criar a associação
-      const novaAssociacao = await prisma.atividadeRecursoNecessario.create({
-        data,
+      const novaAssociacao = await this.createAtividadeRecursoUseCase.execute({
+        atividadeId: body.atividadeId,
+        tipoRecursoId: body.tipoRecursoId,
       });
       
       return res.status(201).json(novaAssociacao);
     } catch (error) {
+      if (error instanceof Error) {
+        if (error.message === 'Atividade não encontrada') {
+          return res.status(404).json({ error: error.message });
+        }
+        if (error.message === 'Tipo de recurso não encontrado') {
+          return res.status(404).json({ error: error.message });
+        }
+        if (error.message === 'Esta associação já existe') {
+          return res.status(409).json({ error: error.message });
+        }
+      }
       return res.status(400).json({ error });
     }
-  },
+  }
   
   // Listar todos os tipos de recursos necessários para uma atividade específica
-  getByAtividade: async (req: Request, res: Response) => {
+  async getByAtividade(req: Request, res: Response) {
     try {
-      const { atividadeId } = atividadeIdSchema.parse(req).params;
+      const { params } = atividadeIdSchema.parse(req);
+      const { atividadeId } = params;
       
-      // Verificar se a atividade existe
-      const atividade = await prisma.atividade.findUnique({
-        where: { id: atividadeId },
-      });
-      
-      if (!atividade) {
-        return res.status(404).json({ message: 'Atividade não encontrada.' });
-      }
-      
-      // Buscar os tipos de recursos associados à atividade
-      const tiposRecurso = await prisma.atividadeRecursoNecessario.findMany({
-        where: { atividadeId },
-        include: { tipoRecurso: true },
-      });
+      const tiposRecurso = await this.getRecursosByAtividadeUseCase.execute(atividadeId);
       
       return res.status(200).json(tiposRecurso);
     } catch (error) {
+      if (error instanceof Error) {
+        if (error.message === 'Atividade não encontrada') {
+          return res.status(404).json({ error: error.message });
+        }
+      }
       return res.status(400).json({ error });
     }
-  },
+  }
   
   // Listar todas as atividades que necessitam de um tipo de recurso específico
-  getByTipoRecurso: async (req: Request, res: Response) => {
+  async getByTipoRecurso(req: Request, res: Response) {
     try {
-      const { tipoRecursoId } = tipoRecursoIdSchema.parse(req).params;
+      const { params } = tipoRecursoIdSchema.parse(req);
+      const { tipoRecursoId } = params;
       
-      // Verificar se o tipo de recurso existe
-      const tipoRecurso = await prisma.tipoRecurso.findUnique({
-        where: { id: tipoRecursoId },
-      });
-      
-      if (!tipoRecurso) {
-        return res.status(404).json({ message: 'Tipo de recurso não encontrado.' });
-      }
-      
-      // Buscar as atividades associadas ao tipo de recurso
-      const atividades = await prisma.atividadeRecursoNecessario.findMany({
-        where: { tipoRecursoId },
-        include: { atividade: true },
-      });
+      const atividades = await this.getAtividadesByTipoRecursoUseCase.execute(tipoRecursoId);
       
       return res.status(200).json(atividades);
     } catch (error) {
+      if (error instanceof Error) {
+        if (error.message === 'Tipo de recurso não encontrado') {
+          return res.status(404).json({ error: error.message });
+        }
+      }
       return res.status(400).json({ error });
     }
-  },
+  }
   
   // Remover a associação entre uma atividade e um tipo de recurso
-  delete: async (req: Request, res: Response) => {
+  async delete(req: Request, res: Response) {
     try {
-      const { atividadeId, tipoRecursoId } = atividadeRecursoIdSchema.parse(req).params;
+      const { params } = atividadeRecursoIdSchema.parse(req);
+      const { atividadeId, tipoRecursoId } = params;
       
-      // Verificar se a associação existe
-      const associacao = await prisma.atividadeRecursoNecessario.findUnique({
-        where: {
-          atividadeId_tipoRecursoId: {
-            atividadeId,
-            tipoRecursoId,
-          },
-        },
-      });
-      
-      if (!associacao) {
-        return res.status(404).json({ message: 'Associação não encontrada.' });
-      }
-      
-      // Remover a associação
-      await prisma.atividadeRecursoNecessario.delete({
-        where: {
-          atividadeId_tipoRecursoId: {
-            atividadeId,
-            tipoRecursoId,
-          },
-        },
+      await this.deleteAtividadeRecursoUseCase.execute({
+        atividadeId,
+        tipoRecursoId,
       });
       
       return res.status(204).send();
     } catch (error) {
+      if (error instanceof Error) {
+        if (error.message === 'Associação não encontrada') {
+          return res.status(404).json({ error: error.message });
+        }
+      }
       return res.status(400).json({ error });
     }
-  },
-};
+  }
+}

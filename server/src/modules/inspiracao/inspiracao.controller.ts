@@ -1,83 +1,86 @@
 import { Request, Response } from 'express';
-import { prisma } from '../../lib/prisma';
 import { inspiracaoSchema } from './inspiracao.schema';
+import { PrismaInspiracaoRepository } from './repositories/prisma-inspiracao.repository';
+import { AddInspiracaoUseCase, RemoveInspiracaoUseCase, GetInspiracoesByPlantaUseCase } from './use-cases';
 
-export const inspiracaoController = {
-  // Adiciona uma foto como inspiração para uma planta
-  add: async (req: Request, res: Response) => {
+export class InspiracaoController {
+  private repository: PrismaInspiracaoRepository;
+  private addInspiracaoUseCase: AddInspiracaoUseCase;
+  private removeInspiracaoUseCase: RemoveInspiracaoUseCase;
+  private getInspiracoesByPlantaUseCase: GetInspiracoesByPlantaUseCase;
+
+  constructor() {
+    this.repository = new PrismaInspiracaoRepository();
+    this.addInspiracaoUseCase = new AddInspiracaoUseCase(this.repository);
+    this.removeInspiracaoUseCase = new RemoveInspiracaoUseCase(this.repository);
+    this.getInspiracoesByPlantaUseCase = new GetInspiracoesByPlantaUseCase(this.repository);
+  }
+
+  getByPlanta = async (req: Request, res: Response) => {
+    try {
+      const usuarioId = req.user!.userId;
+      const { plantaId } = req.params;
+      const inspiracoes = await this.getInspiracoesByPlantaUseCase.execute(plantaId, usuarioId);
+      return res.status(200).json(inspiracoes);
+    } catch (error) {
+      if (error instanceof Error && error.message === 'Planta não encontrada ou não pertence ao utilizador.') {
+        return res.status(404).json({ message: error.message });
+      }
+      return res.status(500).json({ message: 'Erro ao buscar inspirações.' });
+    }
+  };
+
+  add = async (req: Request, res: Response) => {
     try {
       const usuarioId = req.user!.userId;
       const { plantaId, fotoId } = inspiracaoSchema.parse(req).params;
 
-      // 1. Verificar se a planta pertence ao utilizador logado
-      const planta = await prisma.planta.findFirst({
-        where: { id: plantaId, usuarioId },
-      });
-      if (!planta) {
-        return res.status(404).json({ message: 'A sua planta não foi encontrada.' });
-      }
-
-      // 2. Verificar se a foto existe e se pode ser usada como inspiração
-      const foto = await prisma.foto.findUnique({
-        where: { id: fotoId },
-        include: { planta: true }, // Inclui a planta da foto para verificar a privacidade
+      const result = await this.addInspiracaoUseCase.execute({
+        plantaId,
+        fotoId,
+        usuarioId,
       });
 
-      if (!foto) {
-        return res.status(404).json({ message: 'A foto de inspiração não foi encontrada.' });
+      if (!result.success) {
+        if (result.error === 'A sua planta não foi encontrada.') {
+          return res.status(404).json({ message: result.error });
+        }
+        if (result.error === 'A foto de inspiração não foi encontrada ou não pode ser usada como inspiração.') {
+          return res.status(404).json({ message: 'A foto de inspiração não foi encontrada.' });
+        }
+        if (result.error === 'Esta inspiração já existe para esta planta.') {
+          return res.status(409).json({ message: result.error });
+        }
+        return res.status(400).json({ message: result.error });
       }
 
-      // Uma foto pode ser inspiração se:
-      // - For uma foto genérica (sem planta associada)
-      // - A planta associada à foto for pública
-      // - A foto pertence ao próprio utilizador
-      const podeSerInspiracao = !foto.plantaId || foto.planta?.plantaPublica || foto.usuarioId === usuarioId;
-
-      if (!podeSerInspiracao) {
-          return res.status(403).json({ message: 'Não pode usar esta foto como inspiração.' });
-      }
-
-      const novaInspiracao = await prisma.inspiracao.create({
-        data: { plantaId, fotoId },
-      });
-
-      return res.status(201).json(novaInspiracao);
+      return res.status(201).json(result.data);
     } catch (error) {
       return res.status(400).json({ error });
     }
-  },
+  };
 
-  // Remove uma foto das inspirações de uma planta
-  remove: async (req: Request, res: Response) => {
+  remove = async (req: Request, res: Response) => {
     try {
-        const usuarioId = req.user!.userId;
-        const { plantaId, fotoId } = inspiracaoSchema.parse(req).params;
+      const usuarioId = req.user!.userId;
+      const { plantaId, fotoId } = inspiracaoSchema.parse(req).params;
 
-        // Para remover, basta verificar se o utilizador é dono da planta
-        // e se a inspiração existe.
-        const inspiracao = await prisma.inspiracao.findFirst({
-            where: {
-                plantaId,
-                fotoId,
-                planta: {
-                    usuarioId: usuarioId,
-                },
-            },
-        });
+      const result = await this.removeInspiracaoUseCase.execute({
+        plantaId,
+        fotoId,
+        usuarioId,
+      });
 
-        if (!inspiracao) {
-            return res.status(404).json({ message: 'Ligação de inspiração não encontrada.' });
+      if (!result.success) {
+        if (result.error === 'Ligação de inspiração não encontrada.') {
+          return res.status(404).json({ message: result.error });
         }
+        return res.status(400).json({ message: result.error });
+      }
 
-        await prisma.inspiracao.delete({
-            where: {
-                plantaId_fotoId: { plantaId, fotoId }
-            }
-        });
-
-        return res.status(204).send();
+      return res.status(204).send();
     } catch (error) {
-        return res.status(400).json({ error });
+      return res.status(400).json({ error });
     }
-  },
-};
+  };
+}

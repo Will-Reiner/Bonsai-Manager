@@ -35,7 +35,7 @@ const SpeciesListScreen = () => {
     }
     return especies.filter(especie =>
       especie.nomeComum?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      especie.nomeCientifico.toLowerCase().includes(searchTerm.toLowerCase())
+      especie.nomeCientifico?.toLowerCase().includes(searchTerm.toLowerCase())
     );
   }, [especies, searchTerm]);
 
@@ -57,10 +57,17 @@ const SpeciesListScreen = () => {
         renderItem={({ item }) => (
           <TouchableOpacity
             style={styles.listItem}
-            onPress={() => navigation.navigate('SpeciesDetail', { especieId: item.id, title: item.nomeComum || item.nomeCientifico })}
+            onPress={() => navigation.navigate('SpeciesDetail', { especieId: item.id, title: item.nomeComum || item.nomeCientifico || 'Espécie' })}
           >
-            <Text style={styles.listItemTitle}>{item.nomeComum || item.nomeCientifico}</Text>
-            <Text style={styles.listItemSubtitle}>{item.nomeCientifico}</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              <Text style={styles.listItemTitle}>{item.nomeComum || item.nomeCientifico || 'Sem nome'}</Text>
+              {item.status === 'SUGERIDO' && (
+                <View style={{ backgroundColor: '#F59E0B', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 12 }}>
+                  <Text style={{ color: '#fff', fontSize: 12, fontWeight: 'bold' }}>Sugerido</Text>
+                </View>
+              )}
+            </View>
+            {item.nomeCientifico && <Text style={styles.listItemSubtitle}>{item.nomeCientifico}</Text>}
           </TouchableOpacity>
         )}
       />

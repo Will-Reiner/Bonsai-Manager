@@ -1,16 +1,20 @@
 import { Router } from 'express';
-import { atividadeRecursoController } from './atividade-recurso.controller';
 import { authMiddleware } from '../../middlewares/auth.middleware';
+import { AtividadeRecursoController } from './atividade-recurso.controller';
 
-const atividadeRecursoRouter = Router();
+const router = Router();
+const atividadeRecursoController = new AtividadeRecursoController();
 
-// Aplicar middleware de autenticação em todas as rotas
-atividadeRecursoRouter.use(authMiddleware);
+// Criar associação entre atividade e tipo de recurso
+router.post('/', authMiddleware, atividadeRecursoController.create.bind(atividadeRecursoController));
 
-// Rotas para gerenciar associações entre atividades e tipos de recursos
-atividadeRecursoRouter.post('/', atividadeRecursoController.create);
-atividadeRecursoRouter.get('/atividade/:atividadeId', atividadeRecursoController.getByAtividade);
-atividadeRecursoRouter.get('/tipo-recurso/:tipoRecursoId', atividadeRecursoController.getByTipoRecurso);
-atividadeRecursoRouter.delete('/:atividadeId/:tipoRecursoId', atividadeRecursoController.delete);
+// Listar tipos de recursos por atividade
+router.get('/atividade/:atividadeId', authMiddleware, atividadeRecursoController.getByAtividade.bind(atividadeRecursoController));
 
-export { atividadeRecursoRouter };
+// Listar atividades por tipo de recurso
+router.get('/tipo-recurso/:tipoRecursoId', authMiddleware, atividadeRecursoController.getByTipoRecurso.bind(atividadeRecursoController));
+
+// Remover associação entre atividade e tipo de recurso
+router.delete('/:atividadeId/:tipoRecursoId', authMiddleware, atividadeRecursoController.delete.bind(atividadeRecursoController));
+
+export { router as atividadeRecursoRouter };

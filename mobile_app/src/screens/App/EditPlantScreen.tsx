@@ -13,9 +13,12 @@ import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { Picker } from '@react-native-picker/picker';
 import { especieService } from '../../services/especieService';
 import { plantaService, UpdatePlantaDTO } from '../../services/plantaService';
+import { fotoService } from '../../services/fotoService';
 import { Especie, ModoAquisicao, Planta } from '../../types';
 import { RootStackParamList } from '../../navigation/AppNavigator';
 import { theme } from '../../constants/theme';
+import { CoverPhotoPicker } from '../../components/CoverPhotoPicker';
+import { usePreferencias } from '../../context/PreferenciasContext';
 
 type EditPlantScreenRouteProp = RouteProp<RootStackParamList, 'EditPlant'>;
 
@@ -23,14 +26,18 @@ const EditPlantScreen = () => {
   const navigation = useNavigation();
   const route = useRoute<EditPlantScreenRouteProp>();
   const { plantaId } = route.params;
-  
+  const { preferencias } = usePreferencias();
+
   // Estados do formulário alinhados com a nova estrutura
   const [nome, setNome] = useState('');
+  const [identificador, setIdentificador] = useState('');
   const [especieId, setEspecieId] = useState<string | undefined>();
   const [modoAquisicao, setModoAquisicao] = useState<ModoAquisicao | null | undefined>();
-  const [visao, setVisao] = useState('');
   const [observacoes, setObservacoes] = useState('');
-  
+  const [coverPublicUrl, setCoverPublicUrl] = useState<string | null>(null);
+  const [originalCoverUrl, setOriginalCoverUrl] = useState<string | null>(null);
+  const [isUploadingCover, setIsUploadingCover] = useState(false);
+
   const [especies, setEspecies] = useState<Especie[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isFetchingData, setIsFetchingData] = useState(true);
@@ -45,10 +52,12 @@ const EditPlantScreen = () => {
 
         // Popula o formulário com os dados da planta
         setNome(plantaData.nome || '');
+        setIdentificador(plantaData.identificador || '');
         setEspecieId(plantaData.especieId);
         setModoAquisicao(plantaData.modoAquisicao);
-        setVisao(plantaData.visao || '');
         setObservacoes(plantaData.observacoes || '');
+        setCoverPublicUrl(plantaData.fotoCapaUrl || null);
+        setOriginalCoverUrl(plantaData.fotoCapaUrl || null);
         setEspecies(especiesData);
 
       } catch (error) {
@@ -71,13 +80,27 @@ const EditPlantScreen = () => {
     const plantaData: UpdatePlantaDTO = {
       especieId,
       nome,
+      identificador: identificador || undefined,
       modoAquisicao,
-      visao,
       observacoes,
+      fotoCapaUrl: coverPublicUrl,
     };
 
     try {
       await plantaService.updatePlanta(plantaId, plantaData);
+      // Criar registo Foto se houver nova foto de capa
+      if (coverPublicUrl && coverPublicUrl !== originalCoverUrl) {
+        try {
+          await fotoService.createFoto({
+            caminhoArquivo: coverPublicUrl,
+            plantaId,
+            titulo: 'Foto de capa',
+            tipo: 'FOTO',
+          });
+        } catch {
+          // Não bloquear o update se o registo da foto falhar
+        }
+      }
       Alert.alert('Sucesso', 'Planta atualizada com sucesso!');
       navigation.goBack();
     } catch (error) {
@@ -99,13 +122,35 @@ const EditPlantScreen = () => {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
-      <Text style={styles.label}>Nome (Apelido)</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="Ex: Meu Junípero"
-        value={nome}
-        onChangeText={setNome}
+      <CoverPhotoPicker
+        currentImageUrl={coverPublicUrl}
+        onImageUploaded={(url) => { setCoverPublicUrl(url); setIsUploadingCover(false); }}
+        onImageRemoved={() => { setCoverPublicUrl(null); setIsUploadingCover(false); }}
       />
+
+      {preferencias.usa_nome_planta === 'true' && (
+        <>
+          <Text style={styles.label}>Nome (Apelido)</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Ex: Meu Junípero"
+            value={nome}
+            onChangeText={setNome}
+          />
+        </>
+      )}
+
+      {preferencias.usa_identificador === 'true' && (
+        <>
+          <Text style={styles.label}>Identificador (Plaquinha)</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Ex: 001, A-12..."
+            value={identificador}
+            onChangeText={setIdentificador}
+          />
+        </>
+      )}
 
       <Text style={styles.label}>Espécie *</Text>
       <View style={styles.pickerContainer}>
@@ -116,7 +161,7 @@ const EditPlantScreen = () => {
             {especies.map((especie) => (
               <Picker.Item
                 key={especie.id}
-                label={especie.nomeComum || especie.nomeCientifico}
+                label={especie.nomeComum || especie.nomeCientifico || 'Sem nome'}
                 value={especie.id}
               />
             ))}
@@ -138,15 +183,6 @@ const EditPlantScreen = () => {
         </Picker>
       </View>
 
-      <Text style={styles.label}>Visão de Futuro</Text>
-      <TextInput
-        style={[styles.input, styles.textArea]}
-        placeholder="Descreva como imagina esta planta no futuro"
-        value={visao}
-        onChangeText={setVisao}
-        multiline
-      />
-      
       <Text style={styles.label}>Observações Gerais</Text>
       <TextInput
         style={[styles.input, styles.textArea]}
@@ -157,9 +193,9 @@ const EditPlantScreen = () => {
       />
 
       <TouchableOpacity
-        style={[styles.button, isLoading && styles.buttonDisabled]}
+        style={[styles.button, (isLoading || isUploadingCover) && styles.buttonDisabled]}
         onPress={handleSubmit}
-        disabled={isLoading}
+        disabled={isLoading || isUploadingCover}
       >
         {isLoading ? (
           <ActivityIndicator color="#fff" />

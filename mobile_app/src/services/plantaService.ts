@@ -8,10 +8,11 @@ import { Planta, ModoAquisicao } from '../types';
 export interface CreatePlantaDTO {
   especieId: string;
   nome?: string;
+  identificador?: string;
   dataAquisicao?: string | null; // Formato 'YYYY-MM-DDTHH:mm:ss.sssZ'
   modoAquisicao?: ModoAquisicao | null;
-  visao?: string;
   observacoes?: string;
+  fotoCapaUrl?: string;
   plantaPublica?: boolean;
   historicoPublico?: boolean;
 }

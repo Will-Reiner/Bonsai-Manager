@@ -6,14 +6,18 @@ import { authMiddleware } from '../../middlewares/auth.middleware';
 const especieRouter = Router();
 
 // --- Rotas Públicas ---
-// Qualquer pessoa (logada ou não) pode ver as espécies
 especieRouter.get('/', especieController.getAll);
+
+// --- Rotas de Admin ---
+// IMPORTANTE: /sugeridas deve vir ANTES de /:id para não ser interpretado como ID
+especieRouter.get('/sugeridas', adminMiddleware, especieController.getSugeridas);
+
+// --- Rotas Públicas (com parâmetro) ---
 especieRouter.get('/:id', especieController.getById);
 
 // --- Rotas Protegidas ---
-// Apenas usuários logados podem criar, atualizar ou deletar espécies
 especieRouter.post('/', authMiddleware, especieController.create);
 especieRouter.put('/:id', authMiddleware, especieController.update);
-especieRouter.delete('/:id', authMiddleware, especieController.delete);
+especieRouter.delete('/:id', adminMiddleware, especieController.delete);
 
 export default especieRouter;

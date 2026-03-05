@@ -9,6 +9,8 @@ export type Estacao = 'PRIMAVERA' | 'VERAO' | 'OUTONO' | 'INVERNO';
 export type MomentoIdeal = 'DEVE_FAZER' | 'PODE_FAZER' | 'EVITAR';
 export type RecomendacaoTecnica = 'RECOMENDADA' | 'NAO_RECOMENDADA' | 'COM_CUIDADO';
 export type TipoPlanta = 'PERENE' | 'CADUCIFOLIA' | 'SEMI_CADUCA' | 'ARVORE' | 'ARBUSTO' | 'CONIFERA';
+export type StatusEspecie = 'VERIFICADO' | 'SUGERIDO';
+export type TipoMidia = 'FOTO' | 'VIDEO' | 'VISAO_FUTURA';
 
 // --- INTERFACES DOS MODELOS ---
 
@@ -31,8 +33,10 @@ export interface Usuario {
 
 export interface Especie {
   id: string;
-  nomeCientifico: string;
+  nomeCientifico: string | null;
   nomeComum?: string | null;
+  status: StatusEspecie;
+  criadoPorId?: string | null;
   familia?: string | null;
   origem?: string | null;
   tipoDePlanta?: TipoPlanta | null;
@@ -58,10 +62,11 @@ export interface Especie {
 export interface Planta {
   id: string;
   nome?: string | null;
+  identificador?: string | null;
   dataAquisicao?: string | null;
   modoAquisicao?: ModoAquisicao | null;
-  visao?: string | null;
   observacoes?: string | null;
+  fotoCapaUrl?: string | null;
   plantaPublica: boolean;
   historicoPublico: boolean;
   createdAt: string;
@@ -90,6 +95,9 @@ export interface Foto {
   createdAt: string;
   plantaId?: string | null;
   usuarioId: string;
+  tipo: TipoMidia;
+  descricao?: string | null;
+  thumbnailUrl?: string | null;
 }
 
 export interface TipoRecurso {
@@ -158,6 +166,18 @@ export interface Inspiracao {
   foto?: Foto;
 }
 
+export interface AtividadeFerramentaSugerida {
+  atividadeId: string;
+  ferramentaId: string;
+  ferramenta?: Ferramenta;
+}
+
+export interface AtividadeRecursoSugerido {
+  atividadeId: string;
+  tipoRecursoId: string;
+  tipoRecurso?: TipoRecurso;
+}
+
 // --- DTOs (Data Transfer Objects) ---
 
 export interface CreateAgendaDTO {
@@ -179,3 +199,31 @@ export interface UpdateAgendaDTO {
     quantidadeUtilizada: number;
   }[];
 }
+
+// --- PREFERÊNCIAS ---
+
+export type AdubacaoModo = 'GERAL' | 'INDIVIDUAL' | 'NAO_ADUBA';
+export type AdubacaoFrequencia = 'SEMANAL' | 'QUINZENAL' | 'MENSAL' | 'OUTRO';
+
+export interface Preferencias {
+  usa_identificador: string;
+  usa_nome_planta: string;
+  gerencia_rega: string;
+  adubacao_modo: string;
+  adubacao_frequencia: string;
+  periodo_pos_transplante_dias: string;
+  atividades_rastreadas: string;
+  onboarding_concluido: string;
+  [chave: string]: string;
+}
+
+export const PREFERENCIAS_DEFAULTS: Preferencias = {
+  usa_identificador: 'false',
+  usa_nome_planta: 'false',
+  gerencia_rega: 'false',
+  adubacao_modo: 'GERAL',
+  adubacao_frequencia: 'MENSAL',
+  periodo_pos_transplante_dias: '90',
+  atividades_rastreadas: '[]',
+  onboarding_concluido: 'false',
+};

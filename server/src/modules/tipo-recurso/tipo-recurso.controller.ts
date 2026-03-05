@@ -1,63 +1,90 @@
 import { Request, Response } from 'express';
-import { prisma } from '../../lib/prisma';
 import { createTipoRecursoSchema, updateTipoRecursoSchema, tipoRecursoIdSchema } from './tipo-recurso.schema';
+import { PrismaTipoRecursoRepository } from './repositories/prisma-tipo-recurso.repository';
+import {
+  CreateTipoRecursoUseCase,
+  GetAllTiposRecursoUseCase,
+  GetTipoRecursoByIdUseCase,
+  UpdateTipoRecursoUseCase,
+  DeleteTipoRecursoUseCase
+} from './use-cases';
 
-export const tipoRecursoController = {
-  create: async (req: Request, res: Response) => {
+export class TipoRecursoController {
+  private tipoRecursoRepository = new PrismaTipoRecursoRepository();
+  private createTipoRecursoUseCase = new CreateTipoRecursoUseCase(this.tipoRecursoRepository);
+  private getAllTiposRecursoUseCase = new GetAllTiposRecursoUseCase(this.tipoRecursoRepository);
+  private getTipoRecursoByIdUseCase = new GetTipoRecursoByIdUseCase(this.tipoRecursoRepository);
+  private updateTipoRecursoUseCase = new UpdateTipoRecursoUseCase(this.tipoRecursoRepository);
+  private deleteTipoRecursoUseCase = new DeleteTipoRecursoUseCase(this.tipoRecursoRepository);
+
+  async create(req: Request, res: Response) {
     try {
-      const data = createTipoRecursoSchema.parse(req).body;
-      const novoTipoRecurso = await prisma.tipoRecurso.create({
-        data,
-      });
-      return res.status(201).json(novoTipoRecurso);
+      const { body } = createTipoRecursoSchema.parse(req);
+      const tipoRecurso = await this.createTipoRecursoUseCase.execute(body);
+      res.status(201).json(tipoRecurso);
     } catch (error) {
-      return res.status(400).json({ error });
-    }
-  },
-
-  getAll: async (_req: Request, res: Response) => {
-    try {
-      const tiposRecurso = await prisma.tipoRecurso.findMany();
-      return res.status(200).json(tiposRecurso);
-    } catch (error) {
-      return res.status(500).json({ error: 'Erro ao buscar tipos de recurso.' });
-    }
-  },
-
-  getById: async (req: Request, res: Response) => {
-    try {
-      const { id } = tipoRecursoIdSchema.parse(req).params;
-      const tipoRecurso = await prisma.tipoRecurso.findUnique({ where: { id } });
-      if (!tipoRecurso) {
-        return res.status(404).json({ message: 'Tipo de recurso não encontrado.' });
+      if (error instanceof Error && error.message === 'Já existe um tipo de recurso com este nome.') {
+        return res.status(400).json({ error: error.message });
       }
-      return res.status(200).json(tipoRecurso);
-    } catch (error) {
-      return res.status(400).json({ error });
+      console.error('Erro ao criar tipo de recurso:', error);
+      res.status(500).json({ error: 'Erro interno do servidor' });
     }
-  },
+  }
 
-  update: async (req: Request, res: Response) => {
+  async getAll(req: Request, res: Response) {
     try {
-      const { id } = updateTipoRecursoSchema.parse(req).params;
-      const data = updateTipoRecursoSchema.parse(req).body;
-      const tipoRecursoAtualizado = await prisma.tipoRecurso.update({
-        where: { id },
-        data,
-      });
-      return res.status(200).json(tipoRecursoAtualizado);
+      const tiposRecurso = await this.getAllTiposRecursoUseCase.execute();
+      res.json(tiposRecurso);
     } catch (error) {
-      return res.status(400).json({ error });
+      console.error('Erro ao buscar tipos de recurso:', error);
+      res.status(500).json({ error: 'Erro interno do servidor' });
     }
-  },
+  }
 
-  delete: async (req: Request, res: Response) => {
+  async getById(req: Request, res: Response) {
     try {
-      const { id } = tipoRecursoIdSchema.parse(req).params;
-      await prisma.tipoRecurso.delete({ where: { id } });
-      return res.status(204).send();
+      const { params } = tipoRecursoIdSchema.parse(req);
+      const tipoRecurso = await this.getTipoRecursoByIdUseCase.execute(params.id);
+      res.json(tipoRecurso);
     } catch (error) {
-      return res.status(400).json({ error });
+      if (error instanceof Error && error.message === 'Tipo de recurso não encontrado.') {
+        return res.status(404).json({ error: error.message });
+      }
+      console.error('Erro ao buscar tipo de recurso:', error);
+      res.status(500).json({ error: 'Erro interno do servidor' });
     }
-  },
-};
+  }
+
+  async update(req: Request, res: Response) {
+    try {
+      const { params, body } = updateTipoRecursoSchema.parse(req);
+      const tipoRecurso = await this.updateTipoRecursoUseCase.execute(params.id, body);
+      res.json(tipoRecurso);
+    } catch (error) {
+      if (error instanceof Error) {
+        if (error.message === 'Tipo de recurso não encontrado.') {
+          return res.status(404).json({ error: error.message });
+        }
+        if (error.message === 'Já existe um tipo de recurso com este nome.') {
+          return res.status(400).json({ error: error.message });
+        }
+      }
+      console.error('Erro ao atualizar tipo de recurso:', error);
+      res.status(500).json({ error: 'Erro interno do servidor' });
+    }
+  }
+
+  async delete(req: Request, res: Response) {
+    try {
+      const { params } = tipoRecursoIdSchema.parse(req);
+      await this.deleteTipoRecursoUseCase.execute(params.id);
+      res.status(204).send();
+    } catch (error) {
+      if (error instanceof Error && error.message === 'Tipo de recurso não encontrado.') {
+        return res.status(404).json({ error: error.message });
+      }
+      console.error('Erro ao deletar tipo de recurso:', error);
+      res.status(500).json({ error: 'Erro interno do servidor' });
+    }
+  }
+}

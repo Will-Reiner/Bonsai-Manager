@@ -11,7 +11,7 @@ interface PlantListItemProps {
 const PlantListItem: React.FC<PlantListItemProps> = ({ planta, onPress }) => {
   // Mostra o nome personalizado da planta ou o nome comum da espécie como fallback
   const displayName = planta.nome || planta.especie.nomeComum || 'Planta sem nome';
-  const speciesName = planta.especie.nomeCientifico;
+  const speciesName = planta.especie.nomeCientifico || planta.especie.nomeComum || '';
 
   return (
     <TouchableOpacity style={styles.container} onPress={onPress}>

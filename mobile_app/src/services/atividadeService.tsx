@@ -38,8 +38,25 @@ const createAtividade = async (data: CreateAtividadeDTO): Promise<Atividade> => 
 };
 
 
+/**
+ * Atualiza os dados de uma atividade existente (requer autenticação de Admin).
+ */
+const updateAtividade = async (id: string, data: Partial<CreateAtividadeDTO>): Promise<Atividade> => {
+  const response = await api.put(`/atividades/${id}`, data);
+  return response.data;
+};
+
+/**
+ * Deleta uma atividade (requer autenticação de Admin).
+ */
+const deleteAtividade = async (id: string): Promise<void> => {
+  await api.delete(`/atividades/${id}`);
+};
+
 export const atividadeService = {
   getAllAtividades,
   getAtividadeById,
   createAtividade,
+  updateAtividade,
+  deleteAtividade,
 };

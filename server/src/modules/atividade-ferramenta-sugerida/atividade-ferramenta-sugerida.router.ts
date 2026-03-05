@@ -1,11 +1,15 @@
 import { Router } from 'express';
-import { atividadeFerramentaSugeridaController } from './atividade-ferramenta-sugerida.controller';
+import { AtividadeFerramentaSugeridaController } from './atividade-ferramenta-sugerida.controller';
 import { adminMiddleware } from '../../middlewares/admin.middleware';
 
 const atividadeFerramentaSugeridaRouter = Router();
-atividadeFerramentaSugeridaRouter.use(adminMiddleware);
+const atividadeFerramentaSugeridaController = new AtividadeFerramentaSugeridaController();
 
-atividadeFerramentaSugeridaRouter.post('/:atividadeId/:ferramentaId', atividadeFerramentaSugeridaController.create);
-atividadeFerramentaSugeridaRouter.delete('/:atividadeId/:ferramentaId', atividadeFerramentaSugeridaController.delete);
+// Rota pública
+atividadeFerramentaSugeridaRouter.get('/atividade/:atividadeId', atividadeFerramentaSugeridaController.getByAtividade.bind(atividadeFerramentaSugeridaController));
+
+// Rotas protegidas (admin)
+atividadeFerramentaSugeridaRouter.post('/:atividadeId/:ferramentaId', adminMiddleware, atividadeFerramentaSugeridaController.create.bind(atividadeFerramentaSugeridaController));
+atividadeFerramentaSugeridaRouter.delete('/:atividadeId/:ferramentaId', adminMiddleware, atividadeFerramentaSugeridaController.delete.bind(atividadeFerramentaSugeridaController));
 
 export default atividadeFerramentaSugeridaRouter;

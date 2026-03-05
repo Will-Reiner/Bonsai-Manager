@@ -19,6 +19,7 @@ interface AuthContextData {
   authState: AuthState;
   login: (email: string, pass: string) => Promise<void>;
   logout: () => void;
+  updateUser: (updatedUser: Partial<Usuario>) => Promise<void>;
   user: Usuario | null;
 }
 
@@ -69,6 +70,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const updateUser = async (updatedFields: Partial<Usuario>) => {
+    const updatedUser = { ...authState.user, ...updatedFields } as Usuario;
+    await AsyncStorage.setItem(USER_DATA_KEY, JSON.stringify(updatedUser));
+    setAuthState(prev => ({ ...prev, user: updatedUser }));
+  };
+
   const logout = async () => {
     await AsyncStorage.removeItem(TOKEN_KEY);
     await AsyncStorage.removeItem(USER_DATA_KEY);
@@ -77,7 +84,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   return (
-    <AuthContext.Provider value={{ authState, login, logout, user: authState.user }}>
+    <AuthContext.Provider value={{ authState, login, logout, updateUser, user: authState.user }}>
       {children}
     </AuthContext.Provider>
   );

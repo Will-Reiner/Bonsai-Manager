@@ -1,70 +1,83 @@
 import { Request, Response } from 'express';
 import { prisma } from '../../lib/prisma';
 import { amizadeSchema } from './amizade.schema';
+import { PrismaAmizadeRepository } from './repositories/prisma-amizade.repository';
+import { FollowUserUseCase, UnfollowUserUseCase, GetSeguidoresUseCase, GetSeguindoUseCase } from './use-cases';
 
-export const amizadeController = {
-  // Cria uma nova relação de "seguir"
-  follow: async (req: Request, res: Response) => {
+export class AmizadeController {
+  private amizadeRepository = new PrismaAmizadeRepository();
+  private followUserUseCase = new FollowUserUseCase(this.amizadeRepository);
+  private unfollowUserUseCase = new UnfollowUserUseCase(this.amizadeRepository);
+  private getSeguidoresUseCase = new GetSeguidoresUseCase(this.amizadeRepository);
+  private getSeguindoUseCase = new GetSeguindoUseCase(this.amizadeRepository);
+
+  async getSeguidores(req: Request, res: Response) {
+    try {
+      const userId = req.user!.userId;
+      const seguidores = await this.getSeguidoresUseCase.execute(userId);
+      res.status(200).json(seguidores);
+    } catch (error) {
+      console.error('Erro ao buscar seguidores:', error);
+      res.status(500).json({ message: 'Erro interno do servidor' });
+    }
+  }
+
+  async getSeguindo(req: Request, res: Response) {
+    try {
+      const userId = req.user!.userId;
+      const seguindo = await this.getSeguindoUseCase.execute(userId);
+      res.status(200).json(seguindo);
+    } catch (error) {
+      console.error('Erro ao buscar seguindo:', error);
+      res.status(500).json({ message: 'Erro interno do servidor' });
+    }
+  }
+
+  async follow(req: Request, res: Response) {
     try {
       const seguidorId = req.user!.userId;
-      const { seguidoId } = amizadeSchema.parse(req).params;
-
-      if (seguidorId === seguidoId) {
-        return res.status(400).json({ message: 'Não pode seguir a si mesmo.' });
-      }
-
-      // Verifica se o usuário a ser seguido existe
-      const seguidoExists = await prisma.usuario.findUnique({ where: { id: seguidoId } });
-      if (!seguidoExists) {
-        return res.status(404).json({ message: 'Utilizador a ser seguido não encontrado.' });
-      }
-
-      // Verifica se a amizade já existe
-      const amizadeExistente = await prisma.amizade.findUnique({
-          where: { seguidorId_seguidoId: { seguidorId, seguidoId } }
+      const { params } = amizadeSchema.parse(req);
+      
+      const amizade = await this.followUserUseCase.execute({
+        seguidorId,
+        seguidoId: params.seguidoId,
       });
 
-      if(amizadeExistente) {
-          return res.status(409).json({ message: 'Já está a seguir este utilizador.' });
-      }
-
-      const novaAmizade = await prisma.amizade.create({
-        data: {
-          seguidorId,
-          seguidoId,
-        },
-      });
-
-      return res.status(201).json(novaAmizade);
+      res.status(201).json(amizade);
     } catch (error) {
-      return res.status(400).json({ error });
-    }
-  },
-
-  // Remove uma relação de "seguir"
-  unfollow: async (req: Request, res: Response) => {
-    try {
-        const seguidorId = req.user!.userId;
-        const { seguidoId } = amizadeSchema.parse(req).params;
-
-        // Verifica se a amizade existe antes de apagar
-        const amizadeExistente = await prisma.amizade.findUnique({
-            where: { seguidorId_seguidoId: { seguidorId, seguidoId } }
-        });
-
-        if(!amizadeExistente) {
-            return res.status(404).json({ message: 'Não está a seguir este utilizador.' });
+      if (error instanceof Error) {
+        if (error.message === 'Não pode seguir a si mesmo.') {
+          return res.status(400).json({ message: error.message });
         }
-
-        await prisma.amizade.delete({
-            where: {
-                seguidorId_seguidoId: { seguidorId, seguidoId }
-            }
-        });
-
-        return res.status(204).send();
-    } catch (error) {
-        return res.status(400).json({ error });
+        if (error.message === 'Utilizador a ser seguido não encontrado.') {
+          return res.status(404).json({ message: error.message });
+        }
+        if (error.message === 'Já está a seguir este utilizador.') {
+          return res.status(409).json({ message: error.message });
+        }
+      }
+      console.error('Erro ao seguir usuário:', error);
+      res.status(500).json({ error: 'Erro interno do servidor' });
     }
-  },
-};
+  }
+
+  async unfollow(req: Request, res: Response) {
+    try {
+      const seguidorId = req.user!.userId;
+      const { params } = amizadeSchema.parse(req);
+
+      await this.unfollowUserUseCase.execute({
+        seguidorId,
+        seguidoId: params.seguidoId,
+      });
+
+      res.status(204).send();
+    } catch (error) {
+      if (error instanceof Error && error.message === 'Não está a seguir este utilizador.') {
+        return res.status(404).json({ message: error.message });
+      }
+      console.error('Erro ao deixar de seguir usuário:', error);
+      res.status(500).json({ error: 'Erro interno do servidor' });
+    }
+  }
+}

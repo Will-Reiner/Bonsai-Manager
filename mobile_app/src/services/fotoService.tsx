@@ -2,14 +2,16 @@ import api from '../api';
 import { Foto } from '../types';
 
 /**
- * DTO para o upload de uma nova foto.
- * Reflete a nova estrutura da API.
+ * DTO para criar um novo registo de mídia.
  */
 export interface CreateFotoDTO {
   caminhoArquivo: string;
   plantaId?: string | null;
   titulo?: string;
   tags?: string;
+  tipo?: 'FOTO' | 'VIDEO' | 'VISAO_FUTURA';
+  descricao?: string;
+  thumbnailUrl?: string;
 }
 
 /**
@@ -18,8 +20,8 @@ export interface CreateFotoDTO {
 export interface UpdateFotoDTO {
   titulo?: string;
   tags?: string;
+  descricao?: string;
 }
-
 
 /**
  * Busca todas as fotos de uma planta específica.
@@ -30,11 +32,9 @@ const getFotosPorPlanta = async (plantaId: string): Promise<Foto[]> => {
 };
 
 /**
- * Faz o upload dos dados de uma nova foto.
+ * Cria um registo de mídia com metadados (URL R2 já obtida via upload direto).
  */
 const createFoto = async (data: CreateFotoDTO): Promise<Foto> => {
-  // Nota: O upload real do arquivo de imagem geralmente é um processo multipart/form-data.
-  // Por agora, este serviço apenas envia os metadados.
   const response = await api.post('/fotos', data);
   return response.data;
 };

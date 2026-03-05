@@ -1,65 +1,106 @@
 import { Request, Response } from 'express';
-import { prisma } from '../../lib/prisma';
+import { parsePagination, buildPaginatedResponse } from '../../utils/pagination';
 import { createAtividadeSchema, updateAtividadeSchema, atividadeIdSchema } from './atividade.schema';
+import { CreateAtividadeUseCase } from './use-cases/create-atividade.use-case';
+import { GetAllAtividadesUseCase } from './use-cases/get-all-atividades.use-case';
+import { GetAtividadeByIdUseCase } from './use-cases/get-atividade-by-id.use-case';
+import { UpdateAtividadeUseCase } from './use-cases/update-atividade.use-case';
+import { DeleteAtividadeUseCase } from './use-cases/delete-atividade.use-case';
+import { PrismaAtividadeRepository } from './repositories/prisma-atividade.repository';
+
+// Initialize dependencies
+const atividadeRepository = new PrismaAtividadeRepository();
+const createAtividadeUseCase = new CreateAtividadeUseCase(atividadeRepository);
+const getAllAtividadesUseCase = new GetAllAtividadesUseCase(atividadeRepository);
+const getAtividadeByIdUseCase = new GetAtividadeByIdUseCase(atividadeRepository);
+const updateAtividadeUseCase = new UpdateAtividadeUseCase(atividadeRepository);
+const deleteAtividadeUseCase = new DeleteAtividadeUseCase(atividadeRepository);
 
 export const atividadeController = {
   create: async (req: Request, res: Response) => {
     try {
-      // O schema de validação agora inclui os novos campos
       const data = createAtividadeSchema.parse(req).body;
-      const novaAtividade = await prisma.atividade.create({
-        data, // Passamos todos os dados validados diretamente para o Prisma
-      });
+      const novaAtividade = await createAtividadeUseCase.execute(data);
       return res.status(201).json(novaAtividade);
     } catch (error) {
+      console.error('ERRO AO CRIAR ATIVIDADE:', error);
+      
+      if (error instanceof Error) {
+        if (error.message === 'Já existe uma atividade com este nome.') {
+          return res.status(409).json({ message: error.message });
+        }
+      }
+      
       return res.status(400).json({ error });
     }
   },
 
-  getAll: async (_req: Request, res: Response) => {
+  getAll: async (req: Request, res: Response) => {
     try {
-      const atividades = await prisma.atividade.findMany();
-      return res.status(200).json(atividades);
+      const atividades = await getAllAtividadesUseCase.execute();
+
+      if (req.query.page) {
+        const params = parsePagination(req.query);
+        const paginatedData = atividades.slice(params.skip, params.skip + params.take);
+        return res.json(buildPaginatedResponse(paginatedData, atividades.length, params));
+      }
+
+      return res.json(atividades);
     } catch (error) {
-      return res.status(500).json({ error: 'Erro ao buscar atividades.' });
+      return res.status(500).json({ error });
     }
   },
 
   getById: async (req: Request, res: Response) => {
     try {
       const { id } = atividadeIdSchema.parse(req).params;
-      const atividade = await prisma.atividade.findUnique({ where: { id } });
-      if (!atividade) {
-        return res.status(404).json({ message: 'Atividade não encontrada.' });
-      }
-      return res.status(200).json(atividade);
+      const atividade = await getAtividadeByIdUseCase.execute(id);
+      return res.json(atividade);
     } catch (error) {
-      return res.status(400).json({ error });
+      if (error instanceof Error) {
+        if (error.message === 'Atividade não encontrada.') {
+          return res.status(404).json({ message: error.message });
+        }
+      }
+      
+      return res.status(500).json({ error });
     }
   },
 
   update: async (req: Request, res: Response) => {
     try {
       const { id } = atividadeIdSchema.parse(req).params;
-      // O schema de validação agora inclui os novos campos para atualização
       const data = updateAtividadeSchema.parse(req).body;
-      const atividadeAtualizada = await prisma.atividade.update({
-        where: { id },
-        data, // Passamos todos os dados validados diretamente para o Prisma
-      });
-      return res.status(200).json(atividadeAtualizada);
+
+      const atividadeAtualizada = await updateAtividadeUseCase.execute({ id, ...data });
+      return res.json(atividadeAtualizada);
     } catch (error) {
-      return res.status(400).json({ error });
+      if (error instanceof Error) {
+        if (error.message === 'Atividade não encontrada.') {
+          return res.status(404).json({ message: error.message });
+        }
+        if (error.message === 'Já existe uma atividade com este nome.') {
+          return res.status(409).json({ message: error.message });
+        }
+      }
+      
+      return res.status(500).json({ error });
     }
   },
 
   delete: async (req: Request, res: Response) => {
     try {
       const { id } = atividadeIdSchema.parse(req).params;
-      await prisma.atividade.delete({ where: { id } });
+      await deleteAtividadeUseCase.execute(id);
       return res.status(204).send();
     } catch (error) {
-      return res.status(400).json({ error });
+      if (error instanceof Error) {
+        if (error.message === 'Atividade não encontrada.') {
+          return res.status(404).json({ message: error.message });
+        }
+      }
+      
+      return res.status(500).json({ error });
     }
   },
 };
