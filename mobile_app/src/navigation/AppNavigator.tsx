@@ -37,7 +37,7 @@ import CustomTabBar from '../components/CustomTabBar';
 
 import { useAuth } from '../context/AuthContext';
 import { usePreferencias } from '../context/PreferenciasContext';
-import { Usuario } from '../types';
+import { Usuario, Agenda } from '../types';
 
 // Tipos para o navegador principal (Stack)
 export type RootStackParamList = {
@@ -49,7 +49,7 @@ export type RootStackParamList = {
   AddPlant: undefined;
   EditPlant: { plantaId: string };
   Admin: undefined;
-  ScheduleCare: { plantaId: string };
+  ScheduleCare: { plantaId: string; agenda?: Agenda };
   SpeciesList: undefined;
   SpeciesDetail: { especieId: string; title: string };
   TechniquesList: undefined;
@@ -129,7 +129,7 @@ const AppNavigator = () => {
             <Stack.Screen name="AddPlant" component={AddPlantScreen} options={{ title: 'Adicionar Nova Planta' }} />
             <Stack.Screen name="EditPlant" component={EditPlantScreen} options={{ title: 'Editar Planta' }} />
             <Stack.Screen name="Admin" component={AdminScreen} options={{ title: 'Painel Admin' }} />
-            <Stack.Screen name="ScheduleCare" component={ScheduleCareScreen} options={{ title: 'Agendar Cuidado' }} />
+            <Stack.Screen name="ScheduleCare" component={ScheduleCareScreen} options={({ route }) => ({ title: route.params?.agenda ? 'Editar Tarefa' : 'Agendar Cuidado' })} />
             <Stack.Screen name="SpeciesList" component={SpeciesListScreen} options={{ title: 'Guia de Espécies' }} />
             <Stack.Screen name="SpeciesDetail" component={SpeciesDetailScreen} options={({ route }) => ({ title: route.params.title })} />
             <Stack.Screen name="TechniquesList" component={TechniquesListScreen} options={{ title: 'Guia de Técnicas' }} />

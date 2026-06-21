@@ -34,12 +34,15 @@ const quickDateOptions = [
 const ScheduleCareScreen = () => {
   const navigation = useNavigation();
   const route = useRoute<ScheduleCareScreenRouteProp>();
-  const { plantaId } = route.params;
+  const { plantaId, agenda } = route.params;
+  const isEditMode = !!agenda;
 
   // Estados do formulário
-  const [atividadeId, setAtividadeId] = useState<string | undefined>();
-  const [dataAgendada, setDataAgendada] = useState(new Date());
-  const [observacoes, setObservacoes] = useState('');
+  const [atividadeId, setAtividadeId] = useState<string | undefined>(agenda?.atividadeId);
+  const [dataAgendada, setDataAgendada] = useState(
+    agenda ? new Date(agenda.dataAgendada) : new Date()
+  );
+  const [observacoes, setObservacoes] = useState(agenda?.observacoes ?? '');
   const [showDatePicker, setShowDatePicker] = useState(false);
 
   // Estados de controlo
@@ -84,21 +87,57 @@ const ScheduleCareScreen = () => {
       return;
     }
     setIsLoading(true);
-    const agendaData: CreateAgendaDTO = {
-      plantaId,
-      atividadeId,
-      dataAgendada: dataAgendada.toISOString(),
-      observacoes: observacoes || undefined,
-    };
     try {
-      await agendaService.createAgendamento(agendaData);
-      Alert.alert('Sucesso', 'Atividade agendada com sucesso!');
+      if (isEditMode && agenda) {
+        // Edição: a atividade não pode ser alterada pela API; atualizamos data e observações.
+        await agendaService.updateAgendamento(agenda.id, {
+          dataAgendada: dataAgendada.toISOString(),
+          observacoes: observacoes || undefined,
+        });
+        Alert.alert('Sucesso', 'Tarefa atualizada com sucesso!');
+      } else {
+        const agendaData: CreateAgendaDTO = {
+          plantaId,
+          atividadeId,
+          dataAgendada: dataAgendada.toISOString(),
+          observacoes: observacoes || undefined,
+        };
+        await agendaService.createAgendamento(agendaData);
+        Alert.alert('Sucesso', 'Atividade agendada com sucesso!');
+      }
       navigation.goBack();
     } catch (error) {
-      Alert.alert('Erro', 'Não foi possível criar o agendamento.');
+      Alert.alert('Erro', isEditMode ? 'Não foi possível atualizar a tarefa.' : 'Não foi possível criar o agendamento.');
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleDelete = () => {
+    if (!agenda) return;
+    Alert.alert(
+      'Excluir tarefa',
+      'Tem certeza que deseja excluir esta tarefa?',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Excluir',
+          style: 'destructive',
+          onPress: async () => {
+            setIsLoading(true);
+            try {
+              await agendaService.deleteAgendamento(agenda.id);
+              Alert.alert('Sucesso', 'Tarefa excluída.');
+              navigation.goBack();
+            } catch (error) {
+              Alert.alert('Erro', 'Não foi possível excluir a tarefa.');
+            } finally {
+              setIsLoading(false);
+            }
+          },
+        },
+      ]
+    );
   };
 
   if (isFetchingData) {
@@ -108,14 +147,22 @@ const ScheduleCareScreen = () => {
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
       <Text style={styles.label}>Atividade *</Text>
-      <View style={styles.pickerContainer}>
-        <Picker selectedValue={atividadeId} onValueChange={(itemValue) => setAtividadeId(itemValue)}>
-          <Picker.Item label="Selecione uma atividade..." value={undefined} />
-          {atividades.map((atividade) => (
-            <Picker.Item key={atividade.id} label={atividade.nome} value={atividade.id} />
-          ))}
-        </Picker>
-      </View>
+      {isEditMode ? (
+        <View style={styles.readOnlyField}>
+          <Text style={styles.readOnlyText}>
+            {agenda?.atividade?.nome || atividades.find(a => a.id === atividadeId)?.nome || 'Atividade'}
+          </Text>
+        </View>
+      ) : (
+        <View style={styles.pickerContainer}>
+          <Picker selectedValue={atividadeId} onValueChange={(itemValue) => setAtividadeId(itemValue)}>
+            <Picker.Item label="Selecione uma atividade..." value={undefined} />
+            {atividades.map((atividade) => (
+              <Picker.Item key={atividade.id} label={atividade.nome} value={atividade.id} />
+            ))}
+          </Picker>
+        </View>
+      )}
       
       <Text style={styles.label}>Agendar Para Daqui a</Text>
       <View style={styles.quickDateContainer}>
@@ -154,8 +201,14 @@ const ScheduleCareScreen = () => {
       />
 
       <TouchableOpacity style={[styles.button, isLoading && styles.buttonDisabled]} onPress={handleSubmit} disabled={isLoading}>
-        {isLoading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Agendar Tarefa</Text>}
+        {isLoading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>{isEditMode ? 'Salvar Alterações' : 'Agendar Tarefa'}</Text>}
       </TouchableOpacity>
+
+      {isEditMode && (
+        <TouchableOpacity style={styles.deleteButton} onPress={handleDelete} disabled={isLoading}>
+          <Text style={styles.deleteButtonText}>Excluir Tarefa</Text>
+        </TouchableOpacity>
+      )}
     </ScrollView>
   );
 };
@@ -198,13 +251,26 @@ const styles = StyleSheet.create({
         textAlignVertical: 'top', 
         paddingTop: theme.spacing.md 
     },
-    pickerContainer: { 
-        backgroundColor: theme.colors.card, 
-        borderRadius: 8, 
-        borderWidth: 1, 
-        borderColor: theme.colors.lightGray, 
-        marginBottom: theme.spacing.sm, 
-        justifyContent: 'center' 
+    pickerContainer: {
+        backgroundColor: theme.colors.card,
+        borderRadius: 8,
+        borderWidth: 1,
+        borderColor: theme.colors.lightGray,
+        marginBottom: theme.spacing.sm,
+        justifyContent: 'center'
+    },
+    readOnlyField: {
+        backgroundColor: theme.colors.lightGray,
+        borderRadius: 8,
+        paddingHorizontal: theme.spacing.md,
+        height: 50,
+        justifyContent: 'center',
+        marginBottom: theme.spacing.sm,
+    },
+    readOnlyText: {
+        fontSize: 16,
+        color: theme.colors.text,
+        fontWeight: '500',
     },
     
     // Novos estilos para a seleção de data
@@ -253,10 +319,22 @@ const styles = StyleSheet.create({
     buttonDisabled: { 
         backgroundColor: theme.colors.lightGray 
     },
-    buttonText: { 
-        color: theme.colors.card, 
-        fontSize: 18, 
-        fontWeight: 'bold' 
+    buttonText: {
+        color: theme.colors.card,
+        fontSize: 18,
+        fontWeight: 'bold'
+    },
+    deleteButton: {
+        height: 50,
+        borderRadius: 8,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginTop: theme.spacing.sm,
+    },
+    deleteButtonText: {
+        color: theme.colors.danger,
+        fontSize: 16,
+        fontWeight: '600',
     },
 });
 

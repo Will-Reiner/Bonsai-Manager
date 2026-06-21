@@ -1,43 +1,34 @@
-import React, { useState, useCallback, useMemo, useEffect } from 'react';
+import React, { useState, useCallback, useMemo, useEffect, useLayoutEffect } from 'react';
 import {
   View,
   Text,
-  SectionList,
+  FlatList,
   StyleSheet,
   ActivityIndicator,
   TouchableOpacity,
   RefreshControl,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useFocusEffect, useRoute, RouteProp } from '@react-navigation/native';
+import {
+  useFocusEffect,
+  useRoute,
+  useNavigation,
+  RouteProp,
+} from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { agendaService } from '../../services/agendaService';
 import { Agenda } from '../../types';
 import { theme } from '../../constants/theme';
 import { isOverdue } from '../../utils/dateHelpers';
-import FilterChips, { FilterOption } from '../../components/FilterChips';
-import TaskListItem from '../../components/TaskListItem';
+import TaskListCard from '../../components/TaskListCard';
 import CompleteTaskModal from '../../components/CompleteTaskModal';
 import QuickInterventionModal from '../../components/QuickInterventionModal';
+import TaskFilterModal from '../../components/TaskFilterModal';
 import { RootStackParamList } from '../../navigation/AppNavigator';
 
 type TasksScreenRouteProp = RouteProp<RootStackParamList, 'Tasks'>;
-
-const categoryFilters: FilterOption[] = [
-  { key: 'ALL', label: 'Todas' },
-  { key: 'poda', label: 'Poda' },
-  { key: 'rega', label: 'Rega' },
-  { key: 'adubacao', label: 'Adubação' },
-  { key: 'aramacao', label: 'Aramação' },
-  { key: 'transplante', label: 'Transplante' },
-];
-
-interface Section {
-  title: string;
-  color: string;
-  collapsible?: boolean;
-  data: Agenda[];
-}
+type TasksScreenNavProp = NativeStackNavigationProp<RootStackParamList, 'Tasks'>;
 
 const isToday = (dateStr: string): boolean => {
   const date = new Date(dateStr);
@@ -45,28 +36,41 @@ const isToday = (dateStr: string): boolean => {
   return date.toDateString() === today.toDateString();
 };
 
-const isThisWeek = (dateStr: string): boolean => {
-  const date = new Date(dateStr);
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const endOfWeek = new Date(today);
-  endOfWeek.setDate(today.getDate() + (7 - today.getDay()));
-  return date > today && date <= endOfWeek && !isToday(dateStr);
-};
-
 const TasksScreen = () => {
   const route = useRoute<TasksScreenRouteProp>();
+  const navigation = useNavigation<TasksScreenNavProp>();
 
   const [agendamentos, setAgendamentos] = useState<Agenda[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [categoryFilter, setCategoryFilter] = useState('ALL');
-  const [collapsedConcluidos, setCollapsedConcluidos] = useState(true);
+
+  // Filtros
+  const [typeFilter, setTypeFilter] = useState('ALL');
+  const [statusFilter, setStatusFilter] = useState('ALL');
+  const [filterModalVisible, setFilterModalVisible] = useState(false);
 
   // Modais
   const [completeModalVisible, setCompleteModalVisible] = useState(false);
   const [selectedAgenda, setSelectedAgenda] = useState<Agenda | null>(null);
   const [interventionModalVisible, setInterventionModalVisible] = useState(false);
+
+  const filtersActive = typeFilter !== 'ALL' || statusFilter !== 'ALL';
+
+  // Botão de filtragem no header (ao lado direito do título)
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      headerRight: () => (
+        <TouchableOpacity
+          onPress={() => setFilterModalVisible(true)}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          style={styles.headerButton}
+        >
+          <MaterialCommunityIcons name="filter-variant" size={24} color={theme.colors.primary} />
+          {filtersActive && <View style={styles.headerButtonDot} />}
+        </TouchableOpacity>
+      ),
+    });
+  }, [navigation, filtersActive]);
 
   const carregarAgenda = useCallback(async () => {
     try {
@@ -123,64 +127,56 @@ const TasksScreen = () => {
     carregarAgenda();
   };
 
-  // Filtrar por categoria
+  // Próximos passos → editar tarefa pendente da planta
+  const handleEditTask = (agenda: Agenda) => {
+    setCompleteModalVisible(false);
+    setSelectedAgenda(null);
+    navigation.navigate('ScheduleCare', { plantaId: agenda.plantaId, agenda });
+  };
+
+  // Próximos passos → agendar nova tarefa para a planta
+  const handleAddTask = (plantaId: string) => {
+    setCompleteModalVisible(false);
+    setSelectedAgenda(null);
+    navigation.navigate('ScheduleCare', { plantaId });
+  };
+
+  // Aplicação dos filtros
   const filtered = useMemo(() => {
-    if (categoryFilter === 'ALL') return agendamentos;
-    return agendamentos.filter(a => {
-      const nome = (a.atividade?.nome || '').toLowerCase();
-      return nome.includes(categoryFilter);
+    let list = agendamentos;
+
+    if (typeFilter !== 'ALL') {
+      list = list.filter(a => (a.atividade?.nome || '').toLowerCase().includes(typeFilter));
+    }
+
+    list = list.filter(a => {
+      switch (statusFilter) {
+        case 'overdue':
+          return a.status === 'PENDENTE' && isOverdue(a.dataAgendada);
+        case 'today':
+          return a.status === 'PENDENTE' && isToday(a.dataAgendada);
+        case 'future':
+          return a.status === 'PENDENTE' && !isOverdue(a.dataAgendada) && !isToday(a.dataAgendada);
+        case 'done':
+          return a.status === 'CONCLUIDO' || a.status === 'CANCELADO';
+        case 'ALL':
+        default:
+          return a.status === 'PENDENTE';
+      }
     });
-  }, [agendamentos, categoryFilter]);
 
-  // Contadores para os stat cards (antes do filtro de categoria)
-  const stats = useMemo(() => {
-    const pendentes = agendamentos.filter(a => a.status === 'PENDENTE');
-    const atrasados = pendentes.filter(a => isOverdue(a.dataAgendada));
-    const hoje = pendentes.filter(a => isToday(a.dataAgendada));
-    const proximas = pendentes.filter(a => !isOverdue(a.dataAgendada) && !isToday(a.dataAgendada));
-    return { atrasados: atrasados.length, hoje: hoje.length, proximas: proximas.length };
-  }, [agendamentos]);
-
-  // Agrupar em seções
-  const sections = useMemo(() => {
-    const result: Section[] = [];
-
-    const overdueItems = filtered.filter(a => a.status === 'PENDENTE' && isOverdue(a.dataAgendada));
-    const todayItems = filtered.filter(a => a.status === 'PENDENTE' && isToday(a.dataAgendada));
-    const weekItems = filtered.filter(a => a.status === 'PENDENTE' && isThisWeek(a.dataAgendada));
-    const futureItems = filtered.filter(a =>
-      a.status === 'PENDENTE' && !isOverdue(a.dataAgendada) && !isToday(a.dataAgendada) && !isThisWeek(a.dataAgendada)
-    );
-    const doneItems = filtered.filter(a => a.status === 'CONCLUIDO' || a.status === 'CANCELADO');
-
-    if (overdueItems.length > 0) {
-      result.push({ title: 'Em Atraso', color: theme.colors.urgent, data: overdueItems });
+    const sorted = [...list];
+    if (statusFilter === 'done') {
+      sorted.sort(
+        (a, b) =>
+          new Date(b.dataConcluida || b.dataAgendada).getTime() -
+          new Date(a.dataConcluida || a.dataAgendada).getTime()
+      );
+    } else {
+      sorted.sort((a, b) => new Date(a.dataAgendada).getTime() - new Date(b.dataAgendada).getTime());
     }
-    if (todayItems.length > 0) {
-      result.push({ title: 'Hoje', color: theme.colors.success, data: todayItems });
-    }
-    if (weekItems.length > 0) {
-      result.push({ title: 'Esta Semana', color: theme.colors.subtext, data: weekItems });
-    }
-    if (futureItems.length > 0) {
-      result.push({ title: 'Próximas', color: theme.colors.warning, data: futureItems });
-    }
-    if (doneItems.length > 0) {
-      result.push({
-        title: 'Concluídos',
-        color: theme.colors.subtext,
-        collapsible: true,
-        data: collapsedConcluidos ? [] : doneItems,
-      });
-    }
-
-    return result;
-  }, [filtered, collapsedConcluidos]);
-
-  // Verifica se não há nenhum pendente (para estado vazio)
-  const noPendingTasks = useMemo(() => {
-    return filtered.filter(a => a.status === 'PENDENTE').length === 0;
-  }, [filtered]);
+    return sorted;
+  }, [agendamentos, typeFilter, statusFilter]);
 
   if (isLoading) {
     return (
@@ -194,69 +190,23 @@ const TasksScreen = () => {
 
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
-      {/* Stats cards */}
-      <View style={styles.statsRow}>
-        <View style={[styles.statCard, { backgroundColor: '#FDECEA' }]}>
-          <MaterialCommunityIcons name="alert-circle" size={18} color={theme.colors.urgent} />
-          <Text style={[styles.statNumber, { color: theme.colors.urgent }]}>{stats.atrasados}</Text>
-          <Text style={styles.statLabel}>Em Atraso</Text>
-        </View>
-        <View style={[styles.statCard, { backgroundColor: '#E8F5E9' }]}>
-          <MaterialCommunityIcons name="calendar-today" size={18} color={theme.colors.success} />
-          <Text style={[styles.statNumber, { color: theme.colors.success }]}>{stats.hoje}</Text>
-          <Text style={styles.statLabel}>Hoje</Text>
-        </View>
-        <View style={[styles.statCard, { backgroundColor: '#FFF8E1' }]}>
-          <MaterialCommunityIcons name="calendar-arrow-right" size={18} color={theme.colors.warning} />
-          <Text style={[styles.statNumber, { color: theme.colors.warning }]}>{stats.proximas}</Text>
-          <Text style={styles.statLabel}>Próximas</Text>
-        </View>
-      </View>
-
-      {/* Filtros de categoria */}
-      <FilterChips filters={categoryFilters} activeKey={categoryFilter} onSelect={setCategoryFilter} />
-
-      {/* Lista agrupada */}
-      {noPendingTasks && sections.length === 0 ? (
+      {filtered.length === 0 ? (
         <View style={styles.emptyContainer}>
           <MaterialCommunityIcons name="leaf" size={56} color={theme.colors.primaryLight} />
-          <Text style={styles.emptyTitle}>Tudo em dia!</Text>
-          <Text style={styles.emptySubtitle}>Nenhuma tarefa pendente.</Text>
+          <Text style={styles.emptyTitle}>
+            {filtersActive ? 'Nenhuma tarefa encontrada' : 'Tudo em dia!'}
+          </Text>
+          <Text style={styles.emptySubtitle}>
+            {filtersActive ? 'Tente ajustar os filtros.' : 'Nenhuma tarefa pendente.'}
+          </Text>
         </View>
       ) : (
-        <SectionList
-          sections={sections}
+        <FlatList
+          data={filtered}
           keyExtractor={item => item.id}
           renderItem={({ item }) => (
-            <TaskListItem
-              item={item}
-              onComplete={handleQuickComplete}
-              onPress={handleOpenComplete}
-            />
+            <TaskListCard item={item} onComplete={handleQuickComplete} onPress={handleOpenComplete} />
           )}
-          renderSectionHeader={({ section }) => (
-            <TouchableOpacity
-              style={styles.sectionHeader}
-              onPress={() => {
-                if (section.collapsible) {
-                  setCollapsedConcluidos(prev => !prev);
-                }
-              }}
-              activeOpacity={section.collapsible ? 0.7 : 1}
-              disabled={!section.collapsible}
-            >
-              <View style={[styles.sectionDot, { backgroundColor: section.color }]} />
-              <Text style={styles.sectionTitle}>{section.title}</Text>
-              {section.collapsible && (
-                <MaterialCommunityIcons
-                  name={collapsedConcluidos ? 'chevron-down' : 'chevron-up'}
-                  size={20}
-                  color={theme.colors.subtext}
-                />
-              )}
-            </TouchableOpacity>
-          )}
-          stickySectionHeadersEnabled={false}
           contentContainerStyle={styles.listContent}
           refreshControl={
             <RefreshControl
@@ -266,17 +216,10 @@ const TasksScreen = () => {
               tintColor={theme.colors.primary}
             />
           }
-          ListEmptyComponent={
-            noPendingTasks ? null : (
-              <View style={styles.emptyContainer}>
-                <Text style={styles.emptySubtitle}>Nenhuma tarefa nesta categoria.</Text>
-              </View>
-            )
-          }
         />
       )}
 
-      {/* FAB */}
+      {/* FAB — intervenção rápida */}
       <TouchableOpacity
         style={styles.fab}
         onPress={() => setInterventionModalVisible(true)}
@@ -286,11 +229,25 @@ const TasksScreen = () => {
       </TouchableOpacity>
 
       {/* Modais */}
+      <TaskFilterModal
+        isVisible={filterModalVisible}
+        onClose={() => setFilterModalVisible(false)}
+        typeFilter={typeFilter}
+        statusFilter={statusFilter}
+        onApply={(type, status) => {
+          setTypeFilter(type);
+          setStatusFilter(status);
+        }}
+      />
+
       <CompleteTaskModal
         isVisible={completeModalVisible}
         onClose={() => { setCompleteModalVisible(false); setSelectedAgenda(null); }}
         onTaskCompleted={handleTaskCompleted}
         agendaItem={selectedAgenda}
+        allAgendas={agendamentos}
+        onEditTask={handleEditTask}
+        onAddTask={handleAddTask}
       />
 
       <QuickInterventionModal
@@ -312,52 +269,20 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  // Stats
-  statsRow: {
-    flexDirection: 'row',
-    paddingHorizontal: theme.spacing.md,
-    paddingTop: theme.spacing.md,
-    paddingBottom: theme.spacing.xs,
-    gap: 10,
+  headerButton: {
+    paddingHorizontal: theme.spacing.sm,
   },
-  statCard: {
-    flex: 1,
-    borderRadius: theme.borderRadius.lg,
-    paddingVertical: 12,
-    paddingHorizontal: 10,
-    alignItems: 'center',
-    gap: 2,
-  },
-  statNumber: {
-    fontSize: 22,
-    fontWeight: 'bold',
-  },
-  statLabel: {
-    fontSize: 11,
-    color: theme.colors.subtext,
-    fontWeight: '500',
-  },
-  // Section headers
-  sectionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: theme.spacing.md + 4,
-    paddingTop: theme.spacing.md,
-    paddingBottom: theme.spacing.sm,
-    gap: 8,
-  },
-  sectionDot: {
+  headerButtonDot: {
+    position: 'absolute',
+    top: 0,
+    right: 4,
     width: 8,
     height: 8,
     borderRadius: 4,
-  },
-  sectionTitle: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: theme.colors.text,
-    flex: 1,
+    backgroundColor: theme.colors.urgent,
   },
   listContent: {
+    paddingTop: theme.spacing.md,
     paddingBottom: 100,
   },
   // Empty state
