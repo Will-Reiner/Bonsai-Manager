@@ -2,11 +2,18 @@ import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
 
-// Para emulador Android, use 'http://10.0.2.2:3000'.
-// Para telemóvel físico na mesma rede Wi-Fi, use o IP da sua máquina. 10.60.210.39 para roteador celular e 192.168.0.34 para wifi
-// Para web (browser na mesma máquina do backend), usa-se localhost.
-const SERVER_URL =
-  Platform.OS === 'web' ? 'http://localhost:3000' : 'http://255.255.255.0:3000';
+// URL do servidor em PRODUÇÃO (usada nos builds release — ex.: APK do EAS).
+const PROD_URL = 'https://bonsai.astraflow.io';
+
+// URL em DESENVOLVIMENTO (Metro/Expo rodando localmente):
+// - Emulador Android: 'http://10.0.2.2:3000'
+// - Web (mesmo PC do backend): 'http://localhost:3000'
+// - Dispositivo físico na mesma Wi-Fi: troque pelo IP da sua máquina (ex.: 'http://192.168.0.34:3000')
+const DEV_URL =
+  Platform.OS === 'web' ? 'http://localhost:3000' : 'http://10.0.2.2:3000';
+
+// __DEV__ é falso em builds de produção, então o APK aponta para PROD_URL automaticamente.
+const SERVER_URL = __DEV__ ? DEV_URL : PROD_URL;
 const API_URL = `${SERVER_URL}/api`;
 
 const api = axios.create({

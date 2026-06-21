@@ -32,6 +32,12 @@
       "expo-font",
       "react-native-compressor",
       "expo-video"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "9ee0635c-844e-4571-83bc-2dcea7726ce3"
+      }
+    },
+    "owner": "williamreiner"
   }
 }

@@ -12,9 +12,9 @@ npm install
 echo "Generating Prisma Client..."
 npx prisma generate
 
-# Aplica as migrações do banco de dados (corrige o segundo erro)
-echo "Applying database migrations..."
-npx prisma migrate dev --name init
+# Aplica as migrações já versionadas (comando de PRODUÇÃO — não cria migrações novas)
+echo "Applying database migrations (deploy)..."
+npx prisma migrate deploy
 
 echo "Migrations applied. Starting server..."
 # Finalmente, executa o comando principal do Dockerfile (npm run dev)
