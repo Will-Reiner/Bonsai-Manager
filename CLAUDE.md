@@ -121,6 +121,10 @@ Navigation structure: unauthenticated users see Login/Register; authenticated us
 5. Register the router in `server/src/server.ts` under the `/api` prefix
 6. Add Prisma model to `schema.prisma` and run migrations if needed
 
+## commands
+
+- eas build --platform android --profile preview na pasta /mobile_app para gerar o apk 
+
 ## TODO
 
 - Species suggestion - DONE

@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Image, Dimensions } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Image } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Agenda } from '../types';
 import { theme } from '../constants/theme';
@@ -11,10 +11,6 @@ interface TaskListCardProps {
   onComplete?: (id: string) => void;
   onPress?: (item: Agenda) => void;
 }
-
-const screenWidth = Dimensions.get('window').width;
-// Imagem grande à esquerda — ~1/3 da largura do card
-const IMAGE_WIDTH = Math.round((screenWidth - theme.spacing.md * 2) / 3);
 
 const isToday = (dateStr: string): boolean => {
   const date = new Date(dateStr);
@@ -141,7 +137,8 @@ const styles = StyleSheet.create({
     ...theme.shadows.soft,
   },
   imageContainer: {
-    width: IMAGE_WIDTH,
+    // ~1/3 da largura do card (relativo ao card, não à janela) — responsivo
+    flex: 1,
   },
   image: {
     width: '100%',
@@ -154,7 +151,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   body: {
-    flex: 1,
+    flex: 2,
     flexDirection: 'row',
     alignItems: 'center',
     padding: theme.spacing.md,
