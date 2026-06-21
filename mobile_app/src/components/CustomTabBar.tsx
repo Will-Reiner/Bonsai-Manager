@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { View, TouchableOpacity, Text, StyleSheet, Platform } from 'react-native';
+import { View, TouchableOpacity, Text, StyleSheet } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { theme } from '../constants/theme';
@@ -21,10 +22,14 @@ const tabs: TabItem[] = [
 
 const CustomTabBar: React.FC<BottomTabBarProps> = ({ state, navigation }) => {
   const [showActionSheet, setShowActionSheet] = useState(false);
+  const insets = useSafeAreaInsets();
 
   return (
     <>
-      <View style={styles.container}>
+      {/* paddingBottom dinâmico: em aparelhos com a barra de navegação do sistema
+          (3 botões), insets.bottom é a altura dessa barra; sem ele a tab bar fica
+          atrás dos botões. Mínimo de 8 quando não há inset (navegação por gestos). */}
+      <View style={[styles.container, { paddingBottom: Math.max(insets.bottom, 8) }]}>
         {tabs.map((tab, index) => {
           const isCenter = tab.name === 'AddAction';
           const isFocused = !isCenter && state.routes[state.index]?.name === tab.name;
@@ -79,7 +84,6 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.card,
     borderTopWidth: 1,
     borderTopColor: theme.colors.border,
-    paddingBottom: Platform.OS === 'ios' ? 20 : 8,
     paddingTop: 8,
     alignItems: 'center',
   },

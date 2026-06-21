@@ -17,6 +17,36 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { theme } from '../../constants/theme';
 import type { KeyboardTypeOptions } from 'react-native';
 
+interface InputFieldProps {
+  icon: React.ComponentProps<typeof MaterialCommunityIcons>['name'];
+  placeholder: string;
+  value: string;
+  onChangeText: (text: string) => void;
+  secureTextEntry?: boolean;
+  keyboardType?: KeyboardTypeOptions;
+  autoCapitalize?: 'none' | 'sentences' | 'words' | 'characters';
+}
+
+// Definido FORA do RegisterScreen de propósito: se ficar dentro do componente,
+// ele é recriado a cada render (a cada tecla digitada), o que desmonta e remonta
+// o TextInput e faz o teclado perder o foco/fechar. Mantê-lo no escopo do módulo
+// preserva a identidade do componente entre renders.
+const InputField: React.FC<InputFieldProps> = ({ icon, placeholder, value, onChangeText, secureTextEntry = false, keyboardType = 'default', autoCapitalize = 'sentences' }) => (
+  <View style={styles.inputContainer}>
+    <MaterialCommunityIcons name={icon} size={24} color={theme.colors.subtext} style={styles.icon} />
+    <TextInput
+      style={styles.input}
+      placeholder={placeholder}
+      value={value}
+      onChangeText={onChangeText}
+      secureTextEntry={secureTextEntry}
+      keyboardType={keyboardType}
+      autoCapitalize={autoCapitalize}
+      placeholderTextColor={theme.colors.subtext}
+    />
+  </View>
+);
+
 const RegisterScreen = () => {
   const navigation = useNavigation();
 
@@ -64,32 +94,6 @@ const RegisterScreen = () => {
       setIsLoading(false);
     }
   };
-
-  interface InputFieldProps {
-    icon: React.ComponentProps<typeof MaterialCommunityIcons>['name'];
-    placeholder: string;
-    value: string;
-    onChangeText: (text: string) => void;
-    secureTextEntry?: boolean;
-    keyboardType?: KeyboardTypeOptions;
-    autoCapitalize?: 'none' | 'sentences' | 'words' | 'characters';
-  }
-
-  const InputField: React.FC<InputFieldProps> = ({ icon, placeholder, value, onChangeText, secureTextEntry = false, keyboardType = 'default', autoCapitalize = 'sentences' }) => (
-    <View style={styles.inputContainer}>
-      <MaterialCommunityIcons name={icon} size={24} color={theme.colors.subtext} style={styles.icon} />
-      <TextInput
-        style={styles.input}
-        placeholder={placeholder}
-        value={value}
-        onChangeText={onChangeText}
-        secureTextEntry={secureTextEntry}
-        keyboardType={keyboardType}
-        autoCapitalize={autoCapitalize}
-        placeholderTextColor={theme.colors.subtext}
-      />
-    </View>
-  );
 
   return (
     <KeyboardAvoidingView

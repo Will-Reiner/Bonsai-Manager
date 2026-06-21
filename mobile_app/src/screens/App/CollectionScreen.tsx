@@ -3,11 +3,11 @@ import {
   View,
   Text,
   StyleSheet,
-  FlatList,
+  ScrollView,
   ActivityIndicator,
   TouchableOpacity,
-  Image,
-  Dimensions,
+  TextInput,
+  RefreshControl,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -15,40 +15,45 @@ import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { plantaService } from '../../services/plantaService';
 import { agendaService } from '../../services/agendaService';
-import { Planta } from '../../types';
+import { Planta, Agenda } from '../../types';
 import { RootStackParamList } from '../../navigation/AppNavigator';
 import { theme } from '../../constants/theme';
-import { useAuth } from '../../context/AuthContext';
-import { resolveMediaUri } from '../../utils/resolveMediaUri';
-import ProfileAvatar from '../../components/ProfileAvatar';
-import SectionHeader from '../../components/SectionHeader';
-import StatisticsCard from '../../components/StatisticsCard';
-import FilterChips, { FilterOption } from '../../components/FilterChips';
-import PlantGridItem from '../../components/PlantGridItem';
-import Carousel from '../../components/Carousel';
+import { usePreferencias } from '../../context/PreferenciasContext';
+import { isOverdue } from '../../utils/dateHelpers';
+import PlantCollectionCard from '../../components/PlantCollectionCard';
+import PlantFilterModal, { FilterChoice } from '../../components/PlantFilterModal';
 
 type CollectionNavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
-const SCREEN_WIDTH = Dimensions.get('window').width;
+const KNOWN_TYPES = ['CONIFERA', 'ARVORE', 'CADUCIFOLIA', 'ARBUSTO'];
 
-const typeFilters: FilterOption[] = [
-  { key: 'TODAS', label: 'Todas' },
-  { key: 'CONIFERA', label: 'Coníferas' },
-  { key: 'ARVORE', label: 'Árvores' },
-  { key: 'CADUCIFOLIA', label: 'Decíduas' },
-  { key: 'ARBUSTO', label: 'Arbustos' },
-  { key: 'OUTRAS', label: 'Outras' },
-];
+const isToday = (dateStr: string): boolean => {
+  const date = new Date(dateStr);
+  const today = new Date();
+  return date.toDateString() === today.toDateString();
+};
 
 const CollectionScreen = () => {
   const navigation = useNavigation<CollectionNavigationProp>();
-  const { user } = useAuth();
+  const { preferencias } = usePreferencias();
+  const usaIdentificador = preferencias.usa_identificador === 'true';
+  const usaNome = preferencias.usa_nome_planta === 'true';
+
   const [plantas, setPlantas] = useState<Planta[]>([]);
-  const [concluidos, setConcluidos] = useState(0);
+  const [agendas, setAgendas] = useState<Agenda[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [activeFilter, setActiveFilter] = useState('TODAS');
+
+  // Busca e filtros
+  const [searchVisible, setSearchVisible] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterModalVisible, setFilterModalVisible] = useState(false);
+  const [typeFilter, setTypeFilter] = useState('TODAS');
+  const [taskFilter, setTaskFilter] = useState('ALL');
+  const [speciesFilter, setSpeciesFilter] = useState('ALL');
+
+  const filtersActive = typeFilter !== 'TODAS' || taskFilter !== 'ALL' || speciesFilter !== 'ALL';
 
   const carregarDados = useCallback(async () => {
     try {
@@ -58,7 +63,7 @@ const CollectionScreen = () => {
         agendaService.getMinhaAgenda(),
       ]);
       setPlantas(plantasData);
-      setConcluidos(agendaData.filter(a => a.status === 'CONCLUIDO').length);
+      setAgendas(agendaData);
     } catch (err) {
       setError('Não foi possível carregar a sua coleção.');
       console.error(err);
@@ -78,37 +83,80 @@ const CollectionScreen = () => {
     setIsRefreshing(false);
   };
 
-  // Plantas recentes para o carousel (top 5 com foto de capa)
-  const carouselPlantas = useMemo(() => {
-    return plantas
-      .filter(p => p.fotoCapaUrl)
-      .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
-      .slice(0, 5);
-  }, [plantas]);
-
-  // Espécies únicas
-  const uniqueSpecies = useMemo(() => {
-    const set = new Set(plantas.map(p => p.especieId));
-    return set.size;
-  }, [plantas]);
-
-  // Plantas filtradas
-  const filteredPlantas = useMemo(() => {
-    if (activeFilter === 'TODAS') return plantas;
-    if (activeFilter === 'OUTRAS') {
-      const known = ['CONIFERA', 'ARVORE', 'CADUCIFOLIA', 'ARBUSTO'];
-      return plantas.filter(p => !known.includes(p.especie?.tipoDePlanta || ''));
-    }
-    return plantas.filter(p => p.especie?.tipoDePlanta === activeFilter);
-  }, [plantas, activeFilter]);
-
   const handlePlantPress = (planta: Planta) => {
     navigation.navigate('PlantDetail', { plantaId: planta.id });
   };
 
+  const toggleSearch = () => {
+    setSearchVisible(prev => {
+      if (prev) setSearchQuery('');
+      return !prev;
+    });
+  };
+
+  // Pendências por planta (hoje + atrasadas)
+  const pendingMap = useMemo(() => {
+    const map: Record<string, { today: number; overdue: number }> = {};
+    agendas.forEach(a => {
+      if (a.status !== 'PENDENTE') return;
+      const overdue = isOverdue(a.dataAgendada);
+      const today = !overdue && isToday(a.dataAgendada);
+      if (!overdue && !today) return;
+      if (!map[a.plantaId]) map[a.plantaId] = { today: 0, overdue: 0 };
+      if (overdue) map[a.plantaId].overdue++;
+      else map[a.plantaId].today++;
+    });
+    return map;
+  }, [agendas]);
+
+  // Opções de espécie para o filtro
+  const speciesOptions = useMemo<FilterChoice[]>(() => {
+    const m = new Map<string, string>();
+    plantas.forEach(p => {
+      if (p.especieId && !m.has(p.especieId)) {
+        m.set(p.especieId, p.especie?.nomeComum || p.especie?.nomeCientifico || 'Espécie');
+      }
+    });
+    return [{ key: 'ALL', label: 'Todas' }, ...Array.from(m, ([key, label]) => ({ key, label }))];
+  }, [plantas]);
+
+  // Aplicação de busca + filtros
+  const filtered = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    return plantas.filter(p => {
+      // Busca por nome ou ID da plaquinha
+      if (q) {
+        const nome = (p.nome || '').toLowerCase();
+        const id = (p.identificador || '').toLowerCase();
+        if (!nome.includes(q) && !id.includes(q)) return false;
+      }
+      // Tipo de planta
+      if (typeFilter !== 'TODAS') {
+        const t = p.especie?.tipoDePlanta || '';
+        if (typeFilter === 'OUTRAS') {
+          if (KNOWN_TYPES.includes(t)) return false;
+        } else if (t !== typeFilter) {
+          return false;
+        }
+      }
+      // Espécie
+      if (speciesFilter !== 'ALL' && p.especieId !== speciesFilter) return false;
+      // Tarefas
+      if (taskFilter !== 'ALL') {
+        const c = pendingMap[p.id];
+        const today = c?.today || 0;
+        const overdue = c?.overdue || 0;
+        if (taskFilter === 'today' && today === 0) return false;
+        if (taskFilter === 'overdue' && overdue === 0) return false;
+        if (taskFilter === 'pending' && today + overdue === 0) return false;
+      }
+      return true;
+    });
+  }, [plantas, searchQuery, typeFilter, speciesFilter, taskFilter, pendingMap]);
+
   if (isLoading) {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={styles.container} edges={['top']}>
         <View style={styles.centered}>
           <ActivityIndicator size="large" color={theme.colors.primary} />
           <Text style={styles.infoText}>A carregar a sua coleção...</Text>
@@ -119,7 +167,7 @@ const CollectionScreen = () => {
 
   if (error) {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={styles.container} edges={['top']}>
         <View style={styles.centered}>
           <Text style={styles.errorText}>{error}</Text>
           <TouchableOpacity style={styles.retryButton} onPress={handleRefresh}>
@@ -130,62 +178,50 @@ const CollectionScreen = () => {
     );
   }
 
-  const ListHeader = () => (
-    <>
-      {/* Carousel de favoritos / recentes */}
-      {carouselPlantas.length > 0 && (
-        <View style={styles.carouselSection}>
-          <Carousel
-            data={carouselPlantas}
-            keyExtractor={(item) => item.id}
-            renderItem={(item) => (
-              <TouchableOpacity
-                style={styles.carouselItem}
-                onPress={() => handlePlantPress(item)}
-                activeOpacity={0.9}
-              >
-                <Image
-                  source={{ uri: resolveMediaUri(item.fotoCapaUrl!) }}
-                  style={styles.carouselImage}
-                  resizeMode="cover"
-                />
-                <View style={styles.carouselOverlay}>
-                  <Text style={styles.carouselName}>{item.nome || item.especie?.nomeComum}</Text>
-                  <Text style={styles.carouselSpecies}>{item.especie?.nomeCientifico || ''}</Text>
-                </View>
-              </TouchableOpacity>
-            )}
-          />
-        </View>
-      )}
-
-      {/* Estatísticas */}
-      <View style={styles.statsSection}>
-        <StatisticsCard
-          stats={[
-            { label: 'Plantas', value: plantas.length },
-            { label: 'Espécies', value: uniqueSpecies },
-            { label: 'Concluídos', value: concluidos },
-          ]}
-        />
-      </View>
-
-      {/* Filtros */}
-      <FilterChips filters={typeFilters} activeKey={activeFilter} onSelect={setActiveFilter} />
-    </>
-  );
-
   return (
-    <SafeAreaView style={styles.container}>
-      {/* Header */}
+    <SafeAreaView style={styles.container} edges={['top']}>
+      {/* Header: título + busca + filtro */}
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Minha Coleção</Text>
-        <ProfileAvatar
-          size={36}
-          imageUrl={user?.fotoPerfilUrl}
-          onPress={() => navigation.navigate('Settings')}
-        />
+        <View style={styles.headerActions}>
+          <TouchableOpacity style={styles.headerButton} onPress={toggleSearch} activeOpacity={0.7}>
+            <MaterialCommunityIcons
+              name={searchVisible ? 'close' : 'magnify'}
+              size={24}
+              color={theme.colors.primary}
+            />
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.headerButton}
+            onPress={() => setFilterModalVisible(true)}
+            activeOpacity={0.7}
+          >
+            <MaterialCommunityIcons name="filter-variant" size={24} color={theme.colors.primary} />
+            {filtersActive && <View style={styles.headerDot} />}
+          </TouchableOpacity>
+        </View>
       </View>
+
+      {/* Barra de busca (toggle) */}
+      {searchVisible && (
+        <View style={styles.searchBar}>
+          <MaterialCommunityIcons name="magnify" size={20} color={theme.colors.subtext} />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Buscar por nome ou ID da plaquinha..."
+            placeholderTextColor={theme.colors.subtext}
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            autoFocus
+            returnKeyType="search"
+          />
+          {searchQuery.length > 0 && (
+            <TouchableOpacity onPress={() => setSearchQuery('')} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+              <MaterialCommunityIcons name="close-circle" size={18} color={theme.colors.subtext} />
+            </TouchableOpacity>
+          )}
+        </View>
+      )}
 
       {plantas.length === 0 ? (
         <View style={styles.centered}>
@@ -194,26 +230,57 @@ const CollectionScreen = () => {
           <Text style={styles.emptySubtext}>Toque em '+' para adicionar a sua primeira planta!</Text>
         </View>
       ) : (
-        <FlatList
-          data={filteredPlantas}
-          keyExtractor={item => item.id}
-          numColumns={2}
-          renderItem={({ item }) => (
-            <PlantGridItem planta={item} onPress={() => handlePlantPress(item)} />
-          )}
-          ListHeaderComponent={ListHeader}
-          contentContainerStyle={styles.gridContainer}
-          columnWrapperStyle={styles.gridRow}
-          onRefresh={handleRefresh}
-          refreshing={isRefreshing}
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
-          ListEmptyComponent={
-            <View style={styles.centeredSmall}>
-              <Text style={styles.infoText}>Nenhuma planta com este filtro.</Text>
-            </View>
+          keyboardShouldPersistTaps="handled"
+          refreshControl={
+            <RefreshControl
+              refreshing={isRefreshing}
+              onRefresh={handleRefresh}
+              colors={[theme.colors.primary]}
+              tintColor={theme.colors.primary}
+            />
           }
-        />
+        >
+          {filtered.length === 0 ? (
+            <View style={styles.centeredSmall}>
+              <Text style={styles.infoText}>Nenhuma planta encontrada.</Text>
+            </View>
+          ) : (
+            <View style={styles.grid}>
+              {filtered.map(p => {
+                const c = pendingMap[p.id];
+                const pendingCount = (c?.today || 0) + (c?.overdue || 0);
+                return (
+                  <PlantCollectionCard
+                    key={p.id}
+                    planta={p}
+                    usaIdentificador={usaIdentificador}
+                    usaNome={usaNome}
+                    pendingCount={pendingCount}
+                    onPress={() => handlePlantPress(p)}
+                  />
+                );
+              })}
+            </View>
+          )}
+        </ScrollView>
       )}
+
+      <PlantFilterModal
+        isVisible={filterModalVisible}
+        onClose={() => setFilterModalVisible(false)}
+        typeFilter={typeFilter}
+        taskFilter={taskFilter}
+        speciesFilter={speciesFilter}
+        speciesOptions={speciesOptions}
+        onApply={(type, task, species) => {
+          setTypeFilter(type);
+          setTaskFilter(task);
+          setSpeciesFilter(species);
+        }}
+      />
     </SafeAreaView>
   );
 };
@@ -237,6 +304,55 @@ const styles = StyleSheet.create({
     fontSize: theme.typography.h2.fontSize,
     fontWeight: theme.typography.h2.fontWeight,
     color: theme.colors.text,
+  },
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  headerButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  headerDot: {
+    position: 'absolute',
+    top: 6,
+    right: 6,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: theme.colors.urgent,
+  },
+  searchBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginHorizontal: theme.spacing.md,
+    marginTop: theme.spacing.sm,
+    paddingHorizontal: theme.spacing.md,
+    height: 44,
+    backgroundColor: theme.colors.card,
+    borderRadius: theme.borderRadius.md,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 15,
+    color: theme.colors.text,
+  },
+  scrollContent: {
+    paddingTop: theme.spacing.md,
+    paddingBottom: theme.spacing.xl,
+  },
+  grid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    paddingHorizontal: theme.spacing.md,
   },
   centered: {
     flex: 1,
@@ -280,47 +396,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: theme.colors.subtext,
     marginTop: theme.spacing.sm,
-  },
-  carouselSection: {
-    marginTop: theme.spacing.md,
-  },
-  carouselItem: {
-    borderRadius: theme.borderRadius.lg,
-    overflow: 'hidden',
-    height: 180,
-  },
-  carouselImage: {
-    width: '100%',
-    height: '100%',
-    backgroundColor: theme.colors.lightGray,
-  },
-  carouselOverlay: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    padding: theme.spacing.md,
-    backgroundColor: 'rgba(0,0,0,0.45)',
-  },
-  carouselName: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#FFFFFF',
-  },
-  carouselSpecies: {
-    fontSize: 13,
-    color: '#FFFFFFCC',
-    fontStyle: 'italic',
-  },
-  statsSection: {
-    marginTop: theme.spacing.md,
-  },
-  gridContainer: {
-    paddingHorizontal: theme.spacing.md,
-    paddingBottom: theme.spacing.xl,
-  },
-  gridRow: {
-    justifyContent: 'space-between',
   },
 });
 
