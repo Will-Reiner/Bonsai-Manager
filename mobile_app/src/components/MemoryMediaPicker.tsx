@@ -1,5 +1,5 @@
-import React, { useCallback, useRef, useState } from 'react';
-import { View, Text, ScrollView, Image, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { View, Text, ScrollView, Image, TouchableOpacity, StyleSheet, Alert, ActivityIndicator } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { Ionicons } from '@expo/vector-icons';
@@ -33,24 +33,19 @@ export function MemoryMediaPicker({ onReadyItemsChange, onUploadingChange }: Mem
   const [datePickerFor, setDatePickerFor] = useState<string | null>(null);
   const itemsRef = useRef<PendingMedia[]>([]);
 
-  const sync = useCallback(
-    (next: PendingMedia[]) => {
-      itemsRef.current = next;
-      setItems(next);
-      onReadyItemsChange(
-        next
-          .filter((i) => i.status === 'done' && i.publicUrl)
-          .map((i) => ({
-            tipo: i.tipo,
-            publicUrl: i.publicUrl!,
-            thumbnailUrl: i.thumbnailUrl,
-            dataCaptura: i.dataCaptura,
-          })),
-      );
-      onUploadingChange(next.some((i) => i.status === 'uploading'));
-    },
-    [onReadyItemsChange, onUploadingChange],
-  );
+  const sync = useCallback((next: PendingMedia[]) => {
+    itemsRef.current = next;
+    setItems(next);
+  }, []);
+
+  useEffect(() => {
+    onReadyItemsChange(
+      items
+        .filter((i) => i.status === 'done' && i.publicUrl)
+        .map((i) => ({ tipo: i.tipo, publicUrl: i.publicUrl!, thumbnailUrl: i.thumbnailUrl, dataCaptura: i.dataCaptura })),
+    );
+    onUploadingChange(items.some((i) => i.status === 'uploading'));
+  }, [items, onReadyItemsChange, onUploadingChange]);
 
   const patch = useCallback(
     (localId: string, p: Partial<PendingMedia>) => {
@@ -136,6 +131,7 @@ export function MemoryMediaPicker({ onReadyItemsChange, onUploadingChange }: Mem
 
             {item.status === 'uploading' && (
               <View style={styles.overlay}>
+                <ActivityIndicator size="small" color="#fff" />
                 <Text style={styles.overlayText}>{item.progress}%</Text>
               </View>
             )}
@@ -173,7 +169,11 @@ export function MemoryMediaPicker({ onReadyItemsChange, onUploadingChange }: Mem
           </View>
         ))}
 
-        <TouchableOpacity style={styles.addTile} onPress={handleAdd}>
+        <TouchableOpacity
+          style={[styles.addTile, items.some((i) => i.status === 'uploading') && styles.addTileDisabled]}
+          onPress={handleAdd}
+          disabled={items.some((i) => i.status === 'uploading')}
+        >
           <Ionicons name="add" size={32} color={theme.colors.primary} />
           <Text style={styles.addText}>Adicionar</Text>
         </TouchableOpacity>
@@ -246,4 +246,5 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   addText: { marginTop: 4, fontSize: 13, color: theme.colors.primary, fontWeight: '600' },
+  addTileDisabled: { opacity: 0.5 },
 });
