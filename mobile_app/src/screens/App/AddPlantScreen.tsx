@@ -9,15 +9,19 @@ import {
   ActivityIndicator,
   Alert,
   Modal,
+  Switch,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { Picker } from '@react-native-picker/picker';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import { especieService } from '../../services/especieService';
-import { plantaService, CreatePlantaDTO } from '../../services/plantaService';
+import { plantaService } from '../../services/plantaService';
 import { fotoService } from '../../services/fotoService';
 import { Especie, ModoAquisicao } from '../../types';
 import { theme } from '../../constants/theme';
 import { CoverPhotoPicker } from '../../components/CoverPhotoPicker';
+import { MemoryMediaPicker } from '../../components/MemoryMediaPicker';
+import { buildCreatePlantaDTO, buildMemoryFotoDTO, ReadyMedia } from './addPlant.helpers';
 import { usePreferencias } from '../../context/PreferenciasContext';
 
 const AddPlantScreen = () => {
@@ -32,6 +36,11 @@ const AddPlantScreen = () => {
   const [observacoes, setObservacoes] = useState('');
   const [coverPublicUrl, setCoverPublicUrl] = useState<string | undefined>();
   const [isUploadingCover, setIsUploadingCover] = useState(false);
+  const [dataAquisicao, setDataAquisicao] = useState<Date | null>(null);
+  const [showAquisicaoPicker, setShowAquisicaoPicker] = useState(false);
+  const [plantaPublica, setPlantaPublica] = useState(false);
+  const [memoryItems, setMemoryItems] = useState<ReadyMedia[]>([]);
+  const [isUploadingMedia, setIsUploadingMedia] = useState(false);
 
   // Estados de controlo
   const [especies, setEspecies] = useState<Especie[]>([]);
@@ -84,20 +93,27 @@ const AddPlantScreen = () => {
       Alert.alert('Campo Obrigatório', 'Por favor, selecione uma espécie.');
       return;
     }
+    if (isUploadingMedia) {
+      Alert.alert('Aguarde', 'Ainda há mídias sendo enviadas.');
+      return;
+    }
 
     setIsLoading(true);
-    const plantaData: CreatePlantaDTO = {
+    const plantaData = buildCreatePlantaDTO({
       especieId,
-      nome: nome || undefined,
-      identificador: identificador || undefined,
-      modoAquisicao: modoAquisicao || undefined,
-      observacoes: observacoes || undefined,
-      fotoCapaUrl: coverPublicUrl || undefined,
-    };
+      nome,
+      identificador,
+      dataAquisicao,
+      modoAquisicao,
+      observacoes,
+      fotoCapaUrl: coverPublicUrl,
+      plantaPublica,
+    });
 
     try {
       const planta = await plantaService.createPlanta(plantaData);
-      // Criar registo Foto para a galeria
+
+      // Foto de capa na galeria
       if (coverPublicUrl) {
         try {
           await fotoService.createFoto({
@@ -110,6 +126,16 @@ const AddPlantScreen = () => {
           // Não bloquear a criação da planta se o registo da foto falhar
         }
       }
+
+      // Mídias de memória (fotos/vídeos de outros períodos)
+      for (const item of memoryItems) {
+        try {
+          await fotoService.createFoto(buildMemoryFotoDTO(item, planta.id));
+        } catch {
+          // Não bloquear se uma mídia individual falhar
+        }
+      }
+
       Alert.alert('Sucesso', 'Planta adicionada à sua coleção!');
       navigation.goBack();
     } catch (error) {
@@ -125,6 +151,11 @@ const AddPlantScreen = () => {
       <CoverPhotoPicker
         onImageUploaded={(url) => { setCoverPublicUrl(url); setIsUploadingCover(false); }}
         onImageRemoved={() => { setCoverPublicUrl(undefined); setIsUploadingCover(false); }}
+      />
+
+      <MemoryMediaPicker
+        onReadyItemsChange={setMemoryItems}
+        onUploadingChange={setIsUploadingMedia}
       />
 
       {preferencias.usa_nome_planta === 'true' && (
@@ -203,15 +234,47 @@ const AddPlantScreen = () => {
         multiline
       />
 
+      <Text style={styles.label}>Data de Aquisição</Text>
+      <TouchableOpacity style={styles.dateButton} onPress={() => setShowAquisicaoPicker(true)}>
+        <Text style={dataAquisicao ? styles.dateText : styles.datePlaceholder}>
+          {dataAquisicao ? dataAquisicao.toLocaleDateString('pt-BR') : 'Selecione a data...'}
+        </Text>
+      </TouchableOpacity>
+      {showAquisicaoPicker && (
+        <DateTimePicker
+          value={dataAquisicao ?? new Date()}
+          mode="date"
+          maximumDate={new Date()}
+          onChange={(_event, selected) => {
+            setShowAquisicaoPicker(false);
+            if (selected) setDataAquisicao(selected);
+          }}
+        />
+      )}
+
+      <View style={styles.switchRow}>
+        <View style={styles.switchTextWrap}>
+          <Text style={styles.label}>Planta Pública</Text>
+          <Text style={styles.switchHint}>Se ativado, outros usuários poderão ver esta planta.</Text>
+        </View>
+        <Switch
+          value={plantaPublica}
+          onValueChange={setPlantaPublica}
+          trackColor={{ true: theme.colors.primary }}
+        />
+      </View>
+
       <TouchableOpacity
-        style={[styles.button, (isLoading || isUploadingCover) && styles.buttonDisabled]}
+        style={[styles.button, (isLoading || isUploadingCover || isUploadingMedia) && styles.buttonDisabled]}
         onPress={handleSubmit}
-        disabled={isLoading || isUploadingCover}
+        disabled={isLoading || isUploadingCover || isUploadingMedia}
       >
         {isLoading ? (
           <ActivityIndicator color="#fff" />
         ) : (
-          <Text style={styles.buttonText}>Adicionar Planta</Text>
+          <Text style={styles.buttonText}>
+            {isUploadingMedia ? 'Enviando mídias...' : 'Adicionar Planta'}
+          </Text>
         )}
       </TouchableOpacity>
 
@@ -295,6 +358,38 @@ const styles = StyleSheet.create({
         height: 100,
         textAlignVertical: 'top',
         paddingTop: theme.spacing.md,
+    },
+    dateButton: {
+        backgroundColor: theme.colors.card,
+        borderRadius: 8,
+        paddingHorizontal: theme.spacing.md,
+        height: 50,
+        justifyContent: 'center',
+        marginBottom: theme.spacing.lg,
+        borderWidth: 1,
+        borderColor: theme.colors.lightGray,
+    },
+    dateText: {
+        fontSize: 16,
+        color: theme.colors.text,
+    },
+    datePlaceholder: {
+        fontSize: 16,
+        color: theme.colors.subtext || theme.colors.textSecondary,
+    },
+    switchRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        marginBottom: theme.spacing.lg,
+        gap: theme.spacing.md,
+    },
+    switchTextWrap: {
+        flex: 1,
+    },
+    switchHint: {
+        fontSize: 13,
+        color: theme.colors.subtext || theme.colors.textSecondary,
     },
     pickerContainer: {
         backgroundColor: theme.colors.card,
