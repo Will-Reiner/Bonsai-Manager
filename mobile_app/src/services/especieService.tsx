@@ -1,5 +1,5 @@
 import api from '../api';
-import { Especie, TipoPlanta } from '../types';
+import { Especie, TipoPlanta, StatusEspecie } from '../types';
 
 /**
  * DTO para criar uma nova espécie, agora com todos os campos da enciclopédia.
@@ -10,6 +10,7 @@ export interface CreateEspecieDTO {
   familia?: string;
   origem?: string;
   tipoDePlanta?: TipoPlanta;
+  status?: StatusEspecie;
   folhas?: string;
   tronco?: string;
   flores?: string;
@@ -62,7 +63,7 @@ const createEspecie = async (data: CreateEspecieDTO): Promise<Especie> => {
 /**
  * Atualiza os dados de uma espécie existente (requer autenticação).
  */
-const updateEspecie = async (id: string, data: Partial<CreateEspecieDTO> & { status?: string }): Promise<Especie> => {
+const updateEspecie = async (id: string, data: Partial<CreateEspecieDTO>): Promise<Especie> => {
   const response = await api.put(`/especies/${id}`, data);
   return response.data;
 };
