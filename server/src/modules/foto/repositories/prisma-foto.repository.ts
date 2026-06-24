@@ -11,7 +11,10 @@ export class PrismaFotoRepository implements FotoRepository {
   async findManyByPlanta(plantaId: string) {
     return await prisma.foto.findMany({
       where: { plantaId },
-      orderBy: { createdAt: 'desc' },
+      orderBy: [
+        { dataCaptura: { sort: 'desc', nulls: 'last' } },
+        { createdAt: 'desc' },
+      ],
     });
   }
 

@@ -191,6 +191,7 @@ model Foto {
   titulo         String?
   tags           String?
   createdAt      DateTime   @default(now())
+  dataCaptura    DateTime?  // data em que a mídia foi capturada (foto/vídeo)
 
   plantaId       String?
   planta         Planta?    @relation(fields: [plantaId], references: [id], onDelete: Cascade)
