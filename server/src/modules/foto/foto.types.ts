@@ -7,6 +7,7 @@ export interface CreateFotoDTO {
   tipo?: 'FOTO' | 'VIDEO' | 'VISAO_FUTURA';
   descricao?: string;
   thumbnailUrl?: string;
+  dataCaptura?: string | null;
 }
 
 export interface UpdateFotoDTO {

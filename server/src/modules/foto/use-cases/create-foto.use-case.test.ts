@@ -80,4 +80,22 @@ describe('CreateFotoUseCase', () => {
     expect(mockFotoRepository.checkPlantaBelongsToUser).toHaveBeenCalledWith('planta-1', 'user-1');
     expect(mockFotoRepository.create).not.toHaveBeenCalled();
   });
+
+  it('repassa dataCaptura ao repositório', async () => {
+    const createData = {
+      caminhoArquivo: '/uploads/foto1.jpg',
+      tipo: 'FOTO' as const,
+      dataCaptura: '2023-05-01T00:00:00.000Z',
+    };
+    const usuarioId = 'user-1';
+    const expectedFoto = { id: 'foto-1', ...createData, usuarioId };
+    mockFotoRepository.create.mockResolvedValue(expectedFoto);
+
+    await createFotoUseCase.execute(createData, usuarioId);
+
+    expect(mockFotoRepository.create).toHaveBeenCalledWith({
+      ...createData,
+      usuarioId,
+    });
+  });
 });
