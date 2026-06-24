@@ -98,6 +98,7 @@ export interface Foto {
   tipo: TipoMidia;
   descricao?: string | null;
   thumbnailUrl?: string | null;
+  dataCaptura?: string | null;
 }
 
 export interface TipoRecurso {
