@@ -31,7 +31,15 @@
       "expo-asset",
       "expo-font",
       "react-native-compressor",
-      "expo-video"
+      "expo-video",
+      [
+        "expo-media-library",
+        {
+          "photosPermission": "Permitir que o Bonsai Manager acesse suas fotos e vídeos para adicionar à memória da planta.",
+          "savePhotosPermission": "Permitir que o Bonsai Manager salve fotos.",
+          "isAccessMediaLocationEnabled": false
+        }
+      ]
     ],
     "extra": {
       "eas": {
