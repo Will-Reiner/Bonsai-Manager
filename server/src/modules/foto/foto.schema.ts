@@ -10,6 +10,7 @@ export const createFotoSchema = z.object({
     tipo: z.enum(['FOTO', 'VIDEO', 'VISAO_FUTURA']).optional(),
     descricao: z.string().optional(),
     thumbnailUrl: z.string().optional(),
+    dataCaptura: z.string().datetime().optional().nullable(),
   }),
 });
 

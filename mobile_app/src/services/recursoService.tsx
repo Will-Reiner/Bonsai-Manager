@@ -72,6 +72,21 @@ const createTipoRecurso = async (data: CreateTipoRecursoDTO): Promise<TipoRecurs
     return response.data;
 }
 
+/**
+ * Atualiza um tipo de recurso existente (requer autenticação de Admin).
+ */
+const updateTipoRecurso = async (id: string, data: CreateTipoRecursoDTO): Promise<TipoRecurso> => {
+    const response = await api.put(`/tipos-recurso/${id}`, data);
+    return response.data;
+}
+
+/**
+ * Deleta um tipo de recurso (requer autenticação de Admin).
+ */
+const deleteTipoRecurso = async (id: string): Promise<void> => {
+    await api.delete(`/tipos-recurso/${id}`);
+}
+
 
 export const recursoService = {
   getMeusRecursos,
@@ -80,4 +95,6 @@ export const recursoService = {
   deleteRecurso,
   getAllTiposRecurso,
   createTipoRecurso,
+  updateTipoRecurso,
+  deleteTipoRecurso,
 };
