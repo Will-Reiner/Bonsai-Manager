@@ -11,8 +11,8 @@ export const r2Client = new S3Client({
   },
   // Desativa checksum automático do SDK v3 — sem isso o R2 rejeita com 403
   // pois o header x-amz-checksum-crc32 fica na URL assinada mas não é enviado pelo cliente
-  requestChecksumCalculation: 'when_required',
-  responseChecksumValidation: 'when_required',
+  requestChecksumCalculation: 'WHEN_REQUIRED',
+  responseChecksumValidation: 'WHEN_REQUIRED',
 });
 
 export const R2_BUCKET = process.env.R2_BUCKET ?? '';

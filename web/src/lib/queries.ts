@@ -1,0 +1,53 @@
+import { useQuery } from '@tanstack/react-query';
+import {
+  agendasApi,
+  atividadesApi,
+  especiesApi,
+  fotosApi,
+  plantasApi,
+  preferenciasApi,
+  tiposRecursoApi,
+} from './endpoints';
+
+export const keys = {
+  plantas: ['plantas'] as const,
+  planta: (id: string) => ['plantas', id] as const,
+  agendas: ['agendas'] as const,
+  fotos: (plantaId: string) => ['fotos', plantaId] as const,
+  especies: ['especies'] as const,
+  especiesSugeridas: ['especies', 'sugeridas'] as const,
+  atividades: ['atividades'] as const,
+  tiposRecurso: ['tipos-recurso'] as const,
+  preferencias: ['preferencias'] as const,
+  me: ['me'] as const,
+};
+
+export const usePlantas = () => useQuery({ queryKey: keys.plantas, queryFn: plantasApi.list });
+export const usePlanta = (id: string) =>
+  useQuery({ queryKey: keys.planta(id), queryFn: () => plantasApi.get(id), enabled: !!id });
+export const useAgendas = () => useQuery({ queryKey: keys.agendas, queryFn: agendasApi.list });
+export const useFotos = (plantaId: string) =>
+  useQuery({ queryKey: keys.fotos(plantaId), queryFn: () => fotosApi.listByPlanta(plantaId) });
+export const useEspecies = () =>
+  useQuery({ queryKey: keys.especies, queryFn: especiesApi.list, staleTime: 5 * 60_000 });
+export const useAtividades = () =>
+  useQuery({ queryKey: keys.atividades, queryFn: atividadesApi.list, staleTime: 5 * 60_000 });
+export const useTiposRecurso = () => useQuery({ queryKey: keys.tiposRecurso, queryFn: tiposRecursoApi.list });
+
+/** Atividades ordenadas: as rastreadas nas preferências do usuário primeiro. */
+export function useAtividadesOrdenadas() {
+  const atividades = useAtividades();
+  const prefs = useQuery({ queryKey: keys.preferencias, queryFn: preferenciasApi.get, staleTime: 5 * 60_000 });
+  let rastreadas: string[] = [];
+  try {
+    rastreadas = JSON.parse(prefs.data?.atividades_rastreadas || '[]');
+  } catch {
+    rastreadas = [];
+  }
+  const lista = [...(atividades.data ?? [])].sort((a, b) => {
+    const ra = rastreadas.includes(a.id) ? 0 : 1;
+    const rb = rastreadas.includes(b.id) ? 0 : 1;
+    return ra - rb || a.nome.localeCompare(b.nome, 'pt-BR');
+  });
+  return { ...atividades, data: lista };
+}

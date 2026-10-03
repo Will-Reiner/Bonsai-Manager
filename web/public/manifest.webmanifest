@@ -1,0 +1,11 @@
+{
+  "name": "Bonsai Manager",
+  "short_name": "Bonsai",
+  "description": "Gerencie sua coleção de bonsais.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#F6F5F0",
+  "theme_color": "#285430",
+  "lang": "pt-BR",
+  "icons": [{ "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }]
+}

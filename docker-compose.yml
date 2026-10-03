@@ -42,6 +42,7 @@ services:
       PORT: 3000
       JWT_SECRET: ${JWT_SECRET:-changeme_dev_secret}
       DATABASE_URL: postgresql://${POSTGRES_USER:-bonsai_user}:${POSTGRES_PASSWORD:-bonsai_pass}@db:5432/${POSTGRES_DB:-bonsai_db}?schema=public
+      DIRECT_URL: postgresql://${POSTGRES_USER:-bonsai_user}:${POSTGRES_PASSWORD:-bonsai_pass}@db:5432/${POSTGRES_DB:-bonsai_db}?schema=public
 
 volumes:
   postgres_data:

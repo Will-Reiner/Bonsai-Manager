@@ -1,0 +1,175 @@
+import { useMemo, useState } from 'react';
+import { Link } from 'react-router';
+import { LayoutGrid, List, Plus, Search } from 'lucide-react';
+import { Button, EmptyState, ErrorState, PlantThumb, Spinner } from '@/components/ui';
+import { errorMessage } from '@/lib/api';
+import { especieNome, plantaTitulo } from '@/lib/format';
+import { useAgendas, usePlantas } from '@/lib/queries';
+import type { Planta } from '@/types';
+
+type Ordem = 'recentes' | 'alfabetica' | 'tarefa';
+const VIEW_KEY = 'bonsai_colecao_view';
+
+export function CollectionPage() {
+  const plantas = usePlantas();
+  const agendas = useAgendas();
+  const [busca, setBusca] = useState('');
+  const [especie, setEspecie] = useState('');
+  const [ordem, setOrdem] = useState<Ordem>('recentes');
+  const [view, setView] = useState<'grid' | 'lista'>(() =>
+    localStorage.getItem(VIEW_KEY) === 'lista' ? 'lista' : 'grid',
+  );
+
+  const trocarView = (v: 'grid' | 'lista') => {
+    setView(v);
+    localStorage.setItem(VIEW_KEY, v);
+  };
+
+  // Próxima tarefa pendente por planta
+  const proximaTarefa = useMemo(() => {
+    const mapa = new Map<string, string>();
+    for (const a of agendas.data ?? []) {
+      if (a.status !== 'PENDENTE') continue;
+      const atual = mapa.get(a.plantaId);
+      if (!atual || a.dataAgendada < atual) mapa.set(a.plantaId, a.dataAgendada);
+    }
+    return mapa;
+  }, [agendas.data]);
+
+  const especies = useMemo(() => {
+    const mapa = new Map<string, string>();
+    plantas.data?.forEach((p) => mapa.set(p.especieId, especieNome(p.especie)));
+    return [...mapa.entries()].sort((a, b) => a[1].localeCompare(b[1], 'pt-BR'));
+  }, [plantas.data]);
+
+  const lista = useMemo(() => {
+    const termo = busca.trim().toLowerCase();
+    const filtradas = (plantas.data ?? []).filter((p) => {
+      if (especie && p.especieId !== especie) return false;
+      if (!termo) return true;
+      return [p.nome, p.identificador, p.especie?.nomeComum, p.especie?.nomeCientifico]
+        .filter(Boolean)
+        .some((v) => v!.toLowerCase().includes(termo));
+    });
+    const porTarefa = (p: Planta) => proximaTarefa.get(p.id) ?? '9999';
+    return filtradas.sort((a, b) =>
+      ordem === 'alfabetica'
+        ? plantaTitulo(a).localeCompare(plantaTitulo(b), 'pt-BR')
+        : ordem === 'tarefa'
+          ? porTarefa(a).localeCompare(porTarefa(b))
+          : b.createdAt.localeCompare(a.createdAt),
+    );
+  }, [plantas.data, busca, especie, ordem, proximaTarefa]);
+
+  return (
+    <div className="mx-auto max-w-2xl px-4 pt-safe">
+      <header className="flex items-end justify-between pb-3 pt-6">
+        <div>
+          <h1 className="text-3xl font-semibold">Coleção</h1>
+          {plantas.data && <p className="text-sm text-muted">{plantas.data.length} planta(s)</p>}
+        </div>
+        <Link to="/plantas/nova">
+          <Button size="sm">
+            <Plus size={16} /> Planta
+          </Button>
+        </Link>
+      </header>
+
+      {plantas.isLoading ? (
+        <Spinner />
+      ) : plantas.isError ? (
+        <ErrorState text={errorMessage(plantas.error)} onRetry={() => plantas.refetch()} />
+      ) : plantas.data?.length === 0 ? (
+        <EmptyState
+          title="Sua coleção está vazia"
+          text="Adicione sua primeira planta para começar a registrar cuidados e fotos."
+          action={
+            <Link to="/plantas/nova">
+              <Button>Adicionar planta</Button>
+            </Link>
+          }
+        />
+      ) : (
+        <>
+          <div className="sticky top-0 z-20 -mx-4 space-y-2 bg-bg/95 px-4 pb-3 pt-safe backdrop-blur">
+            <div className="relative">
+              <Search size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted" />
+              <input
+                className="input pl-10"
+                placeholder="Buscar por nome, código ou espécie"
+                value={busca}
+                onChange={(e) => setBusca(e.target.value)}
+                type="search"
+              />
+            </div>
+            <div className="flex gap-2">
+              <select className="input min-w-0 flex-1 py-2 text-sm" value={especie} onChange={(e) => setEspecie(e.target.value)}>
+                <option value="">Todas as espécies</option>
+                {especies.map(([id, nome]) => (
+                  <option key={id} value={id}>
+                    {nome}
+                  </option>
+                ))}
+              </select>
+              <select className="input w-auto py-2 text-sm" value={ordem} onChange={(e) => setOrdem(e.target.value as Ordem)}>
+                <option value="recentes">Recentes</option>
+                <option value="alfabetica">A–Z</option>
+                <option value="tarefa">Próxima tarefa</option>
+              </select>
+              <div className="flex rounded-xl border border-line bg-white p-0.5">
+                {(['grid', 'lista'] as const).map((v) => (
+                  <button
+                    key={v}
+                    onClick={() => trocarView(v)}
+                    className={`flex size-9 items-center justify-center rounded-[10px] ${view === v ? 'bg-primary-light text-primary' : 'text-muted'}`}
+                    aria-label={v === 'grid' ? 'Ver em grade' : 'Ver em lista'}
+                    aria-pressed={view === v}
+                  >
+                    {v === 'grid' ? <LayoutGrid size={18} /> : <List size={18} />}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {lista.length === 0 ? (
+            <p className="py-10 text-center text-sm text-muted">Nenhuma planta encontrada.</p>
+          ) : view === 'grid' ? (
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+              {lista.map((p) => (
+                <Link key={p.id} to={`/plantas/${p.id}`} className="card overflow-hidden transition active:scale-[0.98]">
+                  <div className="relative">
+                    <PlantThumb url={p.fotoCapaUrl} className="aspect-square w-full" />
+                    {proximaTarefa.has(p.id) && (
+                      <span className="absolute right-2 top-2 size-2.5 rounded-full bg-warning ring-2 ring-white" aria-label="Tem tarefa pendente" />
+                    )}
+                  </div>
+                  <div className="p-2.5">
+                    <p className="truncate font-semibold">{plantaTitulo(p)}</p>
+                    <p className="truncate text-xs text-muted">{especieNome(p.especie)}</p>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {lista.map((p) => (
+                <Link key={p.id} to={`/plantas/${p.id}`} className="card flex items-center gap-3 p-2.5">
+                  <PlantThumb url={p.fotoCapaUrl} className="size-14 shrink-0 rounded-xl" />
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate font-semibold">{plantaTitulo(p)}</p>
+                    <p className="truncate text-sm text-muted">
+                      {especieNome(p.especie)}
+                      {p.identificador && p.nome ? ` · ${p.identificador}` : ''}
+                    </p>
+                  </div>
+                  {proximaTarefa.has(p.id) && <span className="size-2.5 shrink-0 rounded-full bg-warning" aria-label="Tem tarefa pendente" />}
+                </Link>
+              ))}
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  );
+}

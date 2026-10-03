@@ -9,7 +9,7 @@ export interface CreatePlantaRequestDTO {
   dataAquisicao?: string | null;
   modoAquisicao?: ModoAquisicao | null;
   observacoes?: string;
-  fotoCapaUrl?: string;
+  fotoCapaUrl?: string | null;
   plantaPublica?: boolean;
   historicoPublico?: boolean;
 }
@@ -35,7 +35,7 @@ export interface CreatePlantaDTO {
   dataAquisicao?: Date | null;
   modoAquisicao?: ModoAquisicao | null;
   observacoes?: string;
-  fotoCapaUrl?: string;
+  fotoCapaUrl?: string | null;
   plantaPublica?: boolean;
   historicoPublico?: boolean;
 }
@@ -67,7 +67,7 @@ export interface PlantaWithEspecie {
   createdAt: Date;
   updatedAt: Date;
   especie: {
-    nomeCientifico: string;
+    nomeCientifico: string | null;
     nomeComum: string | null;
   };
 }
