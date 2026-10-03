@@ -5,8 +5,10 @@
   "main": "dist/index.js",
   "scripts": {
     "dev": "ts-node-dev --respawn --transpile-only --ignore-watch node_modules src/server.ts",
-    "build": "tsc",
+    "build": "tsc -p tsconfig.build.json",
+    "vercel-build": "prisma generate && prisma migrate deploy && npm run build",
     "start": "node dist/server.js",
+    "seed": "node prisma/seed.js",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
