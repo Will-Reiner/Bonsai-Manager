@@ -300,3 +300,33 @@ Redesign completo da tela de Tarefas — UI moderna com secoes agrupadas por tem
 - `Tasks` param type atualizado para aceitar `{ openIntervention?: boolean }`
 - `QuickActionSheet` "Registrar Intervencao" agora navega com `openIntervention: true`
 - `AgendaScreen.tsx` deletada (nao era usada em nenhum lugar da navegacao)
+
+
+## Implementacao 2026-10-03
+
+### Resumo
+
+Novo frontend web mobile first (React + Vite) substituindo o app mobile, e backend preparado para hospedagem gratuita (Vercel + Neon + Cloudflare Pages + R2).
+
+### Detalhes
+
+**Hospedagem / infra**
+- API pronta para Vercel: Express montado em `app.ts` (exportado) e `server.ts` so faz `listen`; entrada serverless em `server/api/index.js` usando o build `dist/`
+- Build de producao (`npm run build` / `vercel-build`) roda `prisma generate`, `migrate deploy` e `tsc`, ignorando testes
+- Prisma com `DATABASE_URL` (pooled) + `DIRECT_URL` (migrations) e binaryTarget da Vercel; PrismaClient singleton em `globalThis`
+- CORS configuravel por `CORS_ORIGIN` (aceita `*.dominio`); Swagger desativado em producao; rota estatica `/uploads` removida
+- Seed (`npm run seed`): atividades e categorias de insumo basicas, e promove `ADMIN_EMAIL` a ADMIN
+- Guia completo de deploy em `docs/DEPLOY.md` (Neon, Vercel, Cloudflare Pages, CORS do R2, primeiro admin)
+- Corrigidos erros de tipagem pre-existentes (r2 checksum, tipos de planta) que quebravam o `tsc`
+
+**Frontend web (`web/`)**
+- Stack: Vite + React 19 + TypeScript, React Router 7, TanStack Query, Tailwind v4, lucide-react; PWA basico (manifest) e `_redirects` para SPA no Pages
+- Telas: login/cadastro, Hoje (atrasadas, hoje, proximos 7 dias, dica da estacao), Colecao (busca, filtro por especie, ordenacao, grade/lista), adicionar planta em 4 passos com sugestao de especie, detalhe da planta (Visao geral, Historico, Galeria, Cuidados), editar planta, perfil, editar perfil, painel admin (especies com aprovacao de sugeridas, atividades, insumos)
+- Cuidados como bottom sheets globais (registrar ja feito, agendar/reagendar, concluir com nota/foto, cancelar, excluir); concluir tarefa em 1 toque com update otimista
+- Upload de foto: compressao no navegador (max 1600px, WebP/JPEG) e PUT direto no R2 via URL pre-assinada, com progresso; video fora do escopo
+- Confirmacoes embutidas (sem `window.confirm`), toasts, estados vazio/erro/carregando
+
+**Pendencias conhecidas**
+- Bucket R2 precisa de regra CORS para o upload do navegador funcionar (testado: "CORS not configured")
+- Rotas de atividades (POST/PUT/DELETE) e PUT de especies exigem so login, nao ADMIN
+- `mobile_app/` descontinuado

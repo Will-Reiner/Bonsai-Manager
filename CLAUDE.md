@@ -4,7 +4,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Bonsai Manager is a full-stack bonsai plant management application with a Node.js/Express backend and a React Native/Expo mobile frontend. The project language (code comments, UI, docs) is **Portuguese**.
+Bonsai Manager is a full-stack bonsai plant management application with a Node.js/Express backend and a **mobile-first web frontend** (`web/`, React + Vite + TypeScript). The React Native/Expo app in `mobile_app/` is **discontinued** — don't add features there. The project language (code comments, UI, docs) is **Portuguese**.
+
+Production hosting (free tier): frontend on Cloudflare Pages, API on Vercel (`server/api/index.js` → compiled `dist/app`), Postgres on Neon, media on Cloudflare R2. See `docs/DEPLOY.md`.
 
 ## Commands
 
@@ -40,7 +42,27 @@ cd server && npm run prisma:migrate:dev
 docker compose exec api npx prisma studio   # visual DB editor on port 5555
 ```
 
-### Frontend (mobile_app/)
+### Frontend web (web/)
+
+```bash
+cd web && npm install
+cd web && npm run dev        # http://localhost:5173 (VITE_API_URL em web/.env, padrão http://localhost:3000/api)
+cd web && npm run build      # tsc -b + vite build → web/dist
+cd web && npm run lint       # oxlint
+```
+
+Structure: `src/lib/endpoints.ts` (all API calls), `src/lib/queries.ts` (TanStack Query hooks + cache keys), `src/lib/upload.ts` (compress → presigned URL → PUT direto no R2), `src/context/CareContext.tsx` (sheets globais de registrar/agendar/concluir cuidado), `src/pages/*`. Styling: Tailwind v4, tokens em `src/index.css`.
+
+### Backend extras
+
+```bash
+cd server && npm run build   # tsc -p tsconfig.build.json → dist/ (usado pela Vercel)
+cd server && npm run seed    # atividades/insumos básicos; ADMIN_EMAIL=x promove usuário a ADMIN
+```
+
+`server/src/app.ts` monta o Express (exportado); `server/src/server.ts` só faz `listen` (dev/Docker). Prisma usa `DATABASE_URL` (pooled) + `DIRECT_URL` (migrations).
+
+### Frontend legado (mobile_app/ — descontinuado)
 
 ```bash
 cd mobile_app && npm install

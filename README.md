@@ -2,6 +2,9 @@
 
 Uma aplicação full-stack desenhada para ajudar entusiastas de bonsai a gerir a sua coleção, agendar cuidados e acompanhar o desenvolvimento de cada planta. O projeto consiste num backend robusto em Node.js com uma base de dados PostgreSQL, tudo a correr em Docker, e uma aplicação mobile em React Native construída com Expo.
 
+> **Novo frontend web (mobile first)** em `web/` — React + Vite + TypeScript. O app React Native (`mobile_app/`) está descontinuado.
+> Hospedagem gratuita (Cloudflare Pages + Vercel + Neon + R2): veja **[docs/DEPLOY.md](docs/DEPLOY.md)**.
+
 ## ✨ Funcionalidades
 
 * **Backend (API RESTful):**
