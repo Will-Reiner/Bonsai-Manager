@@ -48,7 +48,7 @@ export function ScheduleCareSheet({
       if (agenda) {
         await agendasApi.update(agenda.id, { dataAgendada: fromDateInput(data) });
       } else {
-        await agendasApi.createLote({ plantaId, atividadeIds, dataAgendada: fromDateInput(data) });
+        await agendasApi.createLote({ plantaIds: [plantaId], atividadeIds, dataAgendada: fromDateInput(data) });
       }
       queryClient.invalidateQueries({ queryKey: keys.agendas });
       toast(agenda ? 'Tarefa reagendada' : atividadeIds.length > 1 ? `${atividadeIds.length} cuidados agendados` : 'Cuidado agendado');

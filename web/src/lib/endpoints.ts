@@ -72,8 +72,8 @@ export const agendasApi = {
   list: () => data<Agenda[]>(api.get('/agendas')),
   create: (body: { plantaId: string; atividadeId: string; dataAgendada: string }) =>
     data<Agenda>(api.post('/agendas', body)),
-  /** Vários cuidados de uma vez para a mesma planta e data (tudo ou nada). */
-  createLote: (body: { plantaId: string; atividadeIds: string[]; dataAgendada: string }) =>
+  /** Vários cuidados para várias plantas na mesma data (tudo ou nada). `detalhes` = observação/instrução. */
+  createLote: (body: { plantaIds: string[]; atividadeIds: string[]; dataAgendada: string; detalhes?: string }) =>
     data<Agenda[]>(api.post('/agendas/lote', body)),
   update: (id: string, body: AgendaUpdate) => data<Agenda>(api.put(`/agendas/${id}`, body)),
   remove: (id: string) => api.delete(`/agendas/${id}`),
