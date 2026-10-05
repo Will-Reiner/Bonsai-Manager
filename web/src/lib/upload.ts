@@ -1,6 +1,12 @@
 import { midiaApi } from './endpoints';
 
 const MAX_DIMENSION = 1600;
+
+/**
+ * Máximo de fotos escolhidas de uma vez (cadastro de planta, fotos em lote): todas ficam em memória até o
+ * envio — o Safari iOS derruba a aba com muitas imagens — e o trabalho se perde se a aba fechar.
+ */
+export const MAX_FOTOS_POR_VEZ = 50;
 const QUALITY = 0.82;
 
 const dataValida = (d: Date) => !Number.isNaN(d.getTime()) && d.getFullYear() >= 2000 && d.getTime() <= Date.now() + 86_400_000;

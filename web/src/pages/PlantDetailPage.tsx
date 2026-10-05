@@ -239,6 +239,8 @@ function Galeria({ planta }: { planta: Planta }) {
     try {
       await fotosApi.remove(foto.id);
       queryClient.invalidateQueries({ queryKey: keys.fotos(planta.id) });
+      // Se era a capa, o servidor promove a foto mais recente
+      if (foto.caminhoArquivo === planta.fotoCapaUrl) queryClient.invalidateQueries({ queryKey: keys.plantas });
       toast('Foto excluída');
       setConfirmar(false);
       setAberta(null);

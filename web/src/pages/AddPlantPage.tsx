@@ -10,11 +10,11 @@ import { errorMessage } from '@/lib/api';
 import { fotosApi, plantasApi } from '@/lib/endpoints';
 import { especieNome, fromDateInput, plantaTitulo, toDateInput } from '@/lib/format';
 import { keys, useEspecies } from '@/lib/queries';
-import { dataCapturaDe, uploadImage } from '@/lib/upload';
+import { dataCapturaDe, MAX_FOTOS_POR_VEZ, uploadImage } from '@/lib/upload';
 import { MODOS_AQUISICAO, type ModoAquisicao, type Planta } from '@/types';
 
 const PASSOS = ['Espécie', 'Identidade', 'Aquisição', 'Fotos', 'Capa'];
-const MAX_FOTOS = 20;
+const MAX_FOTOS = MAX_FOTOS_POR_VEZ;
 const CONCORRENCIA = 3;
 
 /** Executa `fn` para cada item com no máximo `limite` em paralelo, preservando a ordem do resultado. */
@@ -211,7 +211,12 @@ export function AddPlantPage() {
         {passo === 3 && (
           <section>
             <h2 className="mb-1 text-2xl font-semibold">Fotos da planta</h2>
-            <p className="mb-4 text-sm text-muted">Vão para a galeria dela. No próximo passo você escolhe a capa. Dá para pular.</p>
+            <p className="mb-4 text-sm text-muted">
+              Vão para a galeria dela. No próximo passo você escolhe a capa. Dá para pular.{' '}
+              <span className={fotos.length >= MAX_FOTOS ? 'font-semibold text-ink' : ''}>
+                {fotos.length ? `${fotos.length} de ${MAX_FOTOS} fotos.` : `Até ${MAX_FOTOS} fotos — depois dá para adicionar mais pela galeria.`}
+              </span>
+            </p>
             <SeletorFotos fotos={fotos} onAdd={adicionarFotos} onRemove={removerFoto} />
           </section>
         )}
@@ -296,7 +301,12 @@ function SeletorFotos({ fotos, onAdd, onRemove }: { fotos: File[]; onAdd: (files
           </button>
         </div>
       ))}
-      {fotos.length < MAX_FOTOS && (
+      {fotos.length >= MAX_FOTOS ? (
+        <div className="flex aspect-square flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed border-line px-2 text-center text-muted">
+          <span className="text-sm font-medium">Limite de {MAX_FOTOS}</span>
+          <span className="text-[11px] leading-tight">Adicione mais pela galeria depois</span>
+        </div>
+      ) : (
         <button
           type="button"
           onClick={() => inputRef.current?.click()}

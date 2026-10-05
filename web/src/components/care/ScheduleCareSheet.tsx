@@ -34,7 +34,7 @@ export function ScheduleCareSheet({
   const queryClient = useQueryClient();
   const toast = useToast();
   const [plantaId, setPlantaId] = useState(agenda?.plantaId ?? plantaInicial ?? '');
-  const [atividadeId, setAtividadeId] = useState(agenda?.atividadeId ?? '');
+  const [atividadeIds, setAtividadeIds] = useState<string[]>([]);
   const [data, setData] = useState(() => toDateInput(agenda?.dataAgendada ?? daquiA(1)));
   const [salvando, setSalvando] = useState(false);
 
@@ -42,16 +42,16 @@ export function ScheduleCareSheet({
 
   async function submit(e: FormEvent) {
     e.preventDefault();
-    if (!plantaId || !atividadeId) return toast('Escolha a planta e o tipo de cuidado.', 'error');
+    if (!agenda && (!plantaId || !atividadeIds.length)) return toast('Escolha a planta e o tipo de cuidado.', 'error');
     setSalvando(true);
     try {
       if (agenda) {
         await agendasApi.update(agenda.id, { dataAgendada: fromDateInput(data) });
       } else {
-        await agendasApi.create({ plantaId, atividadeId, dataAgendada: fromDateInput(data) });
+        await agendasApi.createLote({ plantaId, atividadeIds, dataAgendada: fromDateInput(data) });
       }
       queryClient.invalidateQueries({ queryKey: keys.agendas });
-      toast(agenda ? 'Tarefa reagendada' : 'Cuidado agendado');
+      toast(agenda ? 'Tarefa reagendada' : atividadeIds.length > 1 ? `${atividadeIds.length} cuidados agendados` : 'Cuidado agendado');
       onClose();
     } catch (error) {
       toast(errorMessage(error), 'error');
@@ -71,8 +71,9 @@ export function ScheduleCareSheet({
           <PlantaAtividadeFields
             plantaId={plantaId}
             onPlanta={setPlantaId}
-            atividadeId={atividadeId}
-            onAtividade={setAtividadeId}
+            multiplo
+            atividadeIds={atividadeIds}
+            onAtividades={setAtividadeIds}
             lockPlanta={!!plantaInicial}
           />
         )}
@@ -89,7 +90,7 @@ export function ScheduleCareSheet({
           </div>
         </div>
         <Button type="submit" block loading={salvando}>
-          {agenda ? 'Salvar nova data' : 'Agendar'}
+          {agenda ? 'Salvar nova data' : atividadeIds.length > 1 ? `Agendar ${atividadeIds.length} cuidados` : 'Agendar'}
         </Button>
       </form>
     </Sheet>

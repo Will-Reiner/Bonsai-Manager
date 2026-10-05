@@ -1,4 +1,4 @@
 - na tela de agendar cuidado preciso que seja possivel escolher varios cuidados ao mesmo tempo
-- nao ta vindo o tempo certo de quando foi tirada a foto
-- ao adicionar planta, aba para adicionar fotos antes de selecionar capa
-- versao web, durante upload de fotos, se sair ou mudar a pagina, cancela as fotos restantes
+- na aba de adicionar fotos ao adicionar plantas tem um limite de 20 fotos. realmente é necessario esse limite ou podemos aumentar? independente do caso, avise o usuario sobre o limite
+- versao web, durante upload de fotos na galeria, se sair ou mudar a pagina, cancela as fotos restantes. teria como n acontecer isso?
+- deletar planta nao deleta as fotos no R2 bucket (talvez deletar fotos tambem nao delete)

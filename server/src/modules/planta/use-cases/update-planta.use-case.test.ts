@@ -1,11 +1,13 @@
 import { UpdatePlantaUseCase } from './update-planta.use-case';
 import { PlantaRepository, EspecieRepository, UpdatePlantaRequestDTO, PlantaWithEspecie } from '../types/planta.types';
 import { ModoAquisicao } from '@prisma/client';
+import { LimpezaDeMidia } from '../../midia/midia.types';
 
 describe('UpdatePlantaUseCase', () => {
   let updatePlantaUseCase: UpdatePlantaUseCase;
   let mockPlantaRepository: jest.Mocked<PlantaRepository>;
   let mockEspecieRepository: jest.Mocked<EspecieRepository>;
+  let mockLimpeza: jest.Mocked<LimpezaDeMidia>;
 
   beforeEach(() => {
     mockPlantaRepository = {
@@ -15,13 +17,16 @@ describe('UpdatePlantaUseCase', () => {
       update: jest.fn(),
       delete: jest.fn(),
       existsByIdAndUser: jest.fn(),
+      findUrlsDeMidia: jest.fn(),
     };
 
     mockEspecieRepository = {
       existsById: jest.fn(),
     };
 
-    updatePlantaUseCase = new UpdatePlantaUseCase(mockPlantaRepository, mockEspecieRepository);
+    mockLimpeza = { execute: jest.fn().mockResolvedValue(undefined) };
+
+    updatePlantaUseCase = new UpdatePlantaUseCase(mockPlantaRepository, mockEspecieRepository, mockLimpeza);
   });
 
   describe('execute', () => {
@@ -163,6 +168,79 @@ describe('UpdatePlantaUseCase', () => {
         ...mockUpdatePlantaDTO,
         dataAquisicao: new Date('2024-02-01T00:00:00.000Z'),
       });
+    });
+  });
+  describe('troca de capa', () => {
+    const plantaId = 'planta-123';
+    const usuarioId = 'user-123';
+    const plantaAtual = (fotoCapaUrl: string | null) => ({ id: plantaId, fotoCapaUrl }) as unknown as PlantaWithEspecie;
+
+    beforeEach(() => {
+      mockPlantaRepository.existsByIdAndUser.mockResolvedValue(true);
+      mockPlantaRepository.update.mockResolvedValue(plantaAtual('https://cdn/nova.webp'));
+    });
+
+    it('deve enviar a capa antiga para a limpeza depois de atualizar', async () => {
+      // Arrange
+      const ordem: string[] = [];
+      mockPlantaRepository.findByIdAndUser.mockResolvedValue(plantaAtual('https://cdn/antiga.webp'));
+      mockPlantaRepository.update.mockImplementation(async () => {
+        ordem.push('update');
+        return plantaAtual('https://cdn/nova.webp');
+      });
+      mockLimpeza.execute.mockImplementation(async () => {
+        ordem.push('limpeza');
+      });
+
+      // Act
+      await updatePlantaUseCase.execute(plantaId, usuarioId, { fotoCapaUrl: 'https://cdn/nova.webp' });
+
+      // Assert
+      expect(mockPlantaRepository.findByIdAndUser).toHaveBeenCalledWith(plantaId, usuarioId);
+      expect(mockLimpeza.execute).toHaveBeenCalledWith(['https://cdn/antiga.webp']);
+      expect(ordem).toEqual(['update', 'limpeza']);
+    });
+
+    it('deve enviar a capa antiga para a limpeza quando a capa é removida', async () => {
+      // Arrange
+      mockPlantaRepository.findByIdAndUser.mockResolvedValue(plantaAtual('https://cdn/antiga.webp'));
+
+      // Act
+      await updatePlantaUseCase.execute(plantaId, usuarioId, { fotoCapaUrl: null });
+
+      // Assert
+      expect(mockLimpeza.execute).toHaveBeenCalledWith(['https://cdn/antiga.webp']);
+    });
+
+    it('não deve limpar nada quando a capa não muda', async () => {
+      // Arrange
+      mockPlantaRepository.findByIdAndUser.mockResolvedValue(plantaAtual('https://cdn/nova.webp'));
+
+      // Act
+      await updatePlantaUseCase.execute(plantaId, usuarioId, { fotoCapaUrl: 'https://cdn/nova.webp' });
+
+      // Assert
+      expect(mockLimpeza.execute).not.toHaveBeenCalled();
+    });
+
+    it('não deve limpar nada quando a planta não tinha capa', async () => {
+      // Arrange
+      mockPlantaRepository.findByIdAndUser.mockResolvedValue(plantaAtual(null));
+
+      // Act
+      await updatePlantaUseCase.execute(plantaId, usuarioId, { fotoCapaUrl: 'https://cdn/nova.webp' });
+
+      // Assert
+      expect(mockLimpeza.execute).not.toHaveBeenCalled();
+    });
+
+    it('não deve consultar a capa atual quando a capa não está na atualização', async () => {
+      // Act
+      await updatePlantaUseCase.execute(plantaId, usuarioId, { nome: 'Outro nome' });
+
+      // Assert
+      expect(mockPlantaRepository.findByIdAndUser).not.toHaveBeenCalled();
+      expect(mockLimpeza.execute).not.toHaveBeenCalled();
     });
   });
 });

@@ -1,22 +1,24 @@
 import { Request, Response } from 'express';
 import { ZodError } from 'zod';
 import { parsePagination, buildPaginatedResponse } from '../../utils/pagination';
-import { createAgendaSchema, updateAgendaSchema, agendaIdSchema, concluirAgendasSchema } from './agenda.schema';
+import { createAgendaSchema, createAgendasLoteSchema, updateAgendaSchema, agendaIdSchema, concluirAgendasSchema } from './agenda.schema';
 import { PrismaAgendaRepository } from './repositories/prisma-agenda.repository';
 import { PrismaConclusaoRepository } from './repositories/prisma-conclusao.repository';
 import {
   CreateAgendaUseCase,
+  CreateAgendasLoteUseCase,
   GetAllAgendasByUserUseCase,
   GetAgendaByIdUseCase,
   UpdateAgendaUseCase,
   DeleteAgendaUseCase,
   ConcluirAgendasUseCase,
 } from './use-cases';
-import { CreateAgendaDTO, UpdateAgendaDTO, ConcluirAgendasDTO } from './agenda.types';
+import { CreateAgendaDTO, CreateAgendasLoteDTO, UpdateAgendaDTO, ConcluirAgendasDTO } from './agenda.types';
 import '../../middlewares/auth.middleware'; // Import para garantir que a extensão da interface Request seja reconhecida
 
 export class AgendaController {
   private createAgendaUseCase: CreateAgendaUseCase;
+  private createAgendasLoteUseCase: CreateAgendasLoteUseCase;
   private getAllAgendasByUserUseCase: GetAllAgendasByUserUseCase;
   private getAgendaByIdUseCase: GetAgendaByIdUseCase;
   private updateAgendaUseCase: UpdateAgendaUseCase;
@@ -26,6 +28,7 @@ export class AgendaController {
   constructor() {
     const agendaRepository = new PrismaAgendaRepository();
     this.createAgendaUseCase = new CreateAgendaUseCase(agendaRepository);
+    this.createAgendasLoteUseCase = new CreateAgendasLoteUseCase(agendaRepository);
     this.getAllAgendasByUserUseCase = new GetAllAgendasByUserUseCase(agendaRepository);
     this.getAgendaByIdUseCase = new GetAgendaByIdUseCase(agendaRepository);
     this.updateAgendaUseCase = new UpdateAgendaUseCase(agendaRepository);
@@ -71,6 +74,33 @@ export class AgendaController {
         return res.status(403).json({ error: error.message });
       }
       
+      res.status(500).json({ error: 'Erro interno do servidor' });
+    }
+  }
+
+  async createLote(req: Request, res: Response) {
+    try {
+      const { body } = createAgendasLoteSchema.parse({ body: req.body });
+      const usuarioId = req.user?.userId;
+
+      if (!usuarioId) {
+        return res.status(401).json({ error: 'Usuário não autenticado' });
+      }
+
+      const agendas = await this.createAgendasLoteUseCase.execute(body as CreateAgendasLoteDTO, usuarioId);
+      res.status(201).json(agendas);
+    } catch (error) {
+      if (error instanceof ZodError) {
+        return res.status(400).json({ error: error.errors[0]?.message ?? 'Dados inválidos' });
+      }
+      if (error instanceof Error && error.message === 'Acesso negado. A planta não pertence a si.') {
+        return res.status(403).json({ error: error.message });
+      }
+      if (error instanceof Error && error.message === 'Informe ao menos um cuidado.') {
+        return res.status(400).json({ error: error.message });
+      }
+
+      console.error('Erro ao criar agendamentos em lote:', error);
       res.status(500).json({ error: 'Erro interno do servidor' });
     }
   }

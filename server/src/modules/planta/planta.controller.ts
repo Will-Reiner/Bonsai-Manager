@@ -10,17 +10,19 @@ import {
   DeletePlantaUseCase 
 } from './use-cases';
 import { PrismaPlantaRepository, PrismaEspecieRepository } from './repositories';
+import { criarLimpezaDeMidia } from '../midia/limpeza-de-midia';
 
 // Inicialização dos repositórios
 const plantaRepository = new PrismaPlantaRepository(prisma);
 const especieRepository = new PrismaEspecieRepository(prisma);
+const limpezaDeMidia = criarLimpezaDeMidia();
 
 // Inicialização dos use cases
 const createPlantaUseCase = new CreatePlantaUseCase(plantaRepository, especieRepository);
 const getPlantasByUserUseCase = new GetPlantasByUserUseCase(plantaRepository);
 const getPlantaByIdUseCase = new GetPlantaByIdUseCase(plantaRepository);
-const updatePlantaUseCase = new UpdatePlantaUseCase(plantaRepository, especieRepository);
-const deletePlantaUseCase = new DeletePlantaUseCase(plantaRepository);
+const updatePlantaUseCase = new UpdatePlantaUseCase(plantaRepository, especieRepository, limpezaDeMidia);
+const deletePlantaUseCase = new DeletePlantaUseCase(plantaRepository, limpezaDeMidia);
 
 export const plantaController = {
   create: async (req: Request, res: Response) => {

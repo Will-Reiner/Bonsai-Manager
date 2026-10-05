@@ -14,6 +14,9 @@ describe('GetFotoByIdUseCase', () => {
       delete: jest.fn(),
       existsByIdAndUser: jest.fn(),
       checkPlantaBelongsToUser: jest.fn(),
+      findCapaDaPlanta: jest.fn(),
+      findFotoMaisRecente: jest.fn(),
+      updateCapaDaPlanta: jest.fn(),
     };
 
     getFotoByIdUseCase = new GetFotoByIdUseCase(mockFotoRepository);

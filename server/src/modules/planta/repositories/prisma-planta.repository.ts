@@ -160,6 +160,17 @@ export class PrismaPlantaRepository implements PlantaRepository {
     });
   }
 
+  async findUrlsDeMidia(id: string): Promise<string[]> {
+    const planta = await this.prisma.planta.findUnique({
+      where: { id },
+      select: { fotoCapaUrl: true, fotos: { select: { caminhoArquivo: true, thumbnailUrl: true } } },
+    });
+    if (!planta) return [];
+    return [planta.fotoCapaUrl, ...planta.fotos.flatMap((f) => [f.caminhoArquivo, f.thumbnailUrl])].filter(
+      (u): u is string => !!u,
+    );
+  }
+
   async existsByIdAndUser(id: string, usuarioId: string): Promise<boolean> {
     const count = await this.prisma.planta.count({
       where: {

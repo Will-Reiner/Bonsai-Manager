@@ -14,6 +14,9 @@ describe('UpdateFotoUseCase', () => {
       delete: jest.fn(),
       existsByIdAndUser: jest.fn(),
       checkPlantaBelongsToUser: jest.fn(),
+      findCapaDaPlanta: jest.fn(),
+      findFotoMaisRecente: jest.fn(),
+      updateCapaDaPlanta: jest.fn(),
     };
 
     updateFotoUseCase = new UpdateFotoUseCase(mockFotoRepository);
