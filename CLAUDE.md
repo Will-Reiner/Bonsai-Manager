@@ -59,7 +59,7 @@ cd web && npm run build      # tsc -b + vite build → web/dist
 cd web && npm run lint       # oxlint
 ```
 
-Structure: `src/lib/endpoints.ts` (all API calls), `src/lib/queries.ts` (TanStack Query hooks + cache keys), `src/lib/upload.ts` (compress → presigned URL → PUT direto no R2), `src/context/CareContext.tsx` (sheets globais de registrar/agendar/reagendar cuidado; `abrirTarefa` navega para `/tarefas/:id`), `src/pages/*` (incl. `BancadaPage` `/`, `TarefaPage` `/tarefas/:id`, `ConcluirPage` `/concluir?ids=`, que usa `POST /api/agendas/concluir`: conclusão em lote + Revisão geral automática, preferência `revisao_automatica_dias`). Styling: Tailwind v4, tokens em `src/index.css`.
+Structure: `src/lib/endpoints.ts` (all API calls), `src/lib/queries.ts` (TanStack Query hooks + cache keys), `src/lib/upload.ts` (compress → presigned URL → PUT direto no R2), `src/context/CareContext.tsx` (sheets globais de registrar/agendar/reagendar cuidado; `abrirTarefa` navega para `/tarefas/:id`), `src/pages/*` (incl. `BancadaPage` `/`, `TarefaPage` `/tarefas/:id`, `RegistrarPage` `/registrar?planta=` fotos → triagem por código → o que foi feito geral/planta; usa `POST /api/agendas/registrar`, `ConcluirPage` `/concluir?ids=`, que usa `POST /api/agendas/concluir`: conclusão em lote + Revisão geral automática, preferência `revisao_automatica_dias`), `src/lib/loteFotos.ts` + `src/components/TriagemFotos.tsx` (triagem fotos por código compartilhada lote/registrar; código novo → "Criar planta #X" criada só ao salvar), `POST /api/agendas/lote` aceita `plantaIds[]` + `detalhes` (observação agendamento). `Planta.especieId` opcional: planta sem espécie aparece topo Coleção com "!". Styling: Tailwind v4, tokens em `src/index.css`.
 
 ### Backend extras
 
@@ -163,6 +163,6 @@ Navigation structure: unauthenticated users see Login/Register; authenticated us
 - Add photos while creating a plant - DONE
 - Virtual styling for future vision - DONE
 - Lack of recurrence on the events
-- Register multiple tasks
+- Register multiple tasks - DONE
 - Onboarding questions for especification - DONE/precisa melhorar
 - Fotos em lote: no fim do lote, oferecer "registrar cuidado nas plantas tocadas" (via CareContext) para as plantas que receberam fotos
