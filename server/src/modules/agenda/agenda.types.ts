@@ -7,6 +7,13 @@ export interface CreateAgendaDTO {
   observacoes?: string;
 }
 
+export interface CreateAgendasLoteDTO {
+  plantaId: string;
+  atividadeIds: string[];
+  dataAgendada: string;
+  observacoes?: string;
+}
+
 export interface UpdateAgendaDTO {
   dataAgendada?: string;
   dataConcluida?: string | null;
@@ -22,6 +29,8 @@ export interface UpdateAgendaDTO {
 
 export interface AgendaRepository {
   create(data: CreateAgendaDTO): Promise<any>;
+  /** Cria todas numa transação: ou entram todas, ou nenhuma. */
+  createMany(data: CreateAgendaDTO[]): Promise<any[]>;
   findManyByUser(usuarioId: string): Promise<any[]>;
   findByIdAndUser(id: string, usuarioId: string): Promise<any | null>;
   update(id: string, data: Omit<UpdateAgendaDTO, 'recursosUtilizados'>): Promise<any>;

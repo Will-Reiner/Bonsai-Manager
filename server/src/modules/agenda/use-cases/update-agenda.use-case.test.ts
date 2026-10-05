@@ -8,6 +8,7 @@ describe('UpdateAgendaUseCase', () => {
   beforeEach(() => {
     mockAgendaRepository = {
       create: jest.fn(),
+      createMany: jest.fn(),
       findManyByUser: jest.fn(),
       findByIdAndUser: jest.fn(),
       update: jest.fn(),

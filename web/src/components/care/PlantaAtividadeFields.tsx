@@ -2,22 +2,31 @@ import { Field } from '@/components/ui';
 import { plantaTitulo } from '@/lib/format';
 import { useAtividadesOrdenadas, usePlantas } from '@/lib/queries';
 
+/** Um cuidado só (registrar) ou vários de uma vez (agendar). */
+type Selecao =
+  | { multiplo?: false; atividadeId: string; onAtividade: (id: string) => void }
+  | { multiplo: true; atividadeIds: string[]; onAtividades: (ids: string[]) => void };
+
 /** Seleção de planta (quando não vem pré-selecionada) + chips de tipo de cuidado. */
 export function PlantaAtividadeFields({
   plantaId,
   onPlanta,
-  atividadeId,
-  onAtividade,
   lockPlanta,
+  ...selecao
 }: {
   plantaId: string;
   onPlanta: (id: string) => void;
-  atividadeId: string;
-  onAtividade: (id: string) => void;
   lockPlanta?: boolean;
-}) {
+} & Selecao) {
   const plantas = usePlantas();
   const atividades = useAtividadesOrdenadas();
+
+  const ativa = (id: string) => (selecao.multiplo ? selecao.atividadeIds.includes(id) : selecao.atividadeId === id);
+  function tocar(id: string) {
+    if (!selecao.multiplo) return selecao.onAtividade(id);
+    const { atividadeIds, onAtividades } = selecao;
+    onAtividades(atividadeIds.includes(id) ? atividadeIds.filter((a) => a !== id) : [...atividadeIds, id]);
+  }
 
   return (
     <>
@@ -37,7 +46,10 @@ export function PlantaAtividadeFields({
       )}
 
       <div>
-        <span className="label">Tipo de cuidado</span>
+        <span className="label">
+          {selecao.multiplo ? 'Tipos de cuidado' : 'Tipo de cuidado'}
+          {selecao.multiplo && <span className="font-normal text-muted"> · toque em quantos quiser</span>}
+        </span>
         {atividades.isLoading ? (
           <p className="text-sm text-muted">Carregando…</p>
         ) : atividades.data.length === 0 ? (
@@ -48,9 +60,9 @@ export function PlantaAtividadeFields({
               <button
                 type="button"
                 key={a.id}
-                onClick={() => onAtividade(a.id)}
-                className={`chip ${atividadeId === a.id ? 'chip-active' : ''}`}
-                aria-pressed={atividadeId === a.id}
+                onClick={() => tocar(a.id)}
+                className={`chip ${ativa(a.id) ? 'chip-active' : ''}`}
+                aria-pressed={ativa(a.id)}
               >
                 {a.nome}
               </button>

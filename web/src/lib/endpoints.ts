@@ -72,6 +72,9 @@ export const agendasApi = {
   list: () => data<Agenda[]>(api.get('/agendas')),
   create: (body: { plantaId: string; atividadeId: string; dataAgendada: string }) =>
     data<Agenda>(api.post('/agendas', body)),
+  /** Vários cuidados de uma vez para a mesma planta e data (tudo ou nada). */
+  createLote: (body: { plantaId: string; atividadeIds: string[]; dataAgendada: string }) =>
+    data<Agenda[]>(api.post('/agendas/lote', body)),
   update: (id: string, body: AgendaUpdate) => data<Agenda>(api.put(`/agendas/${id}`, body)),
   remove: (id: string) => api.delete(`/agendas/${id}`),
   /** Registra um cuidado já feito: cria a agenda e marca como concluída (mesmo fluxo do QuickInterventionModal). */

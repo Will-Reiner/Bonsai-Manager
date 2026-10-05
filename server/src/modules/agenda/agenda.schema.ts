@@ -13,6 +13,18 @@ export const createAgendaSchema = z.object({
   }),
 });
 
+export const createAgendasLoteSchema = z.object({
+  body: z.object({
+    plantaId: z.string().uuid({ message: 'O ID da planta é obrigatório.' }),
+    atividadeIds: z
+      .array(z.string().uuid({ message: 'ID de atividade inválido.' }))
+      .min(1, { message: 'Informe ao menos um cuidado.' })
+      .max(20, { message: 'Máximo de 20 cuidados por vez.' }),
+    dataAgendada: z.string().datetime({ message: 'A data agendada deve ser uma data válida.' }),
+    observacoes: z.string().optional(),
+  }),
+});
+
 // Schema para ATUALIZAR um agendamento.
 // Agora inclui os campos de histórico e os recursos utilizados.
 export const updateAgendaSchema = z.object({

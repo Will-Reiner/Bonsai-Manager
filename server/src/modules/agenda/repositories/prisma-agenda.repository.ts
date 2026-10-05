@@ -9,6 +9,10 @@ export class PrismaAgendaRepository implements AgendaRepository {
     });
   }
 
+  async createMany(data: CreateAgendaDTO[]) {
+    return await prisma.$transaction(data.map((d) => prisma.agenda.create({ data: d })));
+  }
+
   async findManyByUser(usuarioId: string) {
     return await prisma.agenda.findMany({
       where: {
