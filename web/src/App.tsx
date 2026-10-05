@@ -4,7 +4,7 @@ import { Layout } from '@/components/Layout';
 import { useAuth } from '@/context/AuthContext';
 import { CareProvider } from '@/context/CareContext';
 import { LoginPage, RegisterPage } from '@/pages/AuthPages';
-import { TodayPage } from '@/pages/TodayPage';
+import { BancadaPage } from '@/pages/BancadaPage';
 import { CollectionPage } from '@/pages/CollectionPage';
 import { AddPlantPage } from '@/pages/AddPlantPage';
 import { PlantDetailPage } from '@/pages/PlantDetailPage';
@@ -37,7 +37,7 @@ export default function App() {
         <Route path="/cadastro" element={<Publica><RegisterPage /></Publica>} />
 
         <Route element={<Privada><Layout /></Privada>}>
-          <Route index element={<TodayPage />} />
+          <Route index element={<BancadaPage />} />
           <Route path="colecao" element={<CollectionPage />} />
           <Route path="perfil" element={<ProfilePage />} />
         </Route>

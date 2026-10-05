@@ -98,16 +98,3 @@ export function agruparPorAtividade(agendas: Agenda[]): GrupoAtividade[] {
   }
   return [...grupos.values()];
 }
-
-export function agruparTarefas(agendas: Agenda[]) {
-  const pendentes = agendas.filter((a) => a.status === 'PENDENTE');
-  return {
-    atrasadas: pendentes.filter((a) => diasAte(a.dataAgendada) < 0),
-    hoje: pendentes.filter((a) => diasAte(a.dataAgendada) === 0),
-    proximas: pendentes.filter((a) => {
-      const d = diasAte(a.dataAgendada);
-      return d > 0 && d <= 7;
-    }),
-    depois: pendentes.filter((a) => diasAte(a.dataAgendada) > 7),
-  };
-}
