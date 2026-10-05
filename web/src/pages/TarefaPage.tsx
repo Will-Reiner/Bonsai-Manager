@@ -4,7 +4,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { Ban, CalendarClock, Check, Trash2 } from 'lucide-react';
 import { ConfirmSheet } from '@/components/Sheet';
 import { HistoricoPlanta } from '@/components/HistoricoPlanta';
-import { Button, EmptyState, PageHeader, PlantThumb, Spinner } from '@/components/ui';
+import { Button, EmptyState, ErrorState, PageHeader, PlantThumb, Spinner } from '@/components/ui';
 import { useCare } from '@/context/CareContext';
 import { useToast } from '@/context/ToastContext';
 import { errorMessage } from '@/lib/api';
@@ -34,7 +34,8 @@ export function TarefaPage() {
       else await agendasApi.remove(agenda.id);
       queryClient.invalidateQueries({ queryKey: keys.agendas });
       toast(tipo === 'cancelar' ? 'Tarefa cancelada' : 'Tarefa excluída');
-      navigate(-1);
+      if (window.history.state?.idx > 0) navigate(-1);
+      else navigate('/', { replace: true });
     } catch (error) {
       toast(errorMessage(error), 'error');
       setSalvando(null);
@@ -42,6 +43,14 @@ export function TarefaPage() {
   }
 
   if (agendas.isLoading) return <><PageHeader title="Tarefa" back /><Spinner /></>;
+  if (agendas.isError) {
+    return (
+      <>
+        <PageHeader title="Tarefa" back />
+        <ErrorState text={errorMessage(agendas.error)} onRetry={() => agendas.refetch()} />
+      </>
+    );
+  }
   if (!agenda) {
     return (
       <>
@@ -53,6 +62,8 @@ export function TarefaPage() {
 
   const pendente = agenda.status === 'PENDENTE';
   const atrasada = pendente && diasAte(agenda.dataAgendada) < 0;
+  const rotuloStatus = pendente ? 'Agendada' : agenda.status === 'CONCLUIDO' ? 'Concluída' : 'Cancelada';
+  const dataStatus = agenda.status === 'CONCLUIDO' ? (agenda.dataConcluida ?? agenda.dataAgendada) : agenda.dataAgendada;
 
   return (
     <div className="min-h-dvh pb-10">
@@ -68,7 +79,7 @@ export function TarefaPage() {
         </Link>
 
         <p className={`mt-4 text-sm ${atrasada ? 'font-medium text-danger' : 'text-muted'}`}>
-          {pendente ? 'Agendada' : 'Concluída'} · {dataRelativa(agenda.dataAgendada)} ({dataLonga(agenda.dataAgendada)})
+          {rotuloStatus} · {dataRelativa(dataStatus)} ({dataLonga(dataStatus)})
         </p>
 
         <h2 className="mb-2.5 mt-6 text-xs font-semibold uppercase tracking-wider text-muted">Histórico da planta</h2>

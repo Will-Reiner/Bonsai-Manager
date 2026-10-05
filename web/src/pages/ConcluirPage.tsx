@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router';
 import { useQueryClient } from '@tanstack/react-query';
 import { Check, ChevronDown, Plus, X } from 'lucide-react';
-import { Button, EmptyState, Field, PageHeader, PlantThumb, Spinner } from '@/components/ui';
+import { Button, EmptyState, ErrorState, Field, PageHeader, PlantThumb, Spinner } from '@/components/ui';
 import { PhotoInput } from '@/components/PhotoInput';
 import { useToast } from '@/context/ToastContext';
 import { errorMessage } from '@/lib/api';
@@ -77,6 +77,8 @@ export function ConcluirPage() {
 
   async function concluir() {
     if (!marcadas.length) return toast('Marque ao menos uma planta.', 'error');
+    if (!data) return toast('Informe a data.', 'error');
+    if (data > toDateInput()) return toast('A data não pode ser no futuro.', 'error');
     if (proximos.some((p) => !p.atividadeId || !p.data)) return toast('Complete os próximos passos.', 'error');
     setSalvando(true);
     try {
@@ -93,12 +95,14 @@ export function ConcluirPage() {
         });
       }
       const hoje = data === toDateInput();
+      const principalId = atividadeId || atividadeAtual?.id;
+      const extrasFinais = extras.filter((e) => e !== principalId);
       const resultado = await agendasApi.concluir({
         dataConcluida: hoje ? new Date().toISOString() : fromDateInput(data),
         atividadeId: atividadeId || undefined,
         detalhes: detalhes.trim() || undefined,
         observacaoFutura: observacaoFutura.trim() || undefined,
-        extras: extras.length ? extras : undefined,
+        extras: extrasFinais.length ? extrasFinais : undefined,
         proximos: proximos.length
           ? proximos.map((p) => ({ atividadeId: p.atividadeId, dataAgendada: fromDateInput(p.data) }))
           : undefined,
@@ -120,6 +124,14 @@ export function ConcluirPage() {
   }
 
   if (agendas.isLoading || atividades.isLoading) return <><PageHeader title="Concluir" back /><Spinner /></>;
+  if (agendas.isError) {
+    return (
+      <>
+        <PageHeader title="Concluir" back />
+        <ErrorState text={errorMessage(agendas.error)} onRetry={() => agendas.refetch()} />
+      </>
+    );
+  }
   if (!tarefas.length) {
     return (
       <>
@@ -225,6 +237,7 @@ export function ConcluirPage() {
                   className={`chip ${(atividadeId || atividadeAtual?.id) === a.id ? 'chip-active' : ''}`}
                   onClick={() => {
                     setAtividadeId(a.id === atividadeAtual?.id ? '' : a.id);
+                    setExtras((x) => x.filter((e) => e !== a.id));
                     setTrocarAtividade(false);
                   }}
                 >
