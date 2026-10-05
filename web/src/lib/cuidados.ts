@@ -1,0 +1,56 @@
+import type { Agenda } from '@/types';
+import { diasAte } from './format';
+
+/** Reconciliação: pendentes atrasadas (qualquer idade) ou que vencem em até 90 dias. */
+export const JANELA_RECONCILIACAO_DIAS = 90;
+
+/** Por planta → atividade, a data (ISO) da última vez que o cuidado foi feito. */
+export function ultimasPorPlanta(agendas: Agenda[]): Map<string, Map<string, string>> {
+  const mapa = new Map<string, Map<string, string>>();
+  for (const a of agendas) {
+    if (a.status !== 'CONCLUIDO') continue;
+    const data = a.dataConcluida ?? a.dataAgendada;
+    const daPlanta = mapa.get(a.plantaId) ?? new Map<string, string>();
+    const atual = daPlanta.get(a.atividadeId);
+    if (!atual || data > atual) daPlanta.set(a.atividadeId, data);
+    mapa.set(a.plantaId, daPlanta);
+  }
+  return mapa;
+}
+
+const tempo = (dias: number) => (dias < 60 ? `${dias} dias` : `${Math.round(dias / 30)} meses`);
+const haQuanto = (dias: number) => (dias === 0 ? 'hoje' : dias === 1 ? 'ontem' : `há ${tempo(dias)}`);
+
+/** Última vez numa ou em várias plantas: "hoje", "há 12 dias", "há 5 dias – há 2 meses", "nunca", "… · algumas nunca". */
+export function rotuloUltima(datas: (string | undefined)[]): string {
+  const dias = datas.filter((d): d is string => !!d).map((d) => Math.max(0, -diasAte(d)));
+  if (!dias.length) return 'nunca';
+  const min = Math.min(...dias);
+  const max = Math.max(...dias);
+  const base = min === max ? haQuanto(min) : `${haQuanto(min)} – ${haQuanto(max)}`;
+  return dias.length < datas.length ? `${base} · algumas nunca` : base;
+}
+
+/** "atrasada há 4 dias", "agendada para hoje", "agendada daqui 12 dias". */
+export function textoPrazo(iso: string): string {
+  const d = diasAte(iso);
+  if (d < 0) return `atrasada há ${-d} dia${d === -1 ? '' : 's'}`;
+  if (d === 0) return 'agendada para hoje';
+  return `agendada daqui ${d} dia${d === 1 ? '' : 's'}`;
+}
+
+/** Pendentes que um registro pode concluir: mesma planta e atividade, dentro da janela; mais antigas primeiro. */
+export function candidatasReconciliacao(
+  agendas: Agenda[],
+  cuidados: { plantaId: string; atividadeIds: string[] }[],
+): Agenda[] {
+  const pares = new Set(cuidados.flatMap((c) => c.atividadeIds.map((a) => `${c.plantaId}|${a}`)));
+  return agendas
+    .filter(
+      (a) =>
+        a.status === 'PENDENTE' &&
+        pares.has(`${a.plantaId}|${a.atividadeId}`) &&
+        diasAte(a.dataAgendada) <= JANELA_RECONCILIACAO_DIAS,
+    )
+    .sort((a, b) => a.dataAgendada.localeCompare(b.dataAgendada));
+}
