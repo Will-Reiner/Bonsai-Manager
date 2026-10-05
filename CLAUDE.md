@@ -8,6 +8,14 @@ Bonsai Manager is a full-stack bonsai plant management application with a Node.j
 
 Production hosting (free tier): frontend on Cloudflare Pages, API on Vercel (`server/api/index.js` → compiled `dist/app`), Postgres on Neon, media on Cloudflare R2. See `docs/DEPLOY.md`.
 
+Site em produção: https://bonsaimanager.pages.dev (deploy automático a partir da `main`) · API: https://bonsai-manager-ashen.vercel.app/api
+
+### Testes no navegador (Claude in Chrome)
+
+- Usar sempre a **conta de teste** `testeclaude@bonsai.dev` — nunca a conta pessoal do usuário. Nela pode criar, editar e apagar plantas/fotos/tarefas à vontade.
+- A senha não fica no repositório: a sessão já fica logada no Chrome. Se expirar, pedir ao usuário para logar de novo.
+- Imagens para upload em testes: `test-assets/` (fora do git).
+
 ## Commands
 
 ### Backend (server/)
