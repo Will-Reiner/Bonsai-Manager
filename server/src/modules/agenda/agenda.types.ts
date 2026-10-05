@@ -30,3 +30,43 @@ export interface AgendaRepository {
   existsByIdAndUser(id: string, usuarioId: string): Promise<boolean>;
   checkPlantaBelongsToUser(plantaId: string, usuarioId: string): Promise<boolean>;
 }
+
+export const ATIVIDADE_REVISAO = 'Revisão geral';
+export const PREF_REVISAO_DIAS = 'revisao_automatica_dias';
+
+export interface ConcluirAgendasDTO {
+  dataConcluida: string;
+  atividadeId?: string;
+  detalhes?: string;
+  observacaoFutura?: string;
+  extras?: string[];
+  proximos?: { atividadeId: string; dataAgendada: string }[];
+  itens: { agendaId: string; detalhes?: string; observacaoFutura?: string; fotos?: string[] }[];
+}
+
+export interface PlanoConclusao {
+  usuarioId: string;
+  dataConcluida: Date;
+  atualizacoes: { agendaId: string; atividadeId?: string; detalhes?: string; observacaoFutura?: string }[];
+  fotos: { agendaId: string; plantaId: string; caminhoArquivo: string }[];
+  criarConcluidas: { plantaId: string; atividadeId: string; data: Date; detalhes?: string }[];
+  criarPendentes: { plantaId: string; atividadeId: string; dataAgendada: Date }[];
+  revisoes: { plantaId: string; dataAgendada: Date }[];
+}
+
+export interface ResultadoConclusao {
+  concluidas: any[];
+  criadas: any[];
+  revisoes: any[];
+}
+
+export interface ConclusaoRepository {
+  /** Agendas PENDENTE do usuário dentre os ids informados. */
+  findPendentesDoUsuario(ids: string[], usuarioId: string): Promise<{ id: string; plantaId: string }[]>;
+  atividadesExistem(ids: string[]): Promise<boolean>;
+  /** Valor normalizado da preferência (padrão 30, 0 = desligado). */
+  getRevisaoDias(usuarioId: string): Promise<number>;
+  /** Data da próxima PENDENTE da planta com dataAgendada >= aPartirDe, ignorando `excluir`. */
+  proximaPendente(plantaId: string, aPartirDe: Date, excluir: string[]): Promise<Date | null>;
+  executar(plano: PlanoConclusao): Promise<ResultadoConclusao>;
+}
