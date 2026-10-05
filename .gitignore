@@ -1,2 +1,5 @@
 # Clone local de ferramentas (nao faz parte do app)
 stitch-skills/
+
+# Imagens para testes no navegador
+test-assets/
