@@ -36,7 +36,7 @@ api.interceptors.response.use(
 interface ApiErrorBody {
   message?: string;
   errors?: { campo: string; mensagem: string }[];
-  error?: { issues?: { message: string }[] };
+  error?: string | { issues?: { message: string }[] };
 }
 
 /** Extrai uma mensagem legível dos vários formatos de erro que a API devolve. */
@@ -44,7 +44,13 @@ export function errorMessage(error: unknown, fallback = 'Algo deu errado. Tente 
   if (axios.isAxiosError<ApiErrorBody>(error)) {
     if (!error.response) return 'Sem conexão com o servidor.';
     const body = error.response.data;
-    return body?.errors?.[0]?.mensagem || body?.error?.issues?.[0]?.message || body?.message || fallback;
+    const erro = body?.error;
+    return (
+      body?.errors?.[0]?.mensagem ||
+      (typeof erro === 'string' ? erro : erro?.issues?.[0]?.message) ||
+      body?.message ||
+      fallback
+    );
   }
   if (error instanceof Error) return error.message;
   return fallback;

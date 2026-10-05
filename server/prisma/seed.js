@@ -16,6 +16,7 @@ const ATIVIDADES = [
   { nome: 'Desaramação', descricao: 'Remoção do arame antes que marque a casca.' },
   { nome: 'Transplante', descricao: 'Troca de vaso e/ou substrato, com poda de raízes.' },
   { nome: 'Tratamento fitossanitário', descricao: 'Controle de pragas e doenças.' },
+  { nome: 'Revisão geral', descricao: 'Observar a planta como um todo e decidir os próximos cuidados.' },
 ];
 
 const TIPOS_RECURSO = ['Adubo', 'Substrato', 'Arame', 'Defensivo', 'Pasta cicatrizante'];

@@ -15,9 +15,10 @@ export class PrismaAgendaRepository implements AgendaRepository {
         planta: { usuarioId },
       },
       include: {
-        planta: { select: { id: true, nome: true, fotoCapaUrl: true, especie: true } },
+        planta: { select: { id: true, nome: true, identificador: true, fotoCapaUrl: true, especie: true } },
         atividade: { select: { id: true, nome: true } },
         recursosUtilizados: { include: { recurso: { include: { tipoRecurso: true } } } },
+        fotos: { select: { id: true, caminhoArquivo: true } },
       },
       orderBy: { dataAgendada: 'asc' },
     });
@@ -27,9 +28,10 @@ export class PrismaAgendaRepository implements AgendaRepository {
     return await prisma.agenda.findFirst({
       where: { id, planta: { usuarioId } },
       include: {
-        planta: { select: { id: true, nome: true, fotoCapaUrl: true, especie: true } },
+        planta: { select: { id: true, nome: true, identificador: true, fotoCapaUrl: true, especie: true } },
         atividade: { select: { id: true, nome: true } },
         recursosUtilizados: { include: { recurso: { include: { tipoRecurso: true } } } },
+        fotos: { select: { id: true, caminhoArquivo: true } },
       },
     });
   }

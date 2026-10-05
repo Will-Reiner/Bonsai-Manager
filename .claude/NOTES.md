@@ -330,3 +330,35 @@ Novo frontend web mobile first (React + Vite) substituindo o app mobile, e backe
 - Bucket R2 precisa de regra CORS para o upload do navegador funcionar (testado: "CORS not configured")
 - Rotas de atividades (POST/PUT/DELETE) e PUT de especies exigem so login, nao ADMIN
 - `mobile_app/` descontinuado
+
+
+## Implementacao 2026-10-05
+
+### Resumo
+
+Bancada de trabalho (substitui a tela Hoje), detalhe da tarefa com historico horizontal, tela de conclusao completa (individual ou em grupo) e Revisao geral automatica.
+
+### Detalhes
+
+**Backend**
+- Novo `POST /api/agendas/concluir`: conclui 1..50 tarefas numa transacao; campos comuns (descricao, obs.) com ajuste por planta; troca de atividade; procedimentos "feitos junto" criados ja concluidos; proximos passos por planta; fotos vinculadas ao procedimento
+- `Foto.agendaId` (migration, `ON DELETE SET NULL`) para mostrar a foto no card do historico; listagem de agendas passa a trazer `planta.identificador` e `fotos`
+- Regra da Revisao geral: sem proximos passos, para cada planta, se a proxima pendente estiver alem de N + 30 dias (ou nao existir) cria "Revisao geral" em N dias; N vem da preferencia `revisao_automatica_dias` (padrao 30, 0 desliga)
+- A atividade "Revisao geral" esta no seed e tambem e criada sob demanda (upsert) se faltar
+- Transacao revalida que a tarefa ainda esta PENDENTE (evita duplicar ao concluir em duas abas); itens repetidos e lotes > 50 sao rejeitados
+
+**Frontend web**
+- Bancada (`/`): Atrasadas + Proximas tarefas (hoje ate +6 dias), agrupadas por atividade, cards com foto grande e ID da planta em destaque, botao "Concluir grupo"
+- Detalhe da tarefa (`/tarefas/:id`): foto/ID da planta, historico horizontal (passados esmaecidos, atual destacado, futuros tracejados) com balao clicavel quando ha obs.; reagendar, cancelar, excluir
+- Tela de conclusao (`/concluir?ids=`): substitui a conclusao em 1 toque e o antigo sheet de tarefa; o botao ✓ dos cards agora abre essa tela
+- Preferencia "Revisao automatica" no Perfil (desligada / 15 / 30 / 60 / 90 dias)
+- Mensagens de erro `{ error: string }` da API agora aparecem no toast
+
+**Processo**
+- Spec em `docs/superpowers/specs/2026-10-05-bancada-conclusao-design.md` e plano em `docs/superpowers/plans/2026-10-05-bancada-conclusao.md`
+- Produtos utilizados (inventario) ficaram fora do escopo por decisao do usuario
+
+**Pendencias conhecidas**
+- Em producao: rodar `prisma migrate deploy` (a Vercel ja roda no build) e opcionalmente o seed
+- Melhorias pequenas adiadas: reenvio de fotos ao tentar de novo apos erro, rotulo "1 dias" para valores fora da lista, data agendada vs concluida no card do historico
+- No Docker do Windows o hot-reload da API nao detecta mudancas; reiniciar o container `api` apos alterar o servidor

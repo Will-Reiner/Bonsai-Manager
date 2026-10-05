@@ -1,6 +1,6 @@
-import { useMemo, useState } from 'react';
-import { Link } from 'react-router';
-import { LayoutGrid, List, Plus, Search } from 'lucide-react';
+import { useMemo, useRef, useState } from 'react';
+import { Link, useNavigate } from 'react-router';
+import { ImagePlus, LayoutGrid, List, Plus, Search } from 'lucide-react';
 import { Button, EmptyState, ErrorState, PlantThumb, Spinner } from '@/components/ui';
 import { errorMessage } from '@/lib/api';
 import { especieNome, plantaTitulo } from '@/lib/format';
@@ -13,6 +13,8 @@ const VIEW_KEY = 'bonsai_colecao_view';
 export function CollectionPage() {
   const plantas = usePlantas();
   const agendas = useAgendas();
+  const navigate = useNavigate();
+  const fotosRef = useRef<HTMLInputElement>(null);
   const [busca, setBusca] = useState('');
   const [especie, setEspecie] = useState('');
   const [ordem, setOrdem] = useState<Ordem>('recentes');
@@ -68,11 +70,30 @@ export function CollectionPage() {
           <h1 className="text-3xl font-semibold">Coleção</h1>
           {plantas.data && <p className="text-sm text-muted">{plantas.data.length} planta(s)</p>}
         </div>
-        <Link to="/plantas/nova">
-          <Button size="sm">
-            <Plus size={16} /> Planta
-          </Button>
-        </Link>
+        <div className="flex gap-2">
+          {!!plantas.data?.length && (
+            <Button size="sm" variant="secondary" onClick={() => fotosRef.current?.click()}>
+              <ImagePlus size={16} /> Fotos
+            </Button>
+          )}
+          <Link to="/plantas/nova">
+            <Button size="sm">
+              <Plus size={16} /> Planta
+            </Button>
+          </Link>
+        </div>
+        <input
+          ref={fotosRef}
+          type="file"
+          accept="image/*"
+          multiple
+          className="hidden"
+          onChange={(e) => {
+            const files = [...(e.target.files ?? [])];
+            e.target.value = '';
+            if (files.length) navigate('/fotos/lote', { state: { files } });
+          }}
+        />
       </header>
 
       {plantas.isLoading ? (

@@ -102,14 +102,16 @@ export interface Agenda {
   observacaoFutura?: string | null;
   plantaId: string;
   atividadeId: string;
-  planta?: Pick<Planta, 'id' | 'nome' | 'fotoCapaUrl'> & { especie?: Partial<Especie> };
+  planta?: Pick<Planta, 'id' | 'nome' | 'identificador' | 'fotoCapaUrl'> & { especie?: Partial<Especie> };
   atividade?: Pick<Atividade, 'id' | 'nome'>;
+  fotos?: { id: string; caminhoArquivo: string }[];
 }
 
 export interface Preferencias {
   atividades_rastreadas?: string;
   usa_identificador?: string;
   usa_nome_planta?: string;
+  revisao_automatica_dias?: string;
   [chave: string]: string | undefined;
 }
 

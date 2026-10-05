@@ -1,11 +1,11 @@
 import { useState, type ReactNode } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router';
-import { CalendarCheck, CalendarPlus, Leaf, Plus, Sprout, Sun, User } from 'lucide-react';
+import { CalendarCheck, CalendarPlus, ClipboardList, Leaf, Plus, Sprout, User } from 'lucide-react';
 import { Sheet } from './Sheet';
 import { useCare } from '@/context/CareContext';
 
 const tabs = [
-  { to: '/', label: 'Hoje', icon: Sun, end: true },
+  { to: '/', label: 'Bancada', icon: ClipboardList, end: true },
   { to: '/colecao', label: 'Coleção', icon: Leaf },
   null, // espaço do botão +
   { to: '/perfil', label: 'Perfil', icon: User },

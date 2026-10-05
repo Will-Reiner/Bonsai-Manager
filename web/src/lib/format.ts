@@ -64,15 +64,37 @@ export function fromDateInput(value: string): string {
   return new Date(y, m - 1, d, 12, 0, 0).toISOString();
 }
 
-export function agruparTarefas(agendas: Agenda[]) {
+export const daquiADias = (dias: number) => new Date(Date.now() + dias * 86_400_000).toISOString();
+
+/** Rótulo curto para identificar a planta: o identificador (ex.: JB-03) tem prioridade. */
+export const plantaRotulo = (p?: Agenda['planta']) =>
+  p?.identificador || p?.nome || p?.especie?.nomeComum || p?.especie?.nomeCientifico || 'Planta';
+
+/** Pendentes da bancada: atrasadas e próximas (hoje até +6 dias). */
+export function tarefasDaBancada(agendas: Agenda[]) {
   const pendentes = agendas.filter((a) => a.status === 'PENDENTE');
   return {
     atrasadas: pendentes.filter((a) => diasAte(a.dataAgendada) < 0),
-    hoje: pendentes.filter((a) => diasAte(a.dataAgendada) === 0),
     proximas: pendentes.filter((a) => {
       const d = diasAte(a.dataAgendada);
-      return d > 0 && d <= 7;
+      return d >= 0 && d <= 6;
     }),
-    depois: pendentes.filter((a) => diasAte(a.dataAgendada) > 7),
   };
+}
+
+export interface GrupoAtividade {
+  atividadeId: string;
+  nome: string;
+  agendas: Agenda[];
+}
+
+/** Agrupa por atividade; grupos e itens ordenados pela data mais antiga. */
+export function agruparPorAtividade(agendas: Agenda[]): GrupoAtividade[] {
+  const grupos = new Map<string, GrupoAtividade>();
+  for (const a of [...agendas].sort((x, y) => x.dataAgendada.localeCompare(y.dataAgendada))) {
+    const g = grupos.get(a.atividadeId) ?? { atividadeId: a.atividadeId, nome: a.atividade?.nome ?? 'Cuidado', agendas: [] };
+    g.agendas.push(a);
+    grupos.set(a.atividadeId, g);
+  }
+  return [...grupos.values()];
 }
