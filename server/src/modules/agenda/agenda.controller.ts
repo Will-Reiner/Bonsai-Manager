@@ -96,7 +96,12 @@ export class AgendaController {
       if (error instanceof Error && error.message === 'Acesso negado. A planta não pertence a si.') {
         return res.status(403).json({ error: error.message });
       }
-      if (error instanceof Error && error.message === 'Informe ao menos um cuidado.') {
+      const MENSAGENS_400 = [
+        'Informe ao menos um cuidado.',
+        'Informe ao menos uma planta.',
+        'Máximo de 2000 tarefas por vez.',
+      ];
+      if (error instanceof Error && MENSAGENS_400.includes(error.message)) {
         return res.status(400).json({ error: error.message });
       }
 

@@ -16,6 +16,7 @@ describe('UpdateAgendaUseCase', () => {
       delete: jest.fn(),
       existsByIdAndUser: jest.fn(),
       checkPlantaBelongsToUser: jest.fn(),
+      contarPlantasDoUsuario: jest.fn(),
     };
 
     updateAgendaUseCase = new UpdateAgendaUseCase(mockAgendaRepository);

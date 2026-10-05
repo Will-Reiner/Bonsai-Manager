@@ -14,15 +14,25 @@ export const createAgendaSchema = z.object({
 });
 
 export const createAgendasLoteSchema = z.object({
-  body: z.object({
-    plantaId: z.string().uuid({ message: 'O ID da planta é obrigatório.' }),
-    atividadeIds: z
-      .array(z.string().uuid({ message: 'ID de atividade inválido.' }))
-      .min(1, { message: 'Informe ao menos um cuidado.' })
-      .max(20, { message: 'Máximo de 20 cuidados por vez.' }),
-    dataAgendada: z.string().datetime({ message: 'A data agendada deve ser uma data válida.' }),
-    observacoes: z.string().optional(),
-  }),
+  body: z
+    .object({
+      /** Legado: uma planta só. */
+      plantaId: z.string().uuid({ message: 'ID de planta inválido.' }).optional(),
+      plantaIds: z
+        .array(z.string().uuid({ message: 'ID de planta inválido.' }))
+        .max(500, { message: 'Máximo de 500 plantas por vez.' })
+        .optional(),
+      atividadeIds: z
+        .array(z.string().uuid({ message: 'ID de atividade inválido.' }))
+        .min(1, { message: 'Informe ao menos um cuidado.' })
+        .max(20, { message: 'Máximo de 20 cuidados por vez.' }),
+      dataAgendada: z.string().datetime({ message: 'A data agendada deve ser uma data válida.' }),
+      detalhes: z.string().max(2000, { message: 'Observação muito longa.' }).optional(),
+    })
+    .transform(({ plantaId, plantaIds, ...resto }) => ({
+      ...resto,
+      plantaIds: plantaIds ?? (plantaId ? [plantaId] : []),
+    })),
 });
 
 // Schema para ATUALIZAR um agendamento.

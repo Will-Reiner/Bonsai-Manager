@@ -5,13 +5,15 @@ export interface CreateAgendaDTO {
   atividadeId: string;
   dataAgendada: string;
   observacoes?: string;
+  detalhes?: string;
 }
 
 export interface CreateAgendasLoteDTO {
-  plantaId: string;
+  plantaIds: string[];
   atividadeIds: string[];
   dataAgendada: string;
-  observacoes?: string;
+  /** Instrução para quando o cuidado for feito (ex.: qual adubo usar). */
+  detalhes?: string;
 }
 
 export interface UpdateAgendaDTO {
@@ -38,6 +40,8 @@ export interface AgendaRepository {
   delete(id: string): Promise<void>;
   existsByIdAndUser(id: string, usuarioId: string): Promise<boolean>;
   checkPlantaBelongsToUser(plantaId: string, usuarioId: string): Promise<boolean>;
+  /** Quantas das plantas informadas são do usuário. */
+  contarPlantasDoUsuario(plantaIds: string[], usuarioId: string): Promise<number>;
 }
 
 export const ATIVIDADE_REVISAO = 'Revisão geral';

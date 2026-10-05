@@ -10,7 +10,8 @@ export class PrismaAgendaRepository implements AgendaRepository {
   }
 
   async createMany(data: CreateAgendaDTO[]) {
-    return await prisma.$transaction(data.map((d) => prisma.agenda.create({ data: d })));
+    // Um INSERT só (atômico): até 2000 linhas no lote
+    return await prisma.agenda.createManyAndReturn({ data });
   }
 
   async findManyByUser(usuarioId: string) {
@@ -85,6 +86,10 @@ export class PrismaAgendaRepository implements AgendaRepository {
       select: { id: true },
     });
     return !!agenda;
+  }
+
+  async contarPlantasDoUsuario(plantaIds: string[], usuarioId: string): Promise<number> {
+    return prisma.planta.count({ where: { id: { in: plantaIds }, usuarioId } });
   }
 
   async checkPlantaBelongsToUser(plantaId: string, usuarioId: string): Promise<boolean> {
