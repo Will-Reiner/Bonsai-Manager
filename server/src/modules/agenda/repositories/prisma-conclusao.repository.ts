@@ -19,6 +19,13 @@ export class PrismaConclusaoRepository implements ConclusaoRepository {
     });
   }
 
+  async findPendentesParaReconciliar(ids: string[], usuarioId: string) {
+    return prisma.agenda.findMany({
+      where: { id: { in: ids }, status: 'PENDENTE', planta: { usuarioId } },
+      select: { id: true, plantaId: true, atividadeId: true, dataAgendada: true },
+    });
+  }
+
   async atividadesExistem(ids: string[]) {
     const total = await prisma.atividade.count({ where: { id: { in: ids } } });
     return total === ids.length;
@@ -71,19 +78,53 @@ export class PrismaConclusaoRepository implements ConclusaoRepository {
     return prisma.$transaction(
       async (tx: Prisma.TransactionClient) => {
         // Poucas idas ao banco, independente do número de plantas (lotes grandes estouravam o tempo)
-        const concluidas = await tx.agenda.createManyAndReturn({
-          data: plano.cuidados.flatMap((c) =>
-            c.atividadeIds.map((atividadeId, i) => ({
-              plantaId: c.plantaId,
-              atividadeId,
-              dataAgendada: plano.data,
-              dataConcluida: plano.data,
-              status: 'CONCLUIDO' as const,
-              // Nota e obs. só no primeiro cuidado: no histórico os cuidados do dia aparecem juntos
-              ...(i === 0 ? { detalhes: c.detalhes, observacaoFutura: c.observacaoFutura } : {}),
-            })),
+        const absorvidos = new Set(plano.absorver.map((a) => `${a.plantaId}|${a.atividadeId}`));
+        const novas = plano.cuidados.flatMap((c) =>
+          c.atividadeIds.flatMap((atividadeId, i) =>
+            absorvidos.has(`${c.plantaId}|${atividadeId}`)
+              ? []
+              : [
+                  {
+                    plantaId: c.plantaId,
+                    atividadeId,
+                    dataAgendada: plano.data,
+                    dataConcluida: plano.data,
+                    status: 'CONCLUIDO' as const,
+                    // Nota e obs. só no primeiro cuidado: no histórico os cuidados do dia aparecem juntos
+                    ...(i === 0 ? { detalhes: c.detalhes, observacaoFutura: c.observacaoFutura } : {}),
+                  },
+                ],
           ),
-        });
+        );
+        const criadasAgora = novas.length ? await tx.agenda.createManyAndReturn({ data: novas }) : [];
+
+        // Pendentes escolhidas na tela viram o registro; revalida PENDENTE (envio duplo não conclui duas vezes)
+        const cuidadoDe = new Map(plano.cuidados.map((c) => [c.plantaId, c]));
+        for (const a of plano.absorver) {
+          const c = cuidadoDe.get(a.plantaId)!;
+          const primeiro = c.atividadeIds[0] === a.atividadeId;
+          const { count } = await tx.agenda.updateMany({
+            where: { id: a.agendaId, status: 'PENDENTE' },
+            data: {
+              status: 'CONCLUIDO',
+              dataConcluida: plano.data,
+              // Sem nota no registro, mantém a instrução que veio do agendamento
+              ...(primeiro && c.detalhes !== undefined ? { detalhes: c.detalhes } : {}),
+              ...(primeiro && c.observacaoFutura !== undefined ? { observacaoFutura: c.observacaoFutura } : {}),
+            },
+          });
+          if (count === 0) throw new Error('Acesso negado ou agendamento não encontrado.');
+        }
+        if (plano.cancelar.length) {
+          await tx.agenda.updateMany({
+            where: { id: { in: plano.cancelar }, status: 'PENDENTE' },
+            data: { status: 'CANCELADO' },
+          });
+        }
+        const absorvidas = plano.absorver.length
+          ? await tx.agenda.findMany({ where: { id: { in: plano.absorver.map((a) => a.agendaId) } } })
+          : [];
+        const concluidas = [...criadasAgora, ...absorvidas];
 
         const comFotos = plano.cuidados.filter((c) => c.fotos.length);
         if (comFotos.length) {

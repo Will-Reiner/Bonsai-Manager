@@ -230,10 +230,14 @@ export class AgendaController {
       if (error instanceof Error && error.message === 'Acesso negado. A planta não pertence a si.') {
         return res.status(403).json({ error: error.message });
       }
+      if (error instanceof Error && error.message === 'Acesso negado ou agendamento não encontrado.') {
+        return res.status(404).json({ error: error.message });
+      }
       if (
         error instanceof Error &&
         [
           'Atividade não encontrada.',
+          'Tarefa não corresponde ao cuidado registrado.',
           'Plantas repetidas na lista.',
           'Informe ao menos um cuidado por planta.',
           'A data não pode ser no futuro.',

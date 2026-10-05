@@ -115,5 +115,9 @@ export const registrarCuidadosSchema = z.object({
       .array(z.object({ atividadeId: z.string().uuid(), dataAgendada: z.string().datetime() }))
       .max(10)
       .optional(),
+    concluirAgendaIds: z
+      .array(z.string().uuid({ message: 'ID de tarefa inválido.' }))
+      .max(400, { message: 'Máximo de 400 tarefas por vez.' })
+      .optional(),
   }),
 });

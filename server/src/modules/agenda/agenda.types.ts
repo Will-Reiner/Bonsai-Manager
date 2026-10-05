@@ -1,4 +1,5 @@
 import { AgendaStatus } from '@prisma/client';
+import { PendenteReconciliavel } from './dominio/reconciliar';
 
 export interface CreateAgendaDTO {
   plantaId: string;
@@ -79,6 +80,8 @@ export interface RegistrarCuidadosDTO {
     fotos?: { caminhoArquivo: string; dataCaptura?: string }[];
   }[];
   proximos?: { atividadeId: string; dataAgendada: string }[];
+  /** Pendentes que este registro conclui (escolhidas na tela). */
+  concluirAgendaIds?: string[];
 }
 
 export interface PlanoRegistro {
@@ -92,6 +95,10 @@ export interface PlanoRegistro {
     observacaoFutura?: string;
     fotos: { caminhoArquivo: string; dataCaptura: Date }[];
   }[];
+  /** Pendentes que viram o registro do cuidado (em vez de criar agenda nova). */
+  absorver: { agendaId: string; plantaId: string; atividadeId: string }[];
+  /** Pendentes repetidas do mesmo cuidado: canceladas. */
+  cancelar: string[];
   criarPendentes: { plantaId: string; atividadeId: string; dataAgendada: Date }[];
   revisoes: { plantaId: string; dataAgendada: Date }[];
 }
@@ -105,6 +112,8 @@ export interface ResultadoConclusao {
 export interface ConclusaoRepository {
   /** Agendas PENDENTE do usuário dentre os ids informados. */
   findPendentesDoUsuario(ids: string[], usuarioId: string): Promise<{ id: string; plantaId: string }[]>;
+  /** Agendas PENDENTE do usuário dentre os ids, com planta, atividade e data. */
+  findPendentesParaReconciliar(ids: string[], usuarioId: string): Promise<PendenteReconciliavel[]>;
   atividadesExistem(ids: string[]): Promise<boolean>;
   /** Valor normalizado da preferência (padrão 30, 0 = desligado). */
   getRevisaoDias(usuarioId: string): Promise<number>;
