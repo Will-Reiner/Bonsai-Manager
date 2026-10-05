@@ -70,7 +70,7 @@ export function useLoteFotos(plantas: Planta[] | undefined, filesIniciais: File[
   useEffect(() => {
     const ativos = items.filter((i) => i.upload === 'enviando').length;
     const proximos = items
-      .filter((i) => i.upload === 'fila' && i.plantaId != null && !iniciados.current.has(i.key))
+      .filter((i) => i.upload === 'fila' && i.plantaId !== null && !iniciados.current.has(i.key))
       .slice(0, Math.max(0, CONCORRENCIA - ativos));
     for (const item of proximos) {
       iniciados.current.add(item.key);
@@ -89,6 +89,8 @@ export function useLoteFotos(plantas: Planta[] | undefined, filesIniciais: File[
     porId,
     trocarArquivos(files: File[], plantaId?: string) {
       iniciados.current.clear();
+      criadas.current.clear();
+      setNovas([]);
       setItems(criarItens(files, plantaId));
     },
     atribuir: (key: string, plantaId: string | null) => atualizar(key, { plantaId }),
@@ -98,7 +100,7 @@ export function useLoteFotos(plantas: Planta[] | undefined, filesIniciais: File[
       return { id: PREFIXO_NOVA + c, identificador: c, nova: true };
     },
     enviados: items.filter((i) => i.upload === 'ok').length,
-    enviaveis: comPlanta.length,
+    enviaveis: items.filter((i) => i.plantaId !== null).length,
     uploadsPendentes: comPlanta.some((i) => i.upload === 'fila' || i.upload === 'enviando'),
     falhas: comPlanta.filter((i) => i.upload === 'erro'),
     reenviarFalhas() {
@@ -115,9 +117,9 @@ export function useLoteFotos(plantas: Planta[] | undefined, filesIniciais: File[
       for (const codigo of novas) {
         const provisorio = PREFIXO_NOVA + codigo;
         if (criadas.current.has(provisorio)) continue;
-        const fotos = items.filter((i) => i.plantaId === provisorio);
-        if (!fotos.length) continue;
-        const planta = await plantasApi.create({ identificador: codigo, fotoCapaUrl: fotos.find((f) => f.url)?.url });
+        const capa = items.find((i) => i.plantaId === provisorio && i.upload === 'ok' && i.url);
+        if (!capa) continue;
+        const planta = await plantasApi.create({ identificador: codigo, fotoCapaUrl: capa.url });
         criadas.current.set(provisorio, planta.id);
         criou = true;
       }
