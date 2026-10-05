@@ -27,7 +27,7 @@ export const authApi = {
 };
 
 export interface PlantaInput {
-  especieId: string;
+  especieId?: string;
   nome?: string;
   identificador?: string | null;
   dataAquisicao?: string | null;

@@ -62,8 +62,8 @@ export interface Planta {
   createdAt: string;
   updatedAt: string;
   usuarioId: string;
-  especieId: string;
-  especie: Pick<Especie, 'nomeCientifico' | 'nomeComum'> & Partial<Especie>;
+  especieId: string | null;
+  especie: (Pick<Especie, 'nomeCientifico' | 'nomeComum'> & Partial<Especie>) | null;
 }
 
 export interface Atividade {
