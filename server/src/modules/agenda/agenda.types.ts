@@ -106,8 +106,8 @@ export interface ConclusaoRepository {
   atividadesExistem(ids: string[]): Promise<boolean>;
   /** Valor normalizado da preferência (padrão 30, 0 = desligado). */
   getRevisaoDias(usuarioId: string): Promise<number>;
-  /** Data da próxima PENDENTE da planta com dataAgendada >= aPartirDe, ignorando `excluir`. */
-  proximaPendente(plantaId: string, aPartirDe: Date, excluir: string[]): Promise<Date | null>;
+  /** Por planta, a data da próxima PENDENTE com dataAgendada >= aPartirDe, ignorando `excluir` (sem pendente = fora do Map). */
+  proximasPendentes(plantaIds: string[], aPartirDe: Date, excluir: string[]): Promise<Map<string, Date>>;
   executar(plano: PlanoConclusao): Promise<ResultadoConclusao>;
   /** Quantas das plantas informadas são do usuário. */
   contarPlantasDoUsuario(plantaIds: string[], usuarioId: string): Promise<number>;

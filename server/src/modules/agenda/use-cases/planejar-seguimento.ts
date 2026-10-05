@@ -11,7 +11,7 @@ export interface Seguimento {
 
 /** O que vem depois de um cuidado: os próximos passos informados ou, sem eles, a Revisão geral automática. */
 export async function planejarSeguimento(
-  repo: Pick<ConclusaoRepository, 'getRevisaoDias' | 'proximaPendente'>,
+  repo: Pick<ConclusaoRepository, 'getRevisaoDias' | 'proximasPendentes'>,
   {
     usuarioId,
     plantas,
@@ -29,8 +29,9 @@ export async function planejarSeguimento(
     if (dias > 0) {
       const agora = new Date();
       const limite = agora.getTime() + (dias + MARGEM_REVISAO_DIAS) * DIA;
+      const proximas = await repo.proximasPendentes(plantas, agora, excluir);
       for (const plantaId of plantas) {
-        const proxima = await repo.proximaPendente(plantaId, agora, excluir);
+        const proxima = proximas.get(plantaId);
         if (proxima && proxima.getTime() <= limite) continue;
         revisoes.push({ plantaId, dataAgendada: new Date(agora.getTime() + dias * DIA) });
       }

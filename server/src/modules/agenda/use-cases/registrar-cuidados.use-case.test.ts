@@ -19,7 +19,7 @@ describe('RegistrarCuidadosUseCase', () => {
       findPendentesDoUsuario: jest.fn(),
       atividadesExistem: jest.fn().mockResolvedValue(true),
       getRevisaoDias: jest.fn().mockResolvedValue(30),
-      proximaPendente: jest.fn().mockResolvedValue(null),
+      proximasPendentes: jest.fn().mockResolvedValue(new Map()),
       executar: jest.fn(),
       contarPlantasDoUsuario: jest.fn().mockResolvedValue(1),
       registrar: jest.fn().mockResolvedValue({ concluidas: [], criadas: [], revisoes: [] }),
@@ -85,7 +85,7 @@ describe('RegistrarCuidadosUseCase', () => {
   it('sem próximos, agenda a Revisão geral automática', async () => {
     await useCase.execute(base, 'user-1');
 
-    expect(repo.proximaPendente).toHaveBeenCalledWith('p1', AGORA, []);
+    expect(repo.proximasPendentes).toHaveBeenCalledWith(['p1'], AGORA, []);
     expect(plano().revisoes).toEqual([{ plantaId: 'p1', dataAgendada: new Date(AGORA.getTime() + 30 * DIA) }]);
   });
 
