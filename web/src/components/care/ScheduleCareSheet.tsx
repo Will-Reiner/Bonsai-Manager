@@ -83,7 +83,7 @@ export function ScheduleCareSheet({
         )}
         <div>
           <Field label="Data">
-            <input type="date" className="input" value={data} min={toDateInput()} onChange={(e) => setData(e.target.value)} required />
+            <input type="date" className="input" value={data} min={agenda ? undefined : toDateInput()} onChange={(e) => setData(e.target.value)} required />
           </Field>
           <div className="mt-2 flex flex-wrap gap-2">
             {atalhos.map((a) => (

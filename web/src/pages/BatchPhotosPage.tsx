@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router';
 import { useQueryClient } from '@tanstack/react-query';
 import { AlertCircle, CheckCircle2, ImagePlus } from 'lucide-react';
-import { Button, EmptyState, PageHeader, PlantThumb, Spinner } from '@/components/ui';
+import { Button, EmptyState, ErrorState, PageHeader, PlantThumb, Spinner } from '@/components/ui';
 import { Miniaturas } from '@/components/FilePreview';
 import { TriagemFotos } from '@/components/TriagemFotos';
 import { useToast } from '@/context/ToastContext';
@@ -113,6 +113,15 @@ export function BatchPhotosPage() {
   }
 
   if (plantas.isLoading) return <Spinner />;
+  // Sem a lista não dá para reconhecer os códigos: a triagem ofereceria criar plantas que já existem
+  if (plantas.isError && etapa !== 'salvando' && etapa !== 'fim') {
+    return (
+      <div className="flex min-h-dvh flex-col">
+        <PageHeader title="Fotos em lote" back />
+        <ErrorState text={errorMessage(plantas.error)} onRetry={() => plantas.refetch()} />
+      </div>
+    );
+  }
 
   // ───────────── Fim ─────────────
   if (etapa === 'fim' || etapa === 'salvando') {

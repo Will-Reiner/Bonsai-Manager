@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router';
+import { useLocation, useNavigate, useSearchParams } from 'react-router';
 import { useQueryClient } from '@tanstack/react-query';
 import { Camera, ChevronDown, ImagePlus } from 'lucide-react';
-import { Button, Field, PageHeader, PlantThumb, Spinner } from '@/components/ui';
+import { Button, ErrorState, Field, PageHeader, PlantThumb, Spinner } from '@/components/ui';
 import { FilePreview, Miniaturas } from '@/components/FilePreview';
 import { TriagemFotos } from '@/components/TriagemFotos';
 import { AtividadeChips } from '@/components/care/AtividadeChips';
@@ -30,6 +30,7 @@ export function RegistrarPage() {
   const [params] = useSearchParams();
   const plantaFixa = params.get('planta') ?? undefined;
   const navigate = useNavigate();
+  const location = useLocation();
   const queryClient = useQueryClient();
   const toast = useToast();
   const plantas = usePlantas();
@@ -48,6 +49,19 @@ export function RegistrarPage() {
   const [proximos, setProximos] = useState<Proximo[]>([]);
   const cameraRef = useRef<HTMLInputElement>(null);
   const galeriaRef = useRef<HTMLInputElement>(null);
+  const montadoRef = useRef(true);
+  useEffect(() => {
+    montadoRef.current = true;
+    return () => {
+      montadoRef.current = false;
+    };
+  }, []);
+
+  /** Volta para a tela anterior; aberta por link direto (sem histórico no app), vai para a Bancada. */
+  function voltar() {
+    if (location.key === 'default') navigate('/', { replace: true });
+    else navigate(-1);
+  }
 
   // Plantas tocadas: as das fotos (na ordem da 1ª foto) ou as escolhidas sem foto
   const tocadas = semFoto ?? [...new Set(lote.items.map((i) => i.plantaId).filter((p): p is string => !!p))];
@@ -75,11 +89,27 @@ export function RegistrarPage() {
     } else setEscolherPlantas(true);
   }
 
+  function validar(): boolean {
+    const erro = !tocadas.length
+      ? 'Nenhuma planta escolhida.'
+      : tocadas.some((pid) => !tiposDe(pid).length)
+        ? 'Escolha o que foi feito em cada planta.'
+        : !data || data > toDateInput()
+          ? 'A data não pode ser no futuro.'
+          : proximos.some((p) => !p.atividadeId || !p.data)
+            ? 'Complete os próximos passos.'
+            : null;
+    if (erro) toast(erro, 'error');
+    return !erro;
+  }
+
   function salvar() {
-    if (!tocadas.length) return toast('Nenhuma planta escolhida.', 'error');
-    if (tocadas.some((pid) => !tiposDe(pid).length)) return toast('Escolha o que foi feito em cada planta.', 'error');
-    if (!data || data > toDateInput()) return toast('A data não pode ser no futuro.', 'error');
-    if (proximos.some((p) => !p.atividadeId || !p.data)) return toast('Complete os próximos passos.', 'error');
+    if (validar()) setFase('salvando');
+  }
+
+  function reenviarESalvar() {
+    if (!validar()) return;
+    lote.reenviarFalhas();
     setFase('salvando');
   }
 
@@ -122,7 +152,7 @@ export function RegistrarPage() {
             n ? ` · ${n === 1 ? 'Revisão geral agendada' : `${n} revisões agendadas`}` : ''
           }`,
         );
-        navigate(-1);
+        if (montadoRef.current) voltar();
       } catch (error) {
         toast(errorMessage(error), 'error');
         setFase('detalhes');
@@ -134,6 +164,15 @@ export function RegistrarPage() {
   }, [fase, lote.uploadsPendentes]);
 
   if (plantas.isLoading) return <Spinner />;
+  // Sem a lista não dá para reconhecer os códigos: a triagem ofereceria criar plantas que já existem
+  if (plantas.isError && fase !== 'salvando') {
+    return (
+      <div className="flex min-h-dvh flex-col">
+        <PageHeader title="Registrar cuidado" back />
+        <ErrorState text={errorMessage(plantas.error)} onRetry={() => plantas.refetch()} />
+      </div>
+    );
+  }
 
   // ───────────── Triagem ─────────────
   if (fase === 'triagem') {
@@ -144,7 +183,7 @@ export function RegistrarPage() {
         inicio={triagem.inicio}
         voltarDireto={triagem.voltarDireto}
         onFim={() => setFase('detalhes')}
-        onSair={() => navigate(-1)}
+        onSair={voltar}
       />
     );
   }
@@ -279,7 +318,7 @@ export function RegistrarPage() {
       <div className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-white/95 px-4 pb-safe pt-3 backdrop-blur">
         <div className="mx-auto mb-3 max-w-2xl space-y-2">
           {lote.falhas.length > 0 && fase !== 'salvando' && (
-            <Button block variant="secondary" onClick={() => { lote.reenviarFalhas(); setFase('salvando'); }}>
+            <Button block variant="secondary" onClick={reenviarESalvar}>
               Reenviar {lote.falhas.length} foto(s) e salvar
             </Button>
           )}
