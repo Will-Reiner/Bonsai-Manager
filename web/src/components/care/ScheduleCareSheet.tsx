@@ -9,7 +9,8 @@ import { errorMessage } from '@/lib/api';
 import { agendasApi } from '@/lib/endpoints';
 import { atalhosDeData } from '@/lib/estacoes';
 import { daquiADias, dataNumerica, fromDateInput, toDateInput } from '@/lib/format';
-import { keys } from '@/lib/queries';
+import { keys, useAgendas } from '@/lib/queries';
+import { rotuloUltima, ultimasPorPlanta } from '@/lib/cuidados';
 import type { Agenda } from '@/types';
 
 /** Agendar cuidados para uma ou várias plantas — ou reagendar uma tarefa existente (quando `agenda` vem preenchida). */
@@ -32,6 +33,11 @@ export function ScheduleCareSheet({
   const [data, setData] = useState(() => toDateInput(agenda?.dataAgendada ?? daquiADias(1)));
   const [salvando, setSalvando] = useState(false);
   const atalhos = useMemo(() => atalhosDeData(), []);
+  const agendas = useAgendas();
+  const ultimas = useMemo(() => ultimasPorPlanta(agendas.data ?? []), [agendas.data]);
+  const dica = plantaIds.length
+    ? (atividadeId: string) => rotuloUltima(plantaIds.map((p) => ultimas.get(p)?.get(atividadeId)))
+    : undefined;
 
   const total = plantaIds.length * atividadeIds.length;
 
@@ -70,7 +76,7 @@ export function ScheduleCareSheet({
         ) : (
           <>
             <PlantasCampo ids={plantaIds} onChange={setPlantaIds} />
-            <AtividadeChips value={atividadeIds} onChange={setAtividadeIds} />
+            <AtividadeChips value={atividadeIds} onChange={setAtividadeIds} dica={dica} />
             <Field label="Observação (opcional)">
               <textarea
                 className="input min-h-16"

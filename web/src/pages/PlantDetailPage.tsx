@@ -8,6 +8,7 @@ import { EnviosProgresso, useEnviarFotos } from '@/components/FotoUpload';
 import { useCare } from '@/context/CareContext';
 import { errorMessage } from '@/lib/api';
 import { dataCurta, dataRelativa, especieNome, modoAquisicaoLabel, plantaTitulo, tempoDesde } from '@/lib/format';
+import { rotuloUltima, ultimasPorPlanta } from '@/lib/cuidados';
 import { chaveItem, dataDaFoto, fotosOrdenadas, linhaDoTempo, type ItemLinha } from '@/lib/linhaDoTempo';
 import { useAgendas, useFotos, usePlanta } from '@/lib/queries';
 import type { Foto } from '@/types';
@@ -25,6 +26,12 @@ export function PlantDetailPage() {
   const daPlanta = useMemo(() => (agendas.data ?? []).filter((a) => a.plantaId === id), [agendas.data, id]);
   const imagens = useMemo(() => fotosOrdenadas(fotos.data), [fotos.data]);
   const linha = useMemo(() => linhaDoTempo(daPlanta, fotos.data), [daPlanta, fotos.data]);
+  const ultimos = useMemo(() => {
+    const nomes = new Map(daPlanta.map((a) => [a.atividadeId, a.atividade?.nome ?? 'Cuidado']));
+    return [...(ultimasPorPlanta(daPlanta).get(id) ?? [])]
+      .map(([atividadeId, data]) => ({ atividadeId, data, nome: nomes.get(atividadeId) ?? 'Cuidado' }))
+      .sort((a, b) => b.data.localeCompare(a.data));
+  }, [daPlanta, id]);
 
   if (planta.isLoading) return <><PageHeader title="Planta" back /><Spinner /></>;
   if (planta.isError || !planta.data)
@@ -130,6 +137,19 @@ export function PlantDetailPage() {
             <RodaLinhaDoTempo passado={linha.passado} pendentes={linha.pendentes} abrirFoto={abrirFoto} />
           )}
         </Secao>
+
+        {ultimos.length > 0 && (
+          <Secao titulo="Últimos cuidados">
+            <div className="card divide-y divide-line">
+              {ultimos.map((u) => (
+                <div key={u.atividadeId} className="flex items-center justify-between gap-3 px-4 py-2.5 text-sm">
+                  <span className="font-medium">{u.nome}</span>
+                  <span className="text-muted">{rotuloUltima([u.data])}</span>
+                </div>
+              ))}
+            </div>
+          </Secao>
+        )}
 
         {p.observacoes && (
           <>

@@ -5,10 +5,13 @@ export function AtividadeChips({
   value,
   onChange,
   label = 'Tipos de cuidado',
+  dica,
 }: {
   value: string[];
   onChange: (ids: string[]) => void;
   label?: string;
+  /** Texto curto ao lado do nome (ex.: "há 12 dias"). */
+  dica?: (atividadeId: string) => string | undefined;
 }) {
   const atividades = useAtividadesOrdenadas();
   const tocar = (id: string) => onChange(value.includes(id) ? value.filter((a) => a !== id) : [...value, id]);
@@ -33,6 +36,7 @@ export function AtividadeChips({
               aria-pressed={value.includes(a.id)}
             >
               {a.nome}
+              {dica?.(a.id) && <span className="ml-1 text-[11px] font-normal opacity-70">· {dica(a.id)}</span>}
             </button>
           ))}
         </div>
