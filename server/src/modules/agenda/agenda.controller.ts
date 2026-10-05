@@ -157,8 +157,6 @@ export class AgendaController {
       const resultado = await this.concluirAgendasUseCase.execute(body as ConcluirAgendasDTO, usuarioId);
       res.json(resultado);
     } catch (error) {
-      console.error('Erro ao concluir agendamentos:', error);
-
       if (error instanceof ZodError) {
         return res.status(400).json({ error: error.errors[0]?.message ?? 'Dados inválidos' });
       }
@@ -169,6 +167,7 @@ export class AgendaController {
         return res.status(400).json({ error: error.message });
       }
 
+      console.error('Erro ao concluir agendamentos:', error);
       res.status(500).json({ error: 'Erro interno do servidor' });
     }
   }

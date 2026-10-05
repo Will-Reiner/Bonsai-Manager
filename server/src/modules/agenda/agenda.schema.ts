@@ -60,6 +60,10 @@ export const concluirAgendasSchema = z.object({
           fotos: z.array(z.string().url()).optional(),
         }),
       )
-      .min(1, { message: 'Informe ao menos uma tarefa.' }),
+      .min(1, { message: 'Informe ao menos uma tarefa.' })
+      .max(50, { message: 'Máximo de 50 tarefas por vez.' })
+      .refine((itens) => new Set(itens.map((i) => i.agendaId)).size === itens.length, {
+        message: 'Tarefas repetidas na lista.',
+      }),
   }),
 });

@@ -46,16 +46,21 @@ export class PrismaConclusaoRepository implements ConclusaoRepository {
       async (tx: Prisma.TransactionClient) => {
         const concluidas = [];
         for (const a of plano.atualizacoes) {
+          // Revalida PENDENTE dentro da transação (evita duplicidade em envio duplo)
+          const { count } = await tx.agenda.updateMany({
+            where: { id: a.agendaId, status: 'PENDENTE' },
+            data: {
+              status: 'CONCLUIDO',
+              dataConcluida: plano.dataConcluida,
+              ...(a.atividadeId ? { atividadeId: a.atividadeId } : {}),
+              ...(a.detalhes !== undefined ? { detalhes: a.detalhes } : {}),
+              ...(a.observacaoFutura !== undefined ? { observacaoFutura: a.observacaoFutura } : {}),
+            },
+          });
+          if (count === 0) throw new Error('Acesso negado ou agendamento não encontrado.');
           concluidas.push(
-            await tx.agenda.update({
+            await tx.agenda.findUniqueOrThrow({
               where: { id: a.agendaId },
-              data: {
-                status: 'CONCLUIDO',
-                dataConcluida: plano.dataConcluida,
-                ...(a.atividadeId ? { atividadeId: a.atividadeId } : {}),
-                ...(a.detalhes !== undefined ? { detalhes: a.detalhes } : {}),
-                ...(a.observacaoFutura !== undefined ? { observacaoFutura: a.observacaoFutura } : {}),
-              },
               include: { atividade: { select: { id: true, nome: true } } },
             }),
           );
