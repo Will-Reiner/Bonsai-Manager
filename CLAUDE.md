@@ -157,3 +157,4 @@ Navigation structure: unauthenticated users see Login/Register; authenticated us
 - Lack of recurrence on the events
 - Register multiple tasks
 - Onboarding questions for especification - DONE/precisa melhorar
+- Fotos em lote: no fim do lote, oferecer "registrar cuidado nas plantas tocadas" (via CareContext) para as plantas que receberam fotos

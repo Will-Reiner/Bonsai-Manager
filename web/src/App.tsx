@@ -11,6 +11,7 @@ import { PlantDetailPage } from '@/pages/PlantDetailPage';
 import { EditPlantPage } from '@/pages/EditPlantPage';
 import { TarefaPage } from '@/pages/TarefaPage';
 import { ConcluirPage } from '@/pages/ConcluirPage';
+import { BatchPhotosPage } from '@/pages/BatchPhotosPage';
 import { EditProfilePage, ProfilePage } from '@/pages/ProfilePages';
 import { AdminPage } from '@/pages/AdminPage';
 
@@ -58,6 +59,7 @@ export default function App() {
         <Route path="/plantas/:id/editar" element={<Privada><EditPlantPage /></Privada>} />
         <Route path="/tarefas/:id" element={<Privada><TarefaPage /></Privada>} />
         <Route path="/concluir" element={<Privada><ConcluirPage /></Privada>} />
+        <Route path="/fotos/lote" element={<Privada><BatchPhotosPage /></Privada>} />
         <Route path="/perfil/editar" element={<Privada><EditProfilePage /></Privada>} />
         <Route path="/admin" element={<Privada><SoAdmin><AdminPage /></SoAdmin></Privada>} />
 
