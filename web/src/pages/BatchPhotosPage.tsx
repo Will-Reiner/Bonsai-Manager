@@ -8,11 +8,10 @@ import { useToast } from '@/context/ToastContext';
 import { fotosApi } from '@/lib/endpoints';
 import { especieNome, plantaTitulo } from '@/lib/format';
 import { keys, usePlantas } from '@/lib/queries';
-import { dataCapturaDe, uploadImage } from '@/lib/upload';
+import { dataCapturaDe, MAX_FOTOS_POR_VEZ, uploadImage } from '@/lib/upload';
 import type { Planta } from '@/types';
 
-/** Limite por lote: memória do celular (Safari iOS derruba a aba com muitas imagens) e trabalho perdido se fechar. */
-const MAX_FOTOS_LOTE = 50;
+const MAX_FOTOS_LOTE = MAX_FOTOS_POR_VEZ;
 const CONCORRENCIA = 3;
 
 interface Item {
