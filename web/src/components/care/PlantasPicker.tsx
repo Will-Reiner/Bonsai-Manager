@@ -26,7 +26,7 @@ export function PlantasPicker({
   const plantas = usePlantas();
   const [sel, setSel] = useState(() => new Set(selecionadas));
   const [busca, setBusca] = useState('');
-  const todas = plantas.data ?? [];
+  const todas = useMemo(() => plantas.data ?? [], [plantas.data]);
 
   const grupos = useMemo(() => {
     const mapa = new Map<string, { nome: string; ids: string[] }>();
