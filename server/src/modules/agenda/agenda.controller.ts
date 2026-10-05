@@ -232,7 +232,12 @@ export class AgendaController {
       }
       if (
         error instanceof Error &&
-        ['Atividade não encontrada.', 'Plantas repetidas na lista.', 'Informe ao menos um cuidado por planta.'].includes(error.message)
+        [
+          'Atividade não encontrada.',
+          'Plantas repetidas na lista.',
+          'Informe ao menos um cuidado por planta.',
+          'A data não pode ser no futuro.',
+        ].includes(error.message)
       ) {
         return res.status(400).json({ error: error.message });
       }

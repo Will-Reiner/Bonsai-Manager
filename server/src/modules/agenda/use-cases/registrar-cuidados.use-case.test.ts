@@ -108,6 +108,18 @@ describe('RegistrarCuidadosUseCase', () => {
     ).rejects.toThrow('Informe ao menos um cuidado por planta.');
   });
 
+  it('lança erro com data no futuro (mais de 1 dia à frente)', async () => {
+    await expect(
+      useCase.execute({ ...base, data: new Date(AGORA.getTime() + 2 * DIA).toISOString() }, 'user-1'),
+    ).rejects.toThrow('A data não pode ser no futuro.');
+    expect(repo.registrar).not.toHaveBeenCalled();
+  });
+
+  it('aceita data até 1 dia à frente (fuso do aparelho)', async () => {
+    await useCase.execute({ ...base, data: new Date(AGORA.getTime() + 20 * 3_600_000).toISOString() }, 'user-1');
+    expect(repo.registrar).toHaveBeenCalled();
+  });
+
   it('lança erro com atividade inexistente', async () => {
     repo.atividadesExistem.mockResolvedValue(false);
 
