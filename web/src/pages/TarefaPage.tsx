@@ -82,6 +82,25 @@ export function TarefaPage() {
           {rotuloStatus} · {dataRelativa(dataStatus)} ({dataLonga(dataStatus)})
         </p>
 
+        {!!agenda.fotos?.length && (
+          <>
+            <h2 className="mb-2.5 mt-6 text-xs font-semibold uppercase tracking-wider text-muted">
+              Fotos do cuidado · {agenda.fotos.length}
+            </h2>
+            <div className="grid grid-cols-3 gap-1.5">
+              {agenda.fotos.map((f) => (
+                <Link
+                  key={f.id}
+                  to={`/plantas/${agenda.plantaId}/galeria?foto=${f.id}`}
+                  className="aspect-square overflow-hidden rounded-xl bg-primary-light"
+                >
+                  <img src={f.caminhoArquivo} alt="" loading="lazy" className="size-full object-cover" />
+                </Link>
+              ))}
+            </div>
+          </>
+        )}
+
         <h2 className="mb-2.5 mt-6 text-xs font-semibold uppercase tracking-wider text-muted">Histórico da planta</h2>
         <HistoricoPlanta agendas={daPlanta} atualId={agenda.id} />
 

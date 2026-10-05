@@ -2,6 +2,7 @@ import { useEffect, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 import { Button } from './ui';
+import { travarScroll } from '@/lib/scrollLock';
 
 interface SheetProps {
   open: boolean;
@@ -17,13 +18,11 @@ export function Sheet({ open, onClose, title, children, footer }: SheetProps) {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
     document.addEventListener('keydown', onKey);
-    const overflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    return () => {
-      document.removeEventListener('keydown', onKey);
-      document.body.style.overflow = overflow;
-    };
+    return () => document.removeEventListener('keydown', onKey);
   }, [open, onClose]);
+
+  // Separado do Escape: `onClose` costuma mudar a cada render e não deve re-travar o scroll
+  useEffect(() => (open ? travarScroll() : undefined), [open]);
 
   if (!open) return null;
 

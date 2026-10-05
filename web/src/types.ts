@@ -86,6 +86,8 @@ export interface Foto {
   tipo: TipoMidia;
   descricao?: string | null;
   dataCaptura?: string | null;
+  /** Cuidado em que a foto foi registrada (conclusão de tarefa). */
+  agendaId?: string | null;
 }
 
 export interface TipoRecurso {

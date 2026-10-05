@@ -10,6 +10,7 @@ import { errorMessage } from '@/lib/api';
 import { fotosApi, plantasApi } from '@/lib/endpoints';
 import { dataNumerica, plantaTitulo } from '@/lib/format';
 import { dataDaFoto, fotosOrdenadas } from '@/lib/linhaDoTempo';
+import { travarScroll } from '@/lib/scrollLock';
 import { keys, useFotos, usePlanta } from '@/lib/queries';
 import type { Foto } from '@/types';
 
@@ -149,13 +150,10 @@ function Visualizador({
       if (e.key === 'ArrowLeft') irPara(vistoRef.current - 1);
     };
     document.addEventListener('keydown', onKey);
-    const overflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    return () => {
-      document.removeEventListener('keydown', onKey);
-      document.body.style.overflow = overflow;
-    };
+    return () => document.removeEventListener('keydown', onKey);
   });
+
+  useEffect(() => travarScroll(), []);
 
   function onScroll() {
     const box = boxRef.current;
@@ -188,6 +186,7 @@ function Visualizador({
       if (vizinha) onTrocar(vizinha);
       else onFechar();
       queryClient.invalidateQueries({ queryKey: keys.fotos(plantaId) });
+      if (atual.agendaId) queryClient.invalidateQueries({ queryKey: keys.agendas });
       // Se era a capa, o servidor promove a foto mais recente
       if (ehCapa) queryClient.invalidateQueries({ queryKey: keys.plantas });
       toast('Foto excluída');
