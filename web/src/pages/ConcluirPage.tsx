@@ -3,12 +3,13 @@ import { useNavigate, useSearchParams } from 'react-router';
 import { useQueryClient } from '@tanstack/react-query';
 import { Check, ChevronDown, Plus, X } from 'lucide-react';
 import { Button, EmptyState, ErrorState, Field, PageHeader, PlantThumb, Spinner } from '@/components/ui';
+import { ProximosPassos, type Proximo } from '@/components/care/ProximosPassos';
 import { PhotoInput } from '@/components/PhotoInput';
 import { useToast } from '@/context/ToastContext';
 import { errorMessage } from '@/lib/api';
 import { agendasApi } from '@/lib/endpoints';
-import { daquiADias, fromDateInput, plantaRotulo, toDateInput } from '@/lib/format';
-import { keys, useAgendas, useAtividadesOrdenadas, useRevisaoDias } from '@/lib/queries';
+import { fromDateInput, plantaRotulo, toDateInput } from '@/lib/format';
+import { keys, useAgendas, useAtividadesOrdenadas } from '@/lib/queries';
 import { uploadImage } from '@/lib/upload';
 
 interface Ajuste {
@@ -16,17 +17,6 @@ interface Ajuste {
   observacaoFutura: string;
   foto: File | null;
 }
-
-interface Proximo {
-  atividadeId: string;
-  data: string; // AAAA-MM-DD
-}
-
-const ATALHOS = [
-  { label: '+1 sem', dias: 7 },
-  { label: '+2 sem', dias: 14 },
-  { label: '+1 mês', dias: 30 },
-];
 
 const AJUSTE_VAZIO: Ajuste = { detalhes: '', observacaoFutura: '', foto: null };
 
@@ -38,7 +28,6 @@ export function ConcluirPage() {
   const toast = useToast();
   const agendas = useAgendas();
   const atividades = useAtividadesOrdenadas();
-  const revisaoDias = useRevisaoDias();
 
   const ids = useMemo(() => (params.get('ids') ?? '').split(',').filter(Boolean), [params]);
   const tarefas = useMemo(
@@ -322,79 +311,7 @@ export function ConcluirPage() {
           aspect="aspect-[16/9]"
         />
 
-        {/* Próximos passos */}
-        <section>
-          <span className="label">Próximos passos</span>
-          <div className="space-y-3">
-            {proximos.map((p, i) => (
-              <div key={i} className="card space-y-2 p-3">
-                <div className="flex items-center gap-2">
-                  <select
-                    className="input flex-1"
-                    value={p.atividadeId}
-                    onChange={(e) =>
-                      setProximos((ps) => ps.map((x, j) => (j === i ? { ...x, atividadeId: e.target.value } : x)))
-                    }
-                  >
-                    <option value="" disabled>
-                      Tipo de cuidado
-                    </option>
-                    {atividades.data.map((a) => (
-                      <option key={a.id} value={a.id}>
-                        {a.nome}
-                      </option>
-                    ))}
-                  </select>
-                  <button
-                    type="button"
-                    onClick={() => setProximos((ps) => ps.filter((_, j) => j !== i))}
-                    className="flex size-10 items-center justify-center rounded-full text-muted hover:bg-line/50"
-                    aria-label="Remover próximo passo"
-                  >
-                    <X size={18} />
-                  </button>
-                </div>
-                <div className="flex flex-wrap items-center gap-2">
-                  <input
-                    type="date"
-                    className="input w-auto"
-                    value={p.data}
-                    min={toDateInput()}
-                    onChange={(e) => setProximos((ps) => ps.map((x, j) => (j === i ? { ...x, data: e.target.value } : x)))}
-                  />
-                  {ATALHOS.map((at) => (
-                    <button
-                      type="button"
-                      key={at.label}
-                      className="chip"
-                      onClick={() =>
-                        setProximos((ps) =>
-                          ps.map((x, j) => (j === i ? { ...x, data: toDateInput(daquiADias(at.dias)) } : x)),
-                        )
-                      }
-                    >
-                      {at.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            ))}
-            <Button
-              variant="secondary"
-              size="sm"
-              type="button"
-              onClick={() => setProximos((ps) => [...ps, { atividadeId: '', data: toDateInput(daquiADias(7)) }])}
-            >
-              <Plus size={16} /> Agendar próximo passo
-            </Button>
-            {proximos.length === 0 && revisaoDias > 0 && (
-              <p className="text-xs text-muted">
-                Sem próximos passos, será criada uma Revisão geral em {revisaoDias} dias (se a planta não tiver outra
-                tarefa próxima).
-              </p>
-            )}
-          </div>
-        </section>
+        <ProximosPassos value={proximos} onChange={setProximos} />
       </div>
 
       <div className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-white/95 px-4 pb-safe pt-3 backdrop-blur">
