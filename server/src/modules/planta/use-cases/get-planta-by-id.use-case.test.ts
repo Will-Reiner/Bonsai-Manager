@@ -14,6 +14,7 @@ describe('GetPlantaByIdUseCase', () => {
       update: jest.fn(),
       delete: jest.fn(),
       existsByIdAndUser: jest.fn(),
+      findUrlsDeMidia: jest.fn(),
     };
 
     getPlantaByIdUseCase = new GetPlantaByIdUseCase(mockPlantaRepository);

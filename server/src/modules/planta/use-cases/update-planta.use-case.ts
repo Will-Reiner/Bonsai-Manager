@@ -1,9 +1,11 @@
 import { UpdatePlantaRequestDTO, UpdatePlantaDTO, PlantaWithEspecie, PlantaRepository, EspecieRepository } from '../types/planta.types';
+import { LimpezaDeMidia } from '../../midia/midia.types';
 
 export class UpdatePlantaUseCase {
   constructor(
     private plantaRepository: PlantaRepository,
-    private especieRepository: EspecieRepository
+    private especieRepository: EspecieRepository,
+    private limpezaDeMidia: LimpezaDeMidia,
   ) {}
 
   async execute(id: string, usuarioId: string, data: UpdatePlantaRequestDTO): Promise<PlantaWithEspecie> {
@@ -27,7 +29,19 @@ export class UpdatePlantaUseCase {
       dataAquisicao: data.dataAquisicao ? new Date(data.dataAquisicao) : undefined,
     };
 
+    // Capa atual, para remover do storage se for substituída
+    const capaAnterior =
+      data.fotoCapaUrl !== undefined
+        ? (await this.plantaRepository.findByIdAndUser(id, usuarioId))?.fotoCapaUrl
+        : null;
+
     // Atualizar a planta
-    return await this.plantaRepository.update(id, usuarioId, updateData);
+    const planta = await this.plantaRepository.update(id, usuarioId, updateData);
+
+    if (capaAnterior && capaAnterior !== data.fotoCapaUrl) {
+      await this.limpezaDeMidia.execute([capaAnterior]);
+    }
+
+    return planta;
   }
 }

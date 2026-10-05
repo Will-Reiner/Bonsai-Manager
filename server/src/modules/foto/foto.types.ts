@@ -24,4 +24,8 @@ export interface FotoRepository {
   delete(id: string): Promise<void>;
   existsByIdAndUser(id: string, usuarioId: string): Promise<boolean>;
   checkPlantaBelongsToUser(plantaId: string, usuarioId: string): Promise<boolean>;
+  findCapaDaPlanta(plantaId: string): Promise<string | null>;
+  /** URL da foto (tipo FOTO) mais recente da galeria, pela data de captura. */
+  findFotoMaisRecente(plantaId: string): Promise<string | null>;
+  updateCapaDaPlanta(plantaId: string, fotoCapaUrl: string | null): Promise<void>;
 }

@@ -79,6 +79,8 @@ export interface PlantaRepository {
   update(id: string, usuarioId: string, data: UpdatePlantaDTO): Promise<PlantaWithEspecie>;
   delete(id: string, usuarioId: string): Promise<void>;
   existsByIdAndUser(id: string, usuarioId: string): Promise<boolean>;
+  /** URLs de mídia da planta: capa + arquivos e thumbnails da galeria. */
+  findUrlsDeMidia(id: string): Promise<string[]>;
 }
 
 export interface EspecieRepository {

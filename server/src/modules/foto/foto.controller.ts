@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { createFotoSchema, updateFotoSchema, fotoIdSchema, plantaIdSchema } from './foto.schema';
 import { PrismaFotoRepository } from './repositories/prisma-foto.repository';
+import { criarLimpezaDeMidia } from '../midia/limpeza-de-midia';
 import {
   CreateFotoUseCase,
   GetFotosByPlantaUseCase,
@@ -22,7 +23,7 @@ export class FotoController {
     this.getFotosByPlantaUseCase = new GetFotosByPlantaUseCase(fotoRepository);
     this.getFotoByIdUseCase = new GetFotoByIdUseCase(fotoRepository);
     this.updateFotoUseCase = new UpdateFotoUseCase(fotoRepository);
-    this.deleteFotoUseCase = new DeleteFotoUseCase(fotoRepository);
+    this.deleteFotoUseCase = new DeleteFotoUseCase(fotoRepository, criarLimpezaDeMidia());
   }
 
   async create(req: Request, res: Response) {

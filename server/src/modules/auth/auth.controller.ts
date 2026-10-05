@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { prisma } from '../../lib/prisma';
 import { registerSchema, loginSchema, updateUserSchema } from './auth.schema';
 import { RegisterUseCase, LoginUseCase, GetMeUseCase, UpdateMeUseCase } from './use-cases';
+import { criarLimpezaDeMidia } from '../midia/limpeza-de-midia';
 import { PrismaAuthRepository } from './repositories/prisma-auth.repository';
 import { BcryptPasswordService } from './services/password.service';
 import { JwtTokenService } from './services/token.service';
@@ -15,7 +16,7 @@ const tokenService = new JwtTokenService();
 const registerUseCase = new RegisterUseCase(authRepository, passwordService);
 const loginUseCase = new LoginUseCase(authRepository, passwordService, tokenService);
 const getMeUseCase = new GetMeUseCase(authRepository);
-const updateMeUseCase = new UpdateMeUseCase(authRepository);
+const updateMeUseCase = new UpdateMeUseCase(authRepository, criarLimpezaDeMidia());
 
 export const authController = {
   register: async (req: Request, res: Response) => {

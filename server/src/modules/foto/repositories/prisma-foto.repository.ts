@@ -52,4 +52,28 @@ export class PrismaFotoRepository implements FotoRepository {
     });
     return !!planta;
   }
+
+  async findCapaDaPlanta(plantaId: string): Promise<string | null> {
+    const planta = await prisma.planta.findUnique({
+      where: { id: plantaId },
+      select: { fotoCapaUrl: true },
+    });
+    return planta?.fotoCapaUrl ?? null;
+  }
+
+  async findFotoMaisRecente(plantaId: string): Promise<string | null> {
+    const foto = await prisma.foto.findFirst({
+      where: { plantaId, tipo: 'FOTO' },
+      orderBy: [{ dataCaptura: { sort: 'desc', nulls: 'last' } }, { createdAt: 'desc' }],
+      select: { caminhoArquivo: true },
+    });
+    return foto?.caminhoArquivo ?? null;
+  }
+
+  async updateCapaDaPlanta(plantaId: string, fotoCapaUrl: string | null): Promise<void> {
+    await prisma.planta.update({
+      where: { id: plantaId },
+      data: { fotoCapaUrl },
+    });
+  }
 }

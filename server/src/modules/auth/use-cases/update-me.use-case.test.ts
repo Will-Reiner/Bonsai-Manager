@@ -1,9 +1,11 @@
 import { UpdateMeUseCase } from './update-me.use-case';
-import { AuthRepository, UpdateMeDTO, UserResponseDTO } from '../types/auth.types';
+import { AuthRepository, GetMeResponseDTO, UpdateMeDTO, UserResponseDTO } from '../types/auth.types';
+import { LimpezaDeMidia } from '../../midia/midia.types';
 
 describe('UpdateMeUseCase', () => {
   let useCase: UpdateMeUseCase;
   let mockAuthRepository: jest.Mocked<AuthRepository>;
+  let mockLimpeza: jest.Mocked<LimpezaDeMidia>;
 
   beforeEach(() => {
     mockAuthRepository = {
@@ -12,7 +14,8 @@ describe('UpdateMeUseCase', () => {
       findUserById: jest.fn(),
       updateUser: jest.fn(),
     };
-    useCase = new UpdateMeUseCase(mockAuthRepository);
+    mockLimpeza = { execute: jest.fn().mockResolvedValue(undefined) };
+    useCase = new UpdateMeUseCase(mockAuthRepository, mockLimpeza);
   });
 
   describe('execute', () => {
@@ -210,6 +213,67 @@ describe('UpdateMeUseCase', () => {
 
       // Act & Assert
       await expect(useCase.execute(updateData)).rejects.toThrow('Erro ao atualizar dados do utilizador.');
+    });
+  });
+  describe('troca de foto de perfil', () => {
+    const usuario = (fotoPerfilUrl: string | null) =>
+      ({ id: '1', nome: 'João', fotoPerfilUrl, seguindo: [], seguidores: [], plantas: [] }) as unknown as GetMeResponseDTO;
+
+    beforeEach(() => {
+      mockAuthRepository.updateUser.mockResolvedValue(usuario('https://cdn/nova.webp'));
+    });
+
+    it('deve enviar a foto de perfil antiga para a limpeza depois de atualizar', async () => {
+      // Arrange
+      const ordem: string[] = [];
+      mockAuthRepository.findUserById.mockResolvedValue(usuario('https://cdn/antiga.webp'));
+      mockAuthRepository.updateUser.mockImplementation(async () => {
+        ordem.push('update');
+        return usuario('https://cdn/nova.webp');
+      });
+      mockLimpeza.execute.mockImplementation(async () => {
+        ordem.push('limpeza');
+      });
+
+      // Act
+      await useCase.execute({ userId: '1', fotoPerfilUrl: 'https://cdn/nova.webp' });
+
+      // Assert
+      expect(mockLimpeza.execute).toHaveBeenCalledWith(['https://cdn/antiga.webp']);
+      expect(ordem).toEqual(['update', 'limpeza']);
+    });
+
+    it('não deve limpar nada quando a foto de perfil não muda', async () => {
+      // Arrange
+      mockAuthRepository.findUserById.mockResolvedValue(usuario('https://cdn/nova.webp'));
+
+      // Act
+      await useCase.execute({ userId: '1', fotoPerfilUrl: 'https://cdn/nova.webp' });
+
+      // Assert
+      expect(mockLimpeza.execute).not.toHaveBeenCalled();
+    });
+
+    it('não deve limpar nada quando a foto de perfil não está na atualização', async () => {
+      // Arrange
+      mockAuthRepository.findUserById.mockResolvedValue(usuario('https://cdn/antiga.webp'));
+
+      // Act
+      await useCase.execute({ userId: '1', nome: 'Outro nome' });
+
+      // Assert
+      expect(mockLimpeza.execute).not.toHaveBeenCalled();
+    });
+
+    it('não deve limpar nada quando o usuário não tinha foto de perfil', async () => {
+      // Arrange
+      mockAuthRepository.findUserById.mockResolvedValue(usuario(null));
+
+      // Act
+      await useCase.execute({ userId: '1', fotoPerfilUrl: 'https://cdn/nova.webp' });
+
+      // Assert
+      expect(mockLimpeza.execute).not.toHaveBeenCalled();
     });
   });
 });
