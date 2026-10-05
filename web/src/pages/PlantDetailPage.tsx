@@ -11,7 +11,7 @@ import { errorMessage } from '@/lib/api';
 import { fotosApi, plantasApi } from '@/lib/endpoints';
 import { dataCurta, dataLonga, dataRelativa, diasAte, especieNome, modoAquisicaoLabel, plantaTitulo, tempoDesde } from '@/lib/format';
 import { keys, useAgendas, useFotos, usePlanta } from '@/lib/queries';
-import { uploadImage } from '@/lib/upload';
+import { dataCapturaDe, uploadImage } from '@/lib/upload';
 import type { Agenda, Foto, Planta } from '@/types';
 
 const ABAS = ['Visão geral', 'Histórico', 'Galeria', 'Cuidados'] as const;
@@ -196,12 +196,11 @@ function Galeria({ planta }: { planta: Planta }) {
     let ok = 0;
     for (const [i, file] of lista.entries()) {
       try {
-        const url = await uploadImage(file, (pct) => setEnvios((e) => e.map((x, j) => (j === i ? { ...x, pct } : x))));
-        await fotosApi.create({
-          caminhoArquivo: url,
-          plantaId: planta.id,
-          dataCaptura: new Date(file.lastModified || Date.now()).toISOString(),
-        });
+        const [url, dataCaptura] = await Promise.all([
+          uploadImage(file, (pct) => setEnvios((e) => e.map((x, j) => (j === i ? { ...x, pct } : x)))),
+          dataCapturaDe(file),
+        ]);
+        await fotosApi.create({ caminhoArquivo: url, plantaId: planta.id, dataCaptura });
         ok++;
       } catch (error) {
         toast(`${file.name}: ${errorMessage(error)}`, 'error');

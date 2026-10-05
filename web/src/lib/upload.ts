@@ -3,6 +3,23 @@ import { midiaApi } from './endpoints';
 const MAX_DIMENSION = 1600;
 const QUALITY = 0.82;
 
+/**
+ * Data em que a foto foi tirada (EXIF DateTimeOriginal), lida do arquivo original — a compressão
+ * via canvas descarta o EXIF. Fotos vindas do Google Fotos/galeria chegam com `lastModified` = hoje,
+ * então ele só serve de fallback. Retorna ISO string.
+ */
+export async function dataCapturaDe(file: File): Promise<string> {
+  try {
+    const { default: exifr } = await import('exifr');
+    const exif = await exifr.parse(file, ['DateTimeOriginal', 'CreateDate', 'ModifyDate']);
+    const data = exif?.DateTimeOriginal ?? exif?.CreateDate ?? exif?.ModifyDate;
+    if (data instanceof Date && !Number.isNaN(data.getTime())) return data.toISOString();
+  } catch {
+    // sem EXIF ou formato não suportado — usa o fallback
+  }
+  return new Date(file.lastModified || Date.now()).toISOString();
+}
+
 /** Redimensiona a imagem no navegador (lado maior ≤ 1600px) e converte para WebP/JPEG. */
 export async function compressImage(file: File): Promise<File> {
   if (!file.type.startsWith('image/') || file.type === 'image/gif') return file;
