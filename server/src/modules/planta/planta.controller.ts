@@ -40,6 +40,10 @@ export const plantaController = {
       if (error.message === 'Espécie não encontrada') {
         return res.status(404).json({ message: error.message });
       }
+      // Violação de unicidade (usuarioId + identificador)
+      if (error?.code === 'P2002') {
+        return res.status(409).json({ error: 'Já existe uma planta com esse código.' });
+      }
       return res.status(400).json({ error: error.message || 'Erro ao criar planta' });
     }
   },
