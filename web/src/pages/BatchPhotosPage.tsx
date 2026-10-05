@@ -8,7 +8,7 @@ import { useToast } from '@/context/ToastContext';
 import { fotosApi } from '@/lib/endpoints';
 import { especieNome, plantaTitulo } from '@/lib/format';
 import { keys, usePlantas } from '@/lib/queries';
-import { uploadImage } from '@/lib/upload';
+import { dataCapturaDe, uploadImage } from '@/lib/upload';
 import type { Planta } from '@/types';
 
 /** Limite por lote: memória do celular (Safari iOS derruba a aba com muitas imagens) e trabalho perdido se fechar. */
@@ -20,6 +20,7 @@ interface Item {
   file: File;
   upload: 'fila' | 'enviando' | 'ok' | 'erro';
   url?: string;
+  dataCaptura?: string;
   /** undefined = ainda não triada · null = pulada */
   plantaId?: string | null;
   registro?: 'ok' | 'erro';
@@ -82,8 +83,8 @@ export function BatchPhotosPage() {
     for (const item of proximos) {
       iniciados.current.add(item.key);
       atualizar(item.key, { upload: 'enviando' });
-      uploadImage(item.file)
-        .then((url) => atualizar(item.key, { upload: 'ok', url }))
+      Promise.all([uploadImage(item.file), dataCapturaDe(item.file)])
+        .then(([url, dataCaptura]) => atualizar(item.key, { upload: 'ok', url, dataCaptura }))
         .catch(() => atualizar(item.key, { upload: 'erro' }));
     }
   }, [items]);
@@ -106,7 +107,7 @@ export function BatchPhotosPage() {
           .create({
             caminhoArquivo: i.url!,
             plantaId: i.plantaId,
-            dataCaptura: new Date(i.file.lastModified).toISOString(),
+            dataCaptura: i.dataCaptura,
           })
           .then(() => ({ key: i.key, ok: true }))
           .catch(() => ({ key: i.key, ok: false })),
