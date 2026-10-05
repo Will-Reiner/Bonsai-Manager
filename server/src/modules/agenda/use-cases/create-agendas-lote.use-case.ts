@@ -19,6 +19,9 @@ export class CreateAgendasLoteUseCase {
     if (doUsuario !== plantaIds.length) {
       throw new Error('Acesso negado. A planta não pertence a si.');
     }
+    if (!(await this.agendaRepository.atividadesExistem(atividadeIds))) {
+      throw new Error('Atividade não encontrada.');
+    }
 
     const detalhes = data.detalhes?.trim() || undefined;
     return await this.agendaRepository.createMany(

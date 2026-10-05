@@ -17,6 +17,7 @@ describe('CreateAgendasLoteUseCase', () => {
       existsByIdAndUser: jest.fn(),
       checkPlantaBelongsToUser: jest.fn(),
       contarPlantasDoUsuario: jest.fn(),
+      atividadesExistem: jest.fn().mockResolvedValue(true),
     };
     useCase = new CreateAgendasLoteUseCase(repo);
   });
@@ -82,6 +83,17 @@ describe('CreateAgendasLoteUseCase', () => {
     await expect(
       useCase.execute({ plantaIds: ['p1', 'p2'], atividadeIds: ['at-1'], dataAgendada }, 'user-1'),
     ).rejects.toThrow('Acesso negado. A planta não pertence a si.');
+    expect(repo.createMany).not.toHaveBeenCalled();
+  });
+
+  it('lança erro quando alguma atividade não existe', async () => {
+    repo.contarPlantasDoUsuario.mockResolvedValue(1);
+    repo.atividadesExistem.mockResolvedValue(false);
+
+    await expect(
+      useCase.execute({ plantaIds: ['p1'], atividadeIds: ['at-1', 'at-x', 'at-1'], dataAgendada }, 'user-1'),
+    ).rejects.toThrow('Atividade não encontrada.');
+    expect(repo.atividadesExistem).toHaveBeenCalledWith(['at-1', 'at-x']);
     expect(repo.createMany).not.toHaveBeenCalled();
   });
 

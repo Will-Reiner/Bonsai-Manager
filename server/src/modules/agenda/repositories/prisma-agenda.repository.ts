@@ -92,6 +92,11 @@ export class PrismaAgendaRepository implements AgendaRepository {
     return prisma.planta.count({ where: { id: { in: plantaIds }, usuarioId } });
   }
 
+  async atividadesExistem(ids: string[]): Promise<boolean> {
+    const total = await prisma.atividade.count({ where: { id: { in: ids } } });
+    return total === ids.length;
+  }
+
   async checkPlantaBelongsToUser(plantaId: string, usuarioId: string): Promise<boolean> {
     const planta = await prisma.planta.findFirst({
       where: { id: plantaId, usuarioId },

@@ -42,6 +42,8 @@ export interface AgendaRepository {
   checkPlantaBelongsToUser(plantaId: string, usuarioId: string): Promise<boolean>;
   /** Quantas das plantas informadas são do usuário. */
   contarPlantasDoUsuario(plantaIds: string[], usuarioId: string): Promise<number>;
+  /** true se todas as atividades informadas (sem repetição) existem. */
+  atividadesExistem(ids: string[]): Promise<boolean>;
 }
 
 export const ATIVIDADE_REVISAO = 'Revisão geral';

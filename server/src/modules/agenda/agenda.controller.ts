@@ -104,6 +104,7 @@ export class AgendaController {
         'Informe ao menos um cuidado.',
         'Informe ao menos uma planta.',
         'Máximo de 2000 tarefas por vez.',
+        'Atividade não encontrada.',
       ];
       if (error instanceof Error && MENSAGENS_400.includes(error.message)) {
         return res.status(400).json({ error: error.message });
