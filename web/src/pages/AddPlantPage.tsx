@@ -1,19 +1,35 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { useQueryClient } from '@tanstack/react-query';
-import { CheckCircle2 } from 'lucide-react';
+import { Check, CheckCircle2, ImagePlus, X } from 'lucide-react';
 import { Button, Field, PageHeader } from '@/components/ui';
 import { PhotoInput } from '@/components/PhotoInput';
 import { SpeciesPicker } from '@/components/SpeciesPicker';
 import { useToast } from '@/context/ToastContext';
 import { errorMessage } from '@/lib/api';
-import { plantasApi } from '@/lib/endpoints';
+import { fotosApi, plantasApi } from '@/lib/endpoints';
 import { especieNome, fromDateInput, plantaTitulo, toDateInput } from '@/lib/format';
 import { keys, useEspecies } from '@/lib/queries';
-import { uploadImage } from '@/lib/upload';
+import { dataCapturaDe, uploadImage } from '@/lib/upload';
 import { MODOS_AQUISICAO, type ModoAquisicao, type Planta } from '@/types';
 
-const PASSOS = ['Espécie', 'Identidade', 'Aquisição', 'Foto'];
+const PASSOS = ['Espécie', 'Identidade', 'Aquisição', 'Fotos', 'Capa'];
+const MAX_FOTOS = 20;
+const CONCORRENCIA = 3;
+
+/** Executa `fn` para cada item com no máximo `limite` em paralelo, preservando a ordem do resultado. */
+async function emParalelo<T, R>(itens: T[], limite: number, fn: (item: T) => Promise<R>): Promise<R[]> {
+  const resultado: R[] = new Array(itens.length);
+  let proximo = 0;
+  const trabalhador = async () => {
+    while (proximo < itens.length) {
+      const i = proximo++;
+      resultado[i] = await fn(itens[i]);
+    }
+  };
+  await Promise.all(Array.from({ length: Math.min(limite, itens.length) }, trabalhador));
+  return resultado;
+}
 
 /** Cadastro em passos curtos — só a espécie é obrigatória (UX_FRONTEND.md §4.4). */
 export function AddPlantPage() {
@@ -28,8 +44,13 @@ export function AddPlantPage() {
   const [identificador, setIdentificador] = useState('');
   const [dataAquisicao, setDataAquisicao] = useState('');
   const [modo, setModo] = useState<ModoAquisicao | ''>('');
+  /** Fotos da galeria — a capa é escolhida entre elas no passo seguinte. */
+  const [fotos, setFotos] = useState<File[]>([]);
+  const [capaIndice, setCapaIndice] = useState(0);
+  /** Capa avulsa, usada só quando nenhuma foto foi adicionada. */
   const [foto, setFoto] = useState<File | null>(null);
   const [progresso, setProgresso] = useState<number | null>(null);
+  const [enviadas, setEnviadas] = useState<number | null>(null);
   const [salvando, setSalvando] = useState(false);
   const [criada, setCriada] = useState<Planta | null>(null);
 
@@ -43,6 +64,8 @@ export function AddPlantPage() {
     setIdentificador('');
     setDataAquisicao('');
     setModo('');
+    setFotos([]);
+    setCapaIndice(0);
     setFoto(null);
     setCriada(null);
   }
@@ -50,7 +73,19 @@ export function AddPlantPage() {
   async function salvar() {
     setSalvando(true);
     try {
-      const fotoCapaUrl = foto ? await uploadImage(foto, setProgresso) : undefined;
+      let fotoCapaUrl: string | undefined;
+      let galeria: { url: string; dataCaptura: string }[] = [];
+      if (fotos.length) {
+        setEnviadas(0);
+        galeria = await emParalelo(fotos, CONCORRENCIA, async (file) => {
+          const [url, { data: dataCaptura }] = await Promise.all([uploadImage(file), dataCapturaDe(file)]);
+          setEnviadas((n) => (n ?? 0) + 1);
+          return { url, dataCaptura };
+        });
+        fotoCapaUrl = galeria[capaIndice]?.url;
+      } else if (foto) {
+        fotoCapaUrl = await uploadImage(foto, setProgresso);
+      }
       const planta = await plantasApi.create({
         especieId,
         nome: nome.trim() || undefined,
@@ -59,6 +94,14 @@ export function AddPlantPage() {
         modoAquisicao: modo || null,
         fotoCapaUrl,
       });
+      if (galeria.length) {
+        const resultados = await Promise.allSettled(
+          galeria.map((g) => fotosApi.create({ caminhoArquivo: g.url, plantaId: planta.id, dataCaptura: g.dataCaptura })),
+        );
+        const falhas = resultados.filter((r) => r.status === 'rejected').length;
+        if (falhas) toast(`${falhas} foto(s) não foram salvas na galeria.`, 'error');
+        queryClient.invalidateQueries({ queryKey: keys.fotos(planta.id) });
+      }
       queryClient.invalidateQueries({ queryKey: keys.plantas });
       setCriada(planta);
     } catch (error) {
@@ -66,7 +109,23 @@ export function AddPlantPage() {
     } finally {
       setSalvando(false);
       setProgresso(null);
+      setEnviadas(null);
     }
+  }
+
+  function adicionarFotos(files: FileList | null) {
+    const novas = [...(files ?? [])].filter((f) => f.type.startsWith('image/'));
+    if (!novas.length) return;
+    const total = [...fotos, ...novas];
+    if (total.length > MAX_FOTOS) toast(`Máximo de ${MAX_FOTOS} fotos no cadastro — usando as primeiras.`, 'error');
+    setFotos(total.slice(0, MAX_FOTOS));
+  }
+
+  function removerFoto(i: number) {
+    setFotos(fotos.filter((_, j) => j !== i));
+    // Mantém a capa apontando para a mesma foto (ou volta para a primeira se ela foi removida)
+    if (i === capaIndice) setCapaIndice(0);
+    else if (i < capaIndice) setCapaIndice(capaIndice - 1);
   }
 
   if (criada) {
@@ -151,9 +210,43 @@ export function AddPlantPage() {
 
         {passo === 3 && (
           <section>
+            <h2 className="mb-1 text-2xl font-semibold">Fotos da planta</h2>
+            <p className="mb-4 text-sm text-muted">Vão para a galeria dela. No próximo passo você escolhe a capa. Dá para pular.</p>
+            <SeletorFotos fotos={fotos} onAdd={adicionarFotos} onRemove={removerFoto} />
+          </section>
+        )}
+
+        {passo === 4 && (
+          <section>
             <h2 className="mb-1 text-2xl font-semibold">Uma foto de capa</h2>
-            <p className="mb-4 text-sm text-muted">Fica mais fácil reconhecer na coleção. Dá para pular.</p>
-            <PhotoInput file={foto} onChange={setFoto} label="Tirar ou escolher foto" aspect="aspect-square" />
+            {fotos.length ? (
+              <>
+                <p className="mb-4 text-sm text-muted">Toque na foto que vai aparecer na coleção.</p>
+                <div className="grid grid-cols-3 gap-2">
+                  {fotos.map((f, i) => (
+                    <button
+                      key={`${i}-${f.name}-${f.lastModified}`}
+                      type="button"
+                      onClick={() => setCapaIndice(i)}
+                      aria-pressed={i === capaIndice}
+                      className={`relative aspect-square overflow-hidden rounded-xl ring-offset-2 ring-offset-bg ${i === capaIndice ? 'ring-3 ring-primary' : ''}`}
+                    >
+                      <FilePreview file={f} className="size-full object-cover" />
+                      {i === capaIndice && (
+                        <span className="absolute right-1.5 top-1.5 flex size-6 items-center justify-center rounded-full bg-primary text-white">
+                          <Check size={14} />
+                        </span>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </>
+            ) : (
+              <>
+                <p className="mb-4 text-sm text-muted">Fica mais fácil reconhecer na coleção. Dá para pular.</p>
+                <PhotoInput file={foto} onChange={setFoto} label="Tirar ou escolher foto" aspect="aspect-square" />
+              </>
+            )}
           </section>
         )}
       </div>
@@ -167,15 +260,70 @@ export function AddPlantPage() {
           )}
           {ultimo ? (
             <Button block onClick={salvar} loading={salvando}>
-              {progresso !== null ? `Enviando foto… ${progresso}%` : foto ? 'Salvar planta' : 'Salvar sem foto'}
+              {enviadas !== null
+                ? `Enviando fotos… ${enviadas}/${fotos.length}`
+                : progresso !== null
+                  ? `Enviando foto… ${progresso}%`
+                  : fotos.length || foto
+                    ? 'Salvar planta'
+                    : 'Salvar sem foto'}
             </Button>
           ) : (
             <Button block onClick={() => setPasso(passo + 1)} disabled={passo === 0 && !especieId}>
-              {passo === 0 ? 'Continuar' : 'Próximo'}
+              {passo === 0 ? 'Continuar' : passo === 3 && !fotos.length ? 'Pular' : 'Próximo'}
             </Button>
           )}
         </div>
       </div>
     </div>
   );
+}
+
+function SeletorFotos({ fotos, onAdd, onRemove }: { fotos: File[]; onAdd: (files: FileList | null) => void; onRemove: (i: number) => void }) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  return (
+    <div className="grid grid-cols-3 gap-2">
+      {fotos.map((f, i) => (
+        <div key={`${i}-${f.name}-${f.lastModified}`} className="relative aspect-square overflow-hidden rounded-xl">
+          <FilePreview file={f} className="size-full object-cover" />
+          <button
+            type="button"
+            onClick={() => onRemove(i)}
+            className="absolute right-1.5 top-1.5 flex size-7 items-center justify-center rounded-full bg-white/90 text-ink"
+            aria-label="Remover foto"
+          >
+            <X size={14} />
+          </button>
+        </div>
+      ))}
+      {fotos.length < MAX_FOTOS && (
+        <button
+          type="button"
+          onClick={() => inputRef.current?.click()}
+          className={`flex flex-col items-center justify-center gap-1.5 rounded-xl border-2 border-dashed border-line bg-white text-muted transition hover:border-primary hover:text-primary ${fotos.length ? 'aspect-square' : 'col-span-3 aspect-[4/3]'}`}
+        >
+          <ImagePlus size={fotos.length ? 22 : 28} />
+          <span className="text-sm font-medium">{fotos.length ? 'Mais fotos' : 'Tirar ou escolher fotos'}</span>
+        </button>
+      )}
+      <input
+        ref={inputRef}
+        type="file"
+        accept="image/*"
+        multiple
+        className="hidden"
+        onChange={(e) => {
+          onAdd(e.target.files);
+          e.target.value = '';
+        }}
+      />
+    </div>
+  );
+}
+
+/** Pré-visualização de um arquivo local. A URL blob vive enquanto o componente estiver montado. */
+function FilePreview({ file, className }: { file: File; className?: string }) {
+  const url = useMemo(() => URL.createObjectURL(file), [file]);
+  useEffect(() => () => URL.revokeObjectURL(url), [url]);
+  return <img src={url} alt="" className={className} />;
 }
