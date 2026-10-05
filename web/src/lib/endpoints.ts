@@ -52,6 +52,22 @@ export interface AgendaUpdate {
   observacaoFutura?: string;
 }
 
+export interface ConcluirInput {
+  dataConcluida: string;
+  atividadeId?: string;
+  detalhes?: string;
+  observacaoFutura?: string;
+  extras?: string[];
+  proximos?: { atividadeId: string; dataAgendada: string }[];
+  itens: { agendaId: string; detalhes?: string; observacaoFutura?: string; fotos?: string[] }[];
+}
+
+export interface ConcluirResultado {
+  concluidas: Agenda[];
+  criadas: Agenda[];
+  revisoes: Agenda[];
+}
+
 export const agendasApi = {
   list: () => data<Agenda[]>(api.get('/agendas')),
   create: (body: { plantaId: string; atividadeId: string; dataAgendada: string }) =>
@@ -71,6 +87,8 @@ export const agendasApi = {
       ...(body.detalhes ? { detalhes: body.detalhes } : {}),
     });
   },
+  /** Conclui uma ou várias tarefas (com extras, próximos passos e revisão automática). */
+  concluir: (body: ConcluirInput) => data<ConcluirResultado>(api.post('/agendas/concluir', body)),
 };
 
 export const fotosApi = {
@@ -115,4 +133,5 @@ export const tiposRecursoApi = {
 
 export const preferenciasApi = {
   get: () => data<Preferencias>(api.get('/preferencias')),
+  set: (chave: string, valor: string) => api.put(`/preferencias/${chave}`, { valor }),
 };

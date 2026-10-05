@@ -34,10 +34,20 @@ export const useAtividades = () =>
   useQuery({ queryKey: keys.atividades, queryFn: atividadesApi.list, staleTime: 5 * 60_000 });
 export const useTiposRecurso = () => useQuery({ queryKey: keys.tiposRecurso, queryFn: tiposRecursoApi.list });
 
+export const usePreferencias = () =>
+  useQuery({ queryKey: keys.preferencias, queryFn: preferenciasApi.get, staleTime: 5 * 60_000 });
+
+/** Dias da Revisão geral automática (padrão 30, 0 = desligada) — mesma regra do backend. */
+export function useRevisaoDias() {
+  const prefs = usePreferencias();
+  const dias = parseInt(prefs.data?.revisao_automatica_dias ?? '30', 10);
+  return Number.isNaN(dias) ? 30 : Math.max(0, dias);
+}
+
 /** Atividades ordenadas: as rastreadas nas preferências do usuário primeiro. */
 export function useAtividadesOrdenadas() {
   const atividades = useAtividades();
-  const prefs = useQuery({ queryKey: keys.preferencias, queryFn: preferenciasApi.get, staleTime: 5 * 60_000 });
+  const prefs = usePreferencias();
   let rastreadas: string[] = [];
   try {
     rastreadas = JSON.parse(prefs.data?.atividades_rastreadas || '[]');
