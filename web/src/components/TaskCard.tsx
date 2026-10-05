@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router';
-import { Check } from 'lucide-react';
+import { Check, StickyNote } from 'lucide-react';
 import { PlantThumb } from './ui';
 import { useCare } from '@/context/CareContext';
 import { dataRelativa, diasAte } from '@/lib/format';
@@ -21,6 +21,11 @@ export function TaskCard({ agenda, showPlanta = true }: { agenda: Agenda; showPl
             {showPlanta && <>{agenda.planta?.nome || agenda.planta?.especie?.nomeComum || 'Planta'} · </>}
             <span className={atrasada ? 'font-medium text-danger' : ''}>{dataRelativa(agenda.dataAgendada)}</span>
           </p>
+          {agenda.status === 'PENDENTE' && agenda.detalhes && (
+            <p className="mt-0.5 flex items-center gap-1 truncate text-xs text-primary-dark">
+              <StickyNote size={12} className="shrink-0" /> <span className="truncate">{agenda.detalhes}</span>
+            </p>
+          )}
         </div>
       </button>
       <button

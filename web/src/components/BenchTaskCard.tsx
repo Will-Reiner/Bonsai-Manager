@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router';
-import { Check } from 'lucide-react';
+import { Check, StickyNote } from 'lucide-react';
 import { PlantThumb } from './ui';
 import { useCare } from '@/context/CareContext';
 import { dataRelativa, diasAte, plantaRotulo } from '@/lib/format';
@@ -27,6 +27,11 @@ export function BenchTaskCard({ agenda }: { agenda: Agenda }) {
           <p className={`truncate text-xs ${atrasada ? 'font-medium text-danger' : 'text-muted'}`}>
             {dataRelativa(agenda.dataAgendada)}
           </p>
+          {agenda.detalhes && (
+            <p className="mt-0.5 flex items-center gap-1 truncate text-xs text-primary-dark">
+              <StickyNote size={12} className="shrink-0" /> <span className="truncate">{agenda.detalhes}</span>
+            </p>
+          )}
         </button>
         <button
           onClick={() => navigate(`/concluir?ids=${agenda.id}`)}

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
 import { useQueryClient } from '@tanstack/react-query';
-import { Ban, CalendarClock, Check, Trash2 } from 'lucide-react';
+import { Ban, CalendarClock, Check, StickyNote, Trash2 } from 'lucide-react';
 import { ConfirmSheet } from '@/components/Sheet';
 import { HistoricoPlanta } from '@/components/HistoricoPlanta';
 import { Button, EmptyState, ErrorState, PageHeader, PlantThumb, Spinner } from '@/components/ui';
@@ -81,6 +81,13 @@ export function TarefaPage() {
         <p className={`mt-4 text-sm ${atrasada ? 'font-medium text-danger' : 'text-muted'}`}>
           {rotuloStatus} · {dataRelativa(dataStatus)} ({dataLonga(dataStatus)})
         </p>
+
+        {pendente && agenda.detalhes && (
+          <div className="mt-4 flex gap-2.5 rounded-2xl bg-primary-light p-3 text-sm text-primary-dark">
+            <StickyNote size={18} className="mt-0.5 shrink-0" />
+            <p className="whitespace-pre-line">{agenda.detalhes}</p>
+          </div>
+        )}
 
         {!!agenda.fotos?.length && (
           <>

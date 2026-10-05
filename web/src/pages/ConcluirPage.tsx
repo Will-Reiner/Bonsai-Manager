@@ -176,6 +176,11 @@ export function ConcluirPage() {
                       {t.planta?.identificador && t.planta?.nome && (
                         <p className="truncate text-sm text-muted">{t.planta.nome}</p>
                       )}
+                      {t.detalhes && (
+                        <p className="truncate text-xs text-primary-dark" title={t.detalhes}>
+                          Obs.: {t.detalhes}
+                        </p>
+                      )}
                       {temAjuste && <p className="text-xs font-medium text-primary">Com ajuste próprio</p>}
                     </div>
                     <button
@@ -292,7 +297,7 @@ export function ConcluirPage() {
           <input type="date" className="input" value={data} max={toDateInput()} onChange={(e) => setData(e.target.value)} />
         </Field>
 
-        <Field label="Descrição (opcional)">
+        <Field label="Descrição (opcional)" hint="Se preencher, substitui a observação do agendamento.">
           <textarea
             className="input min-h-20"
             value={detalhes}
