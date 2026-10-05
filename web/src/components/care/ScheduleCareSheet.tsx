@@ -1,25 +1,18 @@
-import { useState, type FormEvent } from 'react';
+import { useMemo, useState, type FormEvent } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { Sheet } from '@/components/Sheet';
 import { Button, Field } from '@/components/ui';
-import { PlantaAtividadeFields } from './PlantaAtividadeFields';
+import { AtividadeChips } from './AtividadeChips';
+import { PlantasCampo } from './PlantasPicker';
 import { useToast } from '@/context/ToastContext';
 import { errorMessage } from '@/lib/api';
 import { agendasApi } from '@/lib/endpoints';
-import { fromDateInput, toDateInput } from '@/lib/format';
+import { atalhosDeData } from '@/lib/estacoes';
+import { daquiADias, dataNumerica, fromDateInput, toDateInput } from '@/lib/format';
 import { keys } from '@/lib/queries';
 import type { Agenda } from '@/types';
 
-const daquiA = (dias: number) => new Date(Date.now() + dias * 86_400_000).toISOString();
-
-const ATALHOS = [
-  { label: 'Amanhã', dias: 1 },
-  { label: 'Em 3 dias', dias: 3 },
-  { label: 'Em 1 semana', dias: 7 },
-  { label: 'Em 1 mês', dias: 30 },
-];
-
-/** Agendar um cuidado futuro — ou reagendar uma tarefa existente (quando `agenda` vem preenchida). */
+/** Agendar cuidados para uma ou várias plantas — ou reagendar uma tarefa existente (quando `agenda` vem preenchida). */
 export function ScheduleCareSheet({
   open,
   onClose,
@@ -33,25 +26,32 @@ export function ScheduleCareSheet({
 }) {
   const queryClient = useQueryClient();
   const toast = useToast();
-  const [plantaId, setPlantaId] = useState(agenda?.plantaId ?? plantaInicial ?? '');
+  const [plantaIds, setPlantaIds] = useState<string[]>(plantaInicial ? [plantaInicial] : []);
   const [atividadeIds, setAtividadeIds] = useState<string[]>([]);
-  const [data, setData] = useState(() => toDateInput(agenda?.dataAgendada ?? daquiA(1)));
+  const [detalhes, setDetalhes] = useState('');
+  const [data, setData] = useState(() => toDateInput(agenda?.dataAgendada ?? daquiADias(1)));
   const [salvando, setSalvando] = useState(false);
+  const atalhos = useMemo(() => atalhosDeData(), []);
 
-  const atalho = (dias: number) => setData(toDateInput(daquiA(dias)));
+  const total = plantaIds.length * atividadeIds.length;
 
   async function submit(e: FormEvent) {
     e.preventDefault();
-    if (!agenda && (!plantaId || !atividadeIds.length)) return toast('Escolha a planta e o tipo de cuidado.', 'error');
+    if (!agenda && (!plantaIds.length || !atividadeIds.length)) return toast('Escolha as plantas e o tipo de cuidado.', 'error');
     setSalvando(true);
     try {
       if (agenda) {
         await agendasApi.update(agenda.id, { dataAgendada: fromDateInput(data) });
       } else {
-        await agendasApi.createLote({ plantaId, atividadeIds, dataAgendada: fromDateInput(data) });
+        await agendasApi.createLote({
+          plantaIds,
+          atividadeIds,
+          dataAgendada: fromDateInput(data),
+          detalhes: detalhes.trim() || undefined,
+        });
       }
       queryClient.invalidateQueries({ queryKey: keys.agendas });
-      toast(agenda ? 'Tarefa reagendada' : atividadeIds.length > 1 ? `${atividadeIds.length} cuidados agendados` : 'Cuidado agendado');
+      toast(agenda ? 'Tarefa reagendada' : total > 1 ? `${total} cuidados agendados` : 'Cuidado agendado');
       onClose();
     } catch (error) {
       toast(errorMessage(error), 'error');
@@ -68,29 +68,38 @@ export function ScheduleCareSheet({
             {agenda.atividade?.nome} · {agenda.planta?.nome || 'planta'}
           </p>
         ) : (
-          <PlantaAtividadeFields
-            plantaId={plantaId}
-            onPlanta={setPlantaId}
-            multiplo
-            atividadeIds={atividadeIds}
-            onAtividades={setAtividadeIds}
-            lockPlanta={!!plantaInicial}
-          />
+          <>
+            <PlantasCampo ids={plantaIds} onChange={setPlantaIds} />
+            <AtividadeChips value={atividadeIds} onChange={setAtividadeIds} />
+            <Field label="Observação (opcional)">
+              <textarea
+                className="input min-h-16"
+                value={detalhes}
+                onChange={(e) => setDetalhes(e.target.value)}
+                placeholder="Ex.: usar adubo Bioplant"
+              />
+            </Field>
+          </>
         )}
         <div>
           <Field label="Data">
-            <input type="date" className="input" value={data} onChange={(e) => setData(e.target.value)} required />
+            <input type="date" className="input" value={data} min={agenda ? undefined : toDateInput()} onChange={(e) => setData(e.target.value)} required />
           </Field>
           <div className="mt-2 flex flex-wrap gap-2">
-            {ATALHOS.map((a) => (
-              <button type="button" key={a.dias} className="chip py-1.5 text-xs" onClick={() => atalho(a.dias)}>
-                {a.label}
+            {atalhos.map((a) => (
+              <button
+                type="button"
+                key={a.label}
+                className={`chip py-1.5 text-xs ${data === a.data ? 'chip-active' : ''}`}
+                onClick={() => setData(a.data)}
+              >
+                {a.label} <span className="opacity-60">· {dataNumerica(fromDateInput(a.data)).slice(0, 5)}</span>
               </button>
             ))}
           </div>
         </div>
         <Button type="submit" block loading={salvando}>
-          {agenda ? 'Salvar nova data' : atividadeIds.length > 1 ? `Agendar ${atividadeIds.length} cuidados` : 'Agendar'}
+          {agenda ? 'Salvar nova data' : total > 1 ? `Agendar ${total} cuidados` : 'Agendar'}
         </Button>
       </form>
     </Sheet>

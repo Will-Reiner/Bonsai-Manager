@@ -1,11 +1,9 @@
 import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from 'react';
 import { useNavigate } from 'react-router';
-import { RegisterCareSheet } from '@/components/care/RegisterCareSheet';
 import { ScheduleCareSheet } from '@/components/care/ScheduleCareSheet';
 import type { Agenda } from '@/types';
 
 type Aberto =
-  | { tipo: 'registrar'; plantaId?: string }
   | { tipo: 'agendar'; plantaId?: string; agenda?: Agenda }
   | null;
 
@@ -32,7 +30,7 @@ export function CareProvider({ children }: { children: ReactNode }) {
 
   const value = useMemo(
     () => ({
-      registrarCuidado: (plantaId?: string) => abrir({ tipo: 'registrar', plantaId }),
+      registrarCuidado: (plantaId?: string) => navigate(plantaId ? `/registrar?planta=${plantaId}` : '/registrar'),
       agendarCuidado: (plantaId?: string) => abrir({ tipo: 'agendar', plantaId }),
       abrirTarefa: (agenda: Agenda) => navigate(`/tarefas/${agenda.id}`),
       reagendar: (agenda: Agenda) => abrir({ tipo: 'agendar', agenda }),
@@ -43,9 +41,6 @@ export function CareProvider({ children }: { children: ReactNode }) {
   return (
     <CareContext.Provider value={value}>
       {children}
-      {aberto?.tipo === 'registrar' && (
-        <RegisterCareSheet key={versao} open onClose={fechar} plantaId={aberto.plantaId} />
-      )}
       {aberto?.tipo === 'agendar' && (
         <ScheduleCareSheet key={versao} open onClose={fechar} plantaId={aberto.plantaId} agenda={aberto.agenda} />
       )}

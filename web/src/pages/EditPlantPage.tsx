@@ -31,7 +31,7 @@ function EditPlantForm({ planta: p }: { planta: Planta }) {
   const toast = useToast();
   const especies = useEspecies();
 
-  const [especieId, setEspecieId] = useState(p.especieId);
+  const [especieId, setEspecieId] = useState(p.especieId ?? '');
   const [nome, setNome] = useState(p.nome ?? '');
   const [identificador, setIdentificador] = useState(p.identificador ?? '');
   const [dataAquisicao, setDataAquisicao] = useState(p.dataAquisicao ? toDateInput(p.dataAquisicao) : '');
@@ -49,7 +49,7 @@ function EditPlantForm({ planta: p }: { planta: Planta }) {
     try {
       const fotoCapaUrl = foto ? await uploadImage(foto) : undefined;
       await plantasApi.update(id, {
-        especieId,
+        especieId: especieId || undefined,
         nome: nome.trim(),
         identificador: identificador.trim() || null,
         dataAquisicao: dataAquisicao ? fromDateInput(dataAquisicao) : null,
@@ -92,7 +92,7 @@ function EditPlantForm({ planta: p }: { planta: Planta }) {
         <div>
           <span className="label">Espécie</span>
           <button type="button" onClick={() => setTrocarEspecie(true)} className="input flex items-center justify-between text-left">
-            <span>{especieNome(especie)}</span>
+            <span>{especieId ? especieNome(especie) : 'Escolher espécie'}</span>
             <span className="text-sm font-medium text-primary">Trocar</span>
           </button>
         </div>

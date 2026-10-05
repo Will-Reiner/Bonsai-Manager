@@ -4,6 +4,7 @@ import {
   ATIVIDADE_REVISAO,
   ConclusaoRepository,
   PlanoConclusao,
+  PlanoRegistro,
   PREF_REVISAO_DIAS,
   ResultadoConclusao,
 } from '../agenda.types';
@@ -32,13 +33,89 @@ export class PrismaConclusaoRepository implements ConclusaoRepository {
     return Math.max(0, dias);
   }
 
-  async proximaPendente(plantaId: string, aPartirDe: Date, excluir: string[]) {
-    const proxima = await prisma.agenda.findFirst({
-      where: { plantaId, status: 'PENDENTE', dataAgendada: { gte: aPartirDe }, id: { notIn: excluir } },
-      orderBy: { dataAgendada: 'asc' },
-      select: { dataAgendada: true },
+  async proximasPendentes(plantaIds: string[], aPartirDe: Date, excluir: string[]) {
+    if (!plantaIds.length) return new Map<string, Date>();
+    const grupos = await prisma.agenda.groupBy({
+      by: ['plantaId'],
+      where: {
+        plantaId: { in: plantaIds },
+        status: 'PENDENTE',
+        dataAgendada: { gte: aPartirDe },
+        id: { notIn: excluir },
+      },
+      _min: { dataAgendada: true },
     });
-    return proxima?.dataAgendada ?? null;
+    const proximas = new Map<string, Date>();
+    for (const g of grupos) if (g._min.dataAgendada) proximas.set(g.plantaId, g._min.dataAgendada);
+    return proximas;
+  }
+
+  private async criarRevisoes(tx: Prisma.TransactionClient, revisoes: { plantaId: string; dataAgendada: Date }[]) {
+    if (!revisoes.length) return [];
+    // Garante a atividade mesmo se o seed não tiver rodado no ambiente
+    const revisao = await tx.atividade.upsert({
+      where: { nome: ATIVIDADE_REVISAO },
+      update: {},
+      create: { nome: ATIVIDADE_REVISAO, descricao: 'Observar a planta como um todo e decidir os próximos cuidados.' },
+    });
+    return tx.agenda.createManyAndReturn({
+      data: revisoes.map((r) => ({ plantaId: r.plantaId, atividadeId: revisao.id, dataAgendada: r.dataAgendada })),
+    });
+  }
+
+  async contarPlantasDoUsuario(plantaIds: string[], usuarioId: string) {
+    return prisma.planta.count({ where: { id: { in: plantaIds }, usuarioId } });
+  }
+
+  async registrar(plano: PlanoRegistro): Promise<ResultadoConclusao> {
+    return prisma.$transaction(
+      async (tx: Prisma.TransactionClient) => {
+        // Poucas idas ao banco, independente do número de plantas (lotes grandes estouravam o tempo)
+        const concluidas = await tx.agenda.createManyAndReturn({
+          data: plano.cuidados.flatMap((c) =>
+            c.atividadeIds.map((atividadeId, i) => ({
+              plantaId: c.plantaId,
+              atividadeId,
+              dataAgendada: plano.data,
+              dataConcluida: plano.data,
+              status: 'CONCLUIDO' as const,
+              // Nota e obs. só no primeiro cuidado: no histórico os cuidados do dia aparecem juntos
+              ...(i === 0 ? { detalhes: c.detalhes, observacaoFutura: c.observacaoFutura } : {}),
+            })),
+          ),
+        });
+
+        const comFotos = plano.cuidados.filter((c) => c.fotos.length);
+        if (comFotos.length) {
+          // Fotos vão no primeiro cuidado da planta (planta + atividade é único no lote)
+          const agendaDe = new Map(concluidas.map((a) => [`${a.plantaId}|${a.atividadeId}`, a.id]));
+          const atividades = await tx.atividade.findMany({
+            where: { id: { in: [...new Set(comFotos.map((c) => c.atividadeIds[0]))] } },
+            select: { id: true, nome: true },
+          });
+          const nomeDe = new Map(atividades.map((a) => [a.id, a.nome]));
+          await tx.foto.createMany({
+            data: comFotos.flatMap((c) =>
+              c.fotos.map((f) => ({
+                caminhoArquivo: f.caminhoArquivo,
+                dataCaptura: f.dataCaptura,
+                plantaId: c.plantaId,
+                agendaId: agendaDe.get(`${c.plantaId}|${c.atividadeIds[0]}`)!,
+                usuarioId: plano.usuarioId,
+                titulo: nomeDe.get(c.atividadeIds[0]),
+              })),
+            ),
+          });
+        }
+
+        const criadas = plano.criarPendentes.length
+          ? await tx.agenda.createManyAndReturn({ data: plano.criarPendentes })
+          : [];
+        const revisoes = await this.criarRevisoes(tx, plano.revisoes);
+        return { concluidas, criadas, revisoes };
+      },
+      { timeout: 20_000 },
+    );
   }
 
   async executar(plano: PlanoConclusao): Promise<ResultadoConclusao> {
@@ -98,22 +175,7 @@ export class PrismaConclusaoRepository implements ConclusaoRepository {
           criadas.push(await tx.agenda.create({ data: p }));
         }
 
-        const revisoes = [];
-        if (plano.revisoes.length) {
-          // Garante a atividade mesmo se o seed não tiver rodado no ambiente
-          const revisao = await tx.atividade.upsert({
-            where: { nome: ATIVIDADE_REVISAO },
-            update: {},
-            create: { nome: ATIVIDADE_REVISAO, descricao: 'Observar a planta como um todo e decidir os próximos cuidados.' },
-          });
-          for (const r of plano.revisoes) {
-            revisoes.push(
-              await tx.agenda.create({
-                data: { plantaId: r.plantaId, atividadeId: revisao.id, dataAgendada: r.dataAgendada },
-              }),
-            );
-          }
-        }
+        const revisoes = await this.criarRevisoes(tx, plano.revisoes);
 
         return { concluidas, criadas, revisoes };
       },

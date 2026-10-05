@@ -72,6 +72,15 @@ export function PlantDetailPage() {
             <p className="mt-0.5 text-sm italic text-muted">{p.especie.nomeCientifico}</p>
           )}
         </div>
+        {!p.especieId && (
+          <Link
+            to={`/plantas/${p.id}/editar`}
+            className="mt-3 flex items-center gap-2 rounded-2xl bg-danger/10 p-3 text-sm font-medium text-danger"
+          >
+            <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-danger font-bold text-white">!</span>
+            Planta sem espécie — toque para completar o cadastro
+          </Link>
+        )}
 
         {(idade || aquisicao) && (
           <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1.5 text-sm text-muted">

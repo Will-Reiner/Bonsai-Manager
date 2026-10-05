@@ -27,7 +27,7 @@ export const authApi = {
 };
 
 export interface PlantaInput {
-  especieId: string;
+  especieId?: string;
   nome?: string;
   identificador?: string | null;
   dataAquisicao?: string | null;
@@ -62,6 +62,18 @@ export interface ConcluirInput {
   itens: { agendaId: string; detalhes?: string; observacaoFutura?: string; fotos?: string[] }[];
 }
 
+export interface RegistrarInput {
+  data: string;
+  plantas: {
+    plantaId: string;
+    atividadeIds: string[];
+    detalhes?: string;
+    observacaoFutura?: string;
+    fotos?: { caminhoArquivo: string; dataCaptura?: string }[];
+  }[];
+  proximos?: { atividadeId: string; dataAgendada: string }[];
+}
+
 export interface ConcluirResultado {
   concluidas: Agenda[];
   criadas: Agenda[];
@@ -72,24 +84,13 @@ export const agendasApi = {
   list: () => data<Agenda[]>(api.get('/agendas')),
   create: (body: { plantaId: string; atividadeId: string; dataAgendada: string }) =>
     data<Agenda>(api.post('/agendas', body)),
-  /** Vários cuidados de uma vez para a mesma planta e data (tudo ou nada). */
-  createLote: (body: { plantaId: string; atividadeIds: string[]; dataAgendada: string }) =>
+  /** Vários cuidados para várias plantas na mesma data (tudo ou nada). `detalhes` = observação/instrução. */
+  createLote: (body: { plantaIds: string[]; atividadeIds: string[]; dataAgendada: string; detalhes?: string }) =>
     data<Agenda[]>(api.post('/agendas/lote', body)),
   update: (id: string, body: AgendaUpdate) => data<Agenda>(api.put(`/agendas/${id}`, body)),
   remove: (id: string) => api.delete(`/agendas/${id}`),
-  /** Registra um cuidado já feito: cria a agenda e marca como concluída (mesmo fluxo do QuickInterventionModal). */
-  registrarFeito: async (body: { plantaId: string; atividadeId: string; data: string; detalhes?: string }) => {
-    const agenda = await agendasApi.create({
-      plantaId: body.plantaId,
-      atividadeId: body.atividadeId,
-      dataAgendada: body.data,
-    });
-    return agendasApi.update(agenda.id, {
-      status: 'CONCLUIDO',
-      dataConcluida: body.data,
-      ...(body.detalhes ? { detalhes: body.detalhes } : {}),
-    });
-  },
+  /** Registra um cuidado já feito (fotos + plantas + próximos passos) numa chamada. */
+  registrar: (body: RegistrarInput) => data<ConcluirResultado>(api.post('/agendas/registrar', body)),
   /** Conclui uma ou várias tarefas (com extras, próximos passos e revisão automática). */
   concluir: (body: ConcluirInput) => data<ConcluirResultado>(api.post('/agendas/concluir', body)),
 };

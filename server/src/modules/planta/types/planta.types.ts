@@ -2,7 +2,7 @@ import { ModoAquisicao } from '@prisma/client';
 
 // DTOs para entrada do controller (com string para data)
 export interface CreatePlantaRequestDTO {
-  especieId: string;
+  especieId?: string;
   usuarioId: string;
   nome?: string;
   identificador?: string;
@@ -28,7 +28,7 @@ export interface UpdatePlantaRequestDTO {
 
 // DTOs para o repositório (com Date)
 export interface CreatePlantaDTO {
-  especieId: string;
+  especieId?: string;
   usuarioId: string;
   nome?: string;
   identificador?: string;
@@ -54,7 +54,7 @@ export interface UpdatePlantaDTO {
 
 export interface PlantaWithEspecie {
   id: string;
-  especieId: string;
+  especieId: string | null;
   usuarioId: string;
   nome: string | null;
   identificador: string | null;
@@ -69,7 +69,7 @@ export interface PlantaWithEspecie {
   especie: {
     nomeCientifico: string | null;
     nomeComum: string | null;
-  };
+  } | null;
 }
 
 export interface PlantaRepository {

@@ -5,13 +5,15 @@ export interface CreateAgendaDTO {
   atividadeId: string;
   dataAgendada: string;
   observacoes?: string;
+  detalhes?: string;
 }
 
 export interface CreateAgendasLoteDTO {
-  plantaId: string;
+  plantaIds: string[];
   atividadeIds: string[];
   dataAgendada: string;
-  observacoes?: string;
+  /** Instrução para quando o cuidado for feito (ex.: qual adubo usar). */
+  detalhes?: string;
 }
 
 export interface UpdateAgendaDTO {
@@ -38,6 +40,10 @@ export interface AgendaRepository {
   delete(id: string): Promise<void>;
   existsByIdAndUser(id: string, usuarioId: string): Promise<boolean>;
   checkPlantaBelongsToUser(plantaId: string, usuarioId: string): Promise<boolean>;
+  /** Quantas das plantas informadas são do usuário. */
+  contarPlantasDoUsuario(plantaIds: string[], usuarioId: string): Promise<number>;
+  /** true se todas as atividades informadas (sem repetição) existem. */
+  atividadesExistem(ids: string[]): Promise<boolean>;
 }
 
 export const ATIVIDADE_REVISAO = 'Revisão geral';
@@ -63,6 +69,33 @@ export interface PlanoConclusao {
   revisoes: { plantaId: string; dataAgendada: Date }[];
 }
 
+export interface RegistrarCuidadosDTO {
+  data: string;
+  plantas: {
+    plantaId: string;
+    atividadeIds: string[];
+    detalhes?: string;
+    observacaoFutura?: string;
+    fotos?: { caminhoArquivo: string; dataCaptura?: string }[];
+  }[];
+  proximos?: { atividadeId: string; dataAgendada: string }[];
+}
+
+export interface PlanoRegistro {
+  usuarioId: string;
+  data: Date;
+  /** Uma entrada por planta; detalhes/obs. e fotos vão no primeiro cuidado dela. */
+  cuidados: {
+    plantaId: string;
+    atividadeIds: string[];
+    detalhes?: string;
+    observacaoFutura?: string;
+    fotos: { caminhoArquivo: string; dataCaptura: Date }[];
+  }[];
+  criarPendentes: { plantaId: string; atividadeId: string; dataAgendada: Date }[];
+  revisoes: { plantaId: string; dataAgendada: Date }[];
+}
+
 export interface ResultadoConclusao {
   concluidas: any[];
   criadas: any[];
@@ -75,7 +108,10 @@ export interface ConclusaoRepository {
   atividadesExistem(ids: string[]): Promise<boolean>;
   /** Valor normalizado da preferência (padrão 30, 0 = desligado). */
   getRevisaoDias(usuarioId: string): Promise<number>;
-  /** Data da próxima PENDENTE da planta com dataAgendada >= aPartirDe, ignorando `excluir`. */
-  proximaPendente(plantaId: string, aPartirDe: Date, excluir: string[]): Promise<Date | null>;
+  /** Por planta, a data da próxima PENDENTE com dataAgendada >= aPartirDe, ignorando `excluir` (sem pendente = fora do Map). */
+  proximasPendentes(plantaIds: string[], aPartirDe: Date, excluir: string[]): Promise<Map<string, Date>>;
   executar(plano: PlanoConclusao): Promise<ResultadoConclusao>;
+  /** Quantas das plantas informadas são do usuário. */
+  contarPlantasDoUsuario(plantaIds: string[], usuarioId: string): Promise<number>;
+  registrar(plano: PlanoRegistro): Promise<ResultadoConclusao>;
 }

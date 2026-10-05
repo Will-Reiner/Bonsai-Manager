@@ -6,7 +6,7 @@ const ModoAquisicaoEnum = z.enum(['SEMENTE', 'ESTACA', 'ALPORQUIA', 'YAMADORI', 
 // Schema para criar uma nova planta com os campos atualizados
 export const createPlantaSchema = z.object({
   body: z.object({
-    especieId: z.string().uuid({ message: 'O ID da espécie é obrigatório.' }),
+    especieId: z.string().uuid({ message: 'ID de espécie inválido.' }).optional(),
     nome: z.string().optional(),
     identificador: z.string().optional(),
     dataAquisicao: z.string().datetime().optional().nullable(),

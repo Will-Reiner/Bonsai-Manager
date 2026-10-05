@@ -40,26 +40,31 @@ export function CollectionPage() {
 
   const especies = useMemo(() => {
     const mapa = new Map<string, string>();
-    plantas.data?.forEach((p) => mapa.set(p.especieId, especieNome(p.especie)));
+    plantas.data?.forEach((p) => {
+      if (p.especieId) mapa.set(p.especieId, especieNome(p.especie));
+    });
     return [...mapa.entries()].sort((a, b) => a[1].localeCompare(b[1], 'pt-BR'));
   }, [plantas.data]);
 
   const lista = useMemo(() => {
     const termo = busca.trim().toLowerCase();
     const filtradas = (plantas.data ?? []).filter((p) => {
-      if (especie && p.especieId !== especie) return false;
+      if (especie === 'sem' ? !!p.especieId : especie && p.especieId !== especie) return false;
       if (!termo) return true;
       return [p.nome, p.identificador, p.especie?.nomeComum, p.especie?.nomeCientifico]
         .filter(Boolean)
         .some((v) => v!.toLowerCase().includes(termo));
     });
     const porTarefa = (p: Planta) => proximaTarefa.get(p.id) ?? '9999';
-    return filtradas.sort((a, b) =>
-      ordem === 'alfabetica'
-        ? plantaTitulo(a).localeCompare(plantaTitulo(b), 'pt-BR')
-        : ordem === 'tarefa'
-          ? porTarefa(a).localeCompare(porTarefa(b))
-          : b.createdAt.localeCompare(a.createdAt),
+    const semEspecieAntes = (a: Planta, b: Planta) => Number(!!a.especieId) - Number(!!b.especieId);
+    return filtradas.sort(
+      (a, b) =>
+        semEspecieAntes(a, b) ||
+        (ordem === 'alfabetica'
+          ? plantaTitulo(a).localeCompare(plantaTitulo(b), 'pt-BR')
+          : ordem === 'tarefa'
+            ? porTarefa(a).localeCompare(porTarefa(b))
+            : b.createdAt.localeCompare(a.createdAt)),
     );
   }, [plantas.data, busca, especie, ordem, proximaTarefa]);
 
@@ -126,6 +131,7 @@ export function CollectionPage() {
             <div className="flex gap-2">
               <select className="input min-w-0 flex-1 py-2 text-sm" value={especie} onChange={(e) => setEspecie(e.target.value)}>
                 <option value="">Todas as espécies</option>
+                {plantas.data?.some((p) => !p.especieId) && <option value="sem">Sem espécie</option>}
                 {especies.map(([id, nome]) => (
                   <option key={id} value={id}>
                     {nome}
@@ -161,13 +167,20 @@ export function CollectionPage() {
                 <Link key={p.id} to={`/plantas/${p.id}`} className="card overflow-hidden transition active:scale-[0.98]">
                   <div className="relative">
                     <PlantThumb url={p.fotoCapaUrl} className="aspect-square w-full" />
+                    {!p.especieId && (
+                      <span className="absolute left-2 top-2 flex size-6 items-center justify-center rounded-full bg-danger text-sm font-bold text-white ring-2 ring-white" aria-label="Sem espécie">
+                        !
+                      </span>
+                    )}
                     {proximaTarefa.has(p.id) && (
                       <span className="absolute right-2 top-2 size-2.5 rounded-full bg-warning ring-2 ring-white" aria-label="Tem tarefa pendente" />
                     )}
                   </div>
                   <div className="p-2.5">
                     <p className="truncate font-semibold">{plantaTitulo(p)}</p>
-                    <p className="truncate text-xs text-muted">{especieNome(p.especie)}</p>
+                    <p className="truncate text-xs text-muted">
+                      {p.especieId ? especieNome(p.especie) : <span className="font-medium text-danger">Sem espécie · completar</span>}
+                    </p>
                   </div>
                 </Link>
               ))}
@@ -180,7 +193,14 @@ export function CollectionPage() {
                   <div className="min-w-0 flex-1">
                     <p className="truncate font-semibold">{plantaTitulo(p)}</p>
                     <p className="truncate text-sm text-muted">
-                      {especieNome(p.especie)}
+                      {p.especieId ? (
+                        especieNome(p.especie)
+                      ) : (
+                        <span className="font-medium text-danger">
+                          <span className="mr-1 inline-flex size-5 items-center justify-center rounded-full bg-danger text-xs font-bold text-white">!</span>
+                          Sem espécie · completar
+                        </span>
+                      )}
                       {p.identificador && p.nome ? ` · ${p.identificador}` : ''}
                     </p>
                   </div>

@@ -160,8 +160,8 @@ model Planta {
   usuarioId        String
   usuario          Usuario       @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
 
-  especieId        String
-  especie          Especie       @relation(fields: [especieId], references: [id])
+  especieId        String?
+  especie          Especie?      @relation(fields: [especieId], references: [id])
 
   // Relacionamentos
   fotos       Foto[]

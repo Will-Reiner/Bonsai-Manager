@@ -20,8 +20,10 @@ describe('ConcluirAgendasUseCase', () => {
       findPendentesDoUsuario: jest.fn().mockResolvedValue([{ id: 'ag-1', plantaId: 'pl-1' }]),
       atividadesExistem: jest.fn().mockResolvedValue(true),
       getRevisaoDias: jest.fn().mockResolvedValue(30),
-      proximaPendente: jest.fn().mockResolvedValue(null),
+      proximasPendentes: jest.fn().mockResolvedValue(new Map()),
       executar: jest.fn().mockResolvedValue({ concluidas: [], criadas: [], revisoes: [] }),
+      contarPlantasDoUsuario: jest.fn(),
+      registrar: jest.fn(),
     };
     useCase = new ConcluirAgendasUseCase(repo);
   });
@@ -89,19 +91,19 @@ describe('ConcluirAgendasUseCase', () => {
   it('cria revisão em N dias quando a planta não tem pendente', async () => {
     await useCase.execute(base, 'user-1');
 
-    expect(repo.proximaPendente).toHaveBeenCalledWith('pl-1', AGORA, ['ag-1']);
+    expect(repo.proximasPendentes).toHaveBeenCalledWith(['pl-1'], AGORA, ['ag-1']);
     expect(plano().revisoes).toEqual([{ plantaId: 'pl-1', dataAgendada: emDias(30) }]);
   });
 
   it('não cria revisão se a próxima pendente está dentro de N + 30 dias', async () => {
-    repo.proximaPendente.mockResolvedValue(emDias(60));
+    repo.proximasPendentes.mockResolvedValue(new Map([['pl-1', emDias(60)]]));
     await useCase.execute(base, 'user-1');
     expect(plano().revisoes).toEqual([]);
   });
 
   it('cria revisão se a próxima pendente está além de N + 30 dias', async () => {
     repo.getRevisaoDias.mockResolvedValue(15);
-    repo.proximaPendente.mockResolvedValue(emDias(46));
+    repo.proximasPendentes.mockResolvedValue(new Map([['pl-1', emDias(46)]]));
     await useCase.execute(base, 'user-1');
     expect(plano().revisoes).toEqual([{ plantaId: 'pl-1', dataAgendada: emDias(15) }]);
   });
@@ -109,7 +111,7 @@ describe('ConcluirAgendasUseCase', () => {
   it('não cria revisão quando a preferência está desligada (0)', async () => {
     repo.getRevisaoDias.mockResolvedValue(0);
     await useCase.execute(base, 'user-1');
-    expect(repo.proximaPendente).not.toHaveBeenCalled();
+    expect(repo.proximasPendentes).not.toHaveBeenCalled();
     expect(plano().revisoes).toEqual([]);
   });
 
@@ -119,7 +121,8 @@ describe('ConcluirAgendasUseCase', () => {
       { id: 'ag-2', plantaId: 'pl-1' },
     ]);
     await useCase.execute({ ...base, itens: [{ agendaId: 'ag-1' }, { agendaId: 'ag-2' }] }, 'user-1');
-    expect(repo.proximaPendente).toHaveBeenCalledTimes(1);
+    expect(repo.proximasPendentes).toHaveBeenCalledTimes(1);
+    expect(repo.proximasPendentes).toHaveBeenCalledWith(['pl-1'], AGORA, ['ag-1', 'ag-2']);
     expect(plano().revisoes).toHaveLength(1);
   });
 

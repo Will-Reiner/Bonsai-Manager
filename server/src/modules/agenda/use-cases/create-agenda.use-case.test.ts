@@ -16,6 +16,8 @@ describe('CreateAgendaUseCase', () => {
       delete: jest.fn(),
       existsByIdAndUser: jest.fn(),
       checkPlantaBelongsToUser: jest.fn(),
+      contarPlantasDoUsuario: jest.fn(),
+      atividadesExistem: jest.fn(),
     };
 
     createAgendaUseCase = new CreateAgendaUseCase(mockAgendaRepository);

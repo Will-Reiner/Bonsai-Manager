@@ -1,28 +1,38 @@
 import { AgendaRepository, CreateAgendasLoteDTO } from '../agenda.types';
 
-/** Agenda vários cuidados de uma vez para a mesma planta e data. */
+export const MAX_AGENDAS_LOTE = 2000;
+
+/** Agenda vários cuidados de uma vez para várias plantas, na mesma data (tudo ou nada). */
 export class CreateAgendasLoteUseCase {
   constructor(private agendaRepository: AgendaRepository) {}
 
   async execute(data: CreateAgendasLoteDTO, usuarioId: string) {
     const atividadeIds = [...new Set(data.atividadeIds)];
-    if (!atividadeIds.length) {
-      throw new Error('Informe ao menos um cuidado.');
+    const plantaIds = [...new Set(data.plantaIds)];
+    if (!atividadeIds.length) throw new Error('Informe ao menos um cuidado.');
+    if (!plantaIds.length) throw new Error('Informe ao menos uma planta.');
+    if (atividadeIds.length * plantaIds.length > MAX_AGENDAS_LOTE) {
+      throw new Error(`Máximo de ${MAX_AGENDAS_LOTE} tarefas por vez.`);
     }
 
-    const plantaBelongsToUser = await this.agendaRepository.checkPlantaBelongsToUser(data.plantaId, usuarioId);
-    if (!plantaBelongsToUser) {
+    const doUsuario = await this.agendaRepository.contarPlantasDoUsuario(plantaIds, usuarioId);
+    if (doUsuario !== plantaIds.length) {
       throw new Error('Acesso negado. A planta não pertence a si.');
     }
+    if (!(await this.agendaRepository.atividadesExistem(atividadeIds))) {
+      throw new Error('Atividade não encontrada.');
+    }
 
-    const { plantaId, dataAgendada, observacoes } = data;
+    const detalhes = data.detalhes?.trim() || undefined;
     return await this.agendaRepository.createMany(
-      atividadeIds.map((atividadeId) => ({
-        plantaId,
-        atividadeId,
-        dataAgendada,
-        ...(observacoes !== undefined && { observacoes }),
-      })),
+      plantaIds.flatMap((plantaId) =>
+        atividadeIds.map((atividadeId) => ({
+          plantaId,
+          atividadeId,
+          dataAgendada: data.dataAgendada,
+          ...(detalhes && { detalhes }),
+        })),
+      ),
     );
   }
 }

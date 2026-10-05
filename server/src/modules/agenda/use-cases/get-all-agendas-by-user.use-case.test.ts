@@ -16,6 +16,8 @@ describe('GetAllAgendasByUserUseCase', () => {
       delete: jest.fn(),
       existsByIdAndUser: jest.fn(),
       checkPlantaBelongsToUser: jest.fn(),
+      contarPlantasDoUsuario: jest.fn(),
+      atividadesExistem: jest.fn(),
     };
 
     getAllAgendasByUserUseCase = new GetAllAgendasByUserUseCase(mockAgendaRepository);
