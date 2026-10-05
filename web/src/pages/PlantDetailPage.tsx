@@ -1,38 +1,48 @@
-import { useMemo, useRef, useState } from 'react';
-import { Link, useParams } from 'react-router';
-import { useQueryClient } from '@tanstack/react-query';
-import { CalendarCheck, CalendarPlus, Camera, ImagePlus, Pencil, Star, Trash2, X } from 'lucide-react';
-import { Button, EmptyState, ErrorState, PageHeader, PlantThumb, SectionTitle, Spinner } from '@/components/ui';
-import { ConfirmSheet } from '@/components/Sheet';
-import { TaskCard } from '@/components/TaskCard';
+import { useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { Link, useNavigate, useParams } from 'react-router';
+import { CalendarCheck, CalendarClock, CalendarPlus, Camera, Check, ChevronRight, Clock, ImagePlus, Pencil, Plus, ShoppingBag } from 'lucide-react';
+import { EmptyState, ErrorState, PageHeader, PlantThumb, SectionTitle, Spinner } from '@/components/ui';
+import { Sheet } from '@/components/Sheet';
+import { EnviosProgresso, useEnviarFotos } from '@/components/FotoUpload';
 import { useCare } from '@/context/CareContext';
-import { useToast } from '@/context/ToastContext';
 import { errorMessage } from '@/lib/api';
-import { fotosApi, plantasApi } from '@/lib/endpoints';
-import { dataCurta, dataLonga, dataRelativa, diasAte, especieNome, modoAquisicaoLabel, plantaTitulo, tempoDesde } from '@/lib/format';
-import { keys, useAgendas, useFotos, usePlanta } from '@/lib/queries';
-import { dataCapturaDe, uploadImage } from '@/lib/upload';
-import type { Agenda, Foto, Planta } from '@/types';
-
-const ABAS = ['Visão geral', 'Histórico', 'Galeria', 'Cuidados'] as const;
-type Aba = (typeof ABAS)[number];
+import { dataCurta, dataRelativa, especieNome, modoAquisicaoLabel, plantaTitulo, tempoDesde } from '@/lib/format';
+import { chaveItem, fotosOrdenadas, linhaDoTempo, type ItemLinha } from '@/lib/linhaDoTempo';
+import { useAgendas, useFotos, usePlanta } from '@/lib/queries';
+import type { Foto } from '@/types';
 
 export function PlantDetailPage() {
   const { id = '' } = useParams();
+  const navigate = useNavigate();
   const planta = usePlanta(id);
   const agendas = useAgendas();
-  const [aba, setAba] = useState<Aba>('Visão geral');
+  const fotos = useFotos(id);
+  const { registrarCuidado, agendarCuidado } = useCare();
+  const upload = useEnviarFotos(id);
+  const [acoes, setAcoes] = useState(false);
 
   const daPlanta = useMemo(() => (agendas.data ?? []).filter((a) => a.plantaId === id), [agendas.data, id]);
+  const imagens = useMemo(() => fotosOrdenadas(fotos.data), [fotos.data]);
+  const linha = useMemo(() => linhaDoTempo(daPlanta, fotos.data), [daPlanta, fotos.data]);
 
   if (planta.isLoading) return <><PageHeader title="Planta" back /><Spinner /></>;
   if (planta.isError || !planta.data)
     return <><PageHeader title="Planta" back /><ErrorState text={errorMessage(planta.error, 'Planta não encontrada.')} /></>;
 
   const p = planta.data;
+  const idade = tempoDesde(p.dataAquisicao);
+  const aquisicao = p.modoAquisicao ? modoAquisicaoLabel(p.modoAquisicao) : null;
+  const galeria = `/plantas/${p.id}/galeria`;
+  const abrirFoto = (f: Foto) => navigate(`${galeria}?foto=${f.id}`);
+  const capa = imagens.find((f) => f.caminhoArquivo === p.fotoCapaUrl);
+
+  const acao = (fn: () => void) => () => {
+    setAcoes(false);
+    fn();
+  };
 
   return (
-    <div>
+    <div className="pb-28">
       <PageHeader
         title={plantaTitulo(p)}
         back
@@ -42,333 +52,206 @@ export function PlantDetailPage() {
           </Link>
         }
       />
-      <div className="sticky top-[calc(3.5rem+env(safe-area-inset-top,0px))] z-20 border-b border-line bg-bg/95 backdrop-blur">
-        <div className="mx-auto flex max-w-2xl overflow-x-auto px-2" role="tablist">
-          {ABAS.map((a) => (
-            <button
-              key={a}
-              role="tab"
-              aria-selected={aba === a}
-              onClick={() => setAba(a)}
-              className={`shrink-0 border-b-2 px-3.5 py-3 text-sm font-semibold transition ${
-                aba === a ? 'border-primary text-primary' : 'border-transparent text-muted'
-              }`}
-            >
-              {a}
-            </button>
-          ))}
+      {upload.input}
+
+      <div className="mx-auto max-w-2xl sm:px-4 sm:pt-4">
+        <button
+          onClick={() => (capa ? abrirFoto(capa) : navigate(galeria))}
+          className="block w-full overflow-hidden sm:rounded-3xl"
+          aria-label="Abrir fotos"
+        >
+          <PlantThumb url={p.fotoCapaUrl} className="aspect-[4/5] max-h-[70dvh] w-full" />
+        </button>
+      </div>
+
+      <div className="mx-auto max-w-2xl px-4">
+        <div className="mt-4">
+          <p className="font-display text-2xl font-semibold leading-tight">{especieNome(p.especie)}</p>
+          {p.especie?.nomeCientifico && p.especie?.nomeComum && (
+            <p className="mt-0.5 text-sm italic text-muted">{p.especie.nomeCientifico}</p>
+          )}
         </div>
-      </div>
 
-      <div className="mx-auto max-w-2xl px-4 pb-6">
-        {aba === 'Visão geral' && <VisaoGeral planta={p} agendas={daPlanta} irPara={setAba} />}
-        {aba === 'Histórico' && <Historico plantaId={p.id} agendas={daPlanta} />}
-        {aba === 'Galeria' && <Galeria planta={p} />}
-        {aba === 'Cuidados' && <Cuidados plantaId={p.id} agendas={daPlanta} />}
-      </div>
-    </div>
-  );
-}
+        {(idade || aquisicao) && (
+          <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1.5 text-sm text-muted">
+            {idade && (
+              <span className="flex items-center gap-1.5">
+                <Clock size={16} className="text-primary" /> Na coleção há {idade}
+              </span>
+            )}
+            {aquisicao && (
+              <span className="flex items-center gap-1.5">
+                <ShoppingBag size={16} className="text-primary" /> {aquisicao}
+              </span>
+            )}
+          </div>
+        )}
 
-function VisaoGeral({ planta, agendas, irPara }: { planta: Planta; agendas: Agenda[]; irPara: (a: Aba) => void }) {
-  const { registrarCuidado, agendarCuidado } = useCare();
-  const proxima = agendas.filter((a) => a.status === 'PENDENTE').sort((a, b) => a.dataAgendada.localeCompare(b.dataAgendada))[0];
-  const ultimo = agendas
-    .filter((a) => a.status === 'CONCLUIDO')
-    .sort((a, b) => (b.dataConcluida ?? b.dataAgendada).localeCompare(a.dataConcluida ?? a.dataAgendada))[0];
-  const idade = tempoDesde(planta.dataAquisicao);
+        <Secao titulo={imagens.length ? `Fotos · ${imagens.length}` : 'Fotos'} verMais={imagens.length ? galeria : undefined}>
+          {fotos.isLoading ? (
+            <Spinner />
+          ) : imagens.length === 0 ? (
+            <button onClick={upload.escolher} className="card flex w-full items-center gap-3 p-4 text-left text-sm text-muted">
+              <span className="flex size-11 items-center justify-center rounded-xl bg-primary-light text-primary">
+                <ImagePlus size={22} />
+              </span>
+              Nenhuma foto ainda. Toque para adicionar e acompanhar a evolução.
+            </button>
+          ) : (
+            <div className="-mx-4 flex snap-x gap-2 overflow-x-auto px-4 pb-1">
+              {imagens.map((f) => (
+                <button key={f.id} onClick={() => abrirFoto(f)} className="size-28 shrink-0 snap-start overflow-hidden rounded-2xl bg-primary-light">
+                  <img src={f.caminhoArquivo} alt={f.titulo ?? ''} loading="lazy" className="size-full object-cover" />
+                </button>
+              ))}
+            </div>
+          )}
+          <EnviosProgresso envios={upload.envios} />
+        </Secao>
 
-  return (
-    <div className="pt-4">
-      <button onClick={() => irPara('Galeria')} className="block w-full overflow-hidden rounded-2xl" aria-label="Abrir galeria">
-        <PlantThumb url={planta.fotoCapaUrl} className="aspect-[4/3] w-full" />
-      </button>
+        <Secao titulo="Histórico e cuidados" verMais={linha.pendentes.length + linha.passado.length ? `/plantas/${p.id}/historico` : undefined}>
+          {agendas.isLoading ? (
+            <Spinner />
+          ) : linha.pendentes.length + linha.passado.length === 0 ? (
+            <EmptyState title="Nada por aqui ainda" text="Cuidados agendados, concluídos e fotos aparecem nesta linha do tempo." />
+          ) : (
+            <FaixaLinhaDoTempo pendentes={linha.pendentes} passado={linha.passado} abrirFoto={abrirFoto} />
+          )}
+        </Secao>
 
-      <div className="mt-4">
-        <p className="text-lg font-semibold">{especieNome(planta.especie)}</p>
-        {planta.especie?.nomeCientifico && planta.especie?.nomeComum && (
-          <p className="text-sm italic text-muted">{planta.especie.nomeCientifico}</p>
+        {p.observacoes && (
+          <>
+            <SectionTitle>Observações</SectionTitle>
+            <p className="whitespace-pre-line text-sm leading-relaxed">{p.observacoes}</p>
+          </>
         )}
       </div>
 
-      <dl className="mt-4 grid grid-cols-2 gap-2.5">
-        <Stat label="Na coleção há" value={idade ?? '—'} />
-        <Stat label="Aquisição" value={modoAquisicaoLabel(planta.modoAquisicao)} />
-        <Stat
-          label="Próxima tarefa"
-          value={proxima ? `${proxima.atividade?.nome} · ${dataRelativa(proxima.dataAgendada)}` : 'Nenhuma'}
-          tone={proxima && diasAte(proxima.dataAgendada) < 0 ? 'danger' : undefined}
-        />
-        <Stat
-          label="Último cuidado"
-          value={ultimo ? `${ultimo.atividade?.nome} · ${dataRelativa(ultimo.dataConcluida ?? ultimo.dataAgendada)}` : 'Nenhum'}
-        />
-        {planta.identificador && <Stat label="Código" value={planta.identificador} />}
-      </dl>
+      <button
+        onClick={() => setAcoes(true)}
+        className="fixed bottom-[calc(1.25rem+env(safe-area-inset-bottom,0px))] right-[max(1.25rem,calc(50vw-21rem+1.25rem))] z-40 flex size-14 items-center justify-center rounded-full bg-primary text-white shadow-lg shadow-primary/30 transition active:scale-90"
+        aria-label="Ações da planta"
+      >
+        <Plus size={28} />
+      </button>
 
-      <Button block className="mt-5" onClick={() => registrarCuidado(planta.id)}>
-        <CalendarCheck size={18} /> Registrar cuidado
-      </Button>
-      <div className="mt-2.5 grid grid-cols-2 gap-2.5">
-        <Button variant="secondary" onClick={() => agendarCuidado(planta.id)}>
-          <CalendarPlus size={18} /> Agendar
-        </Button>
-        <Button variant="secondary" onClick={() => irPara('Galeria')}>
-          <Camera size={18} /> Fotos
-        </Button>
+      <Sheet open={acoes} onClose={() => setAcoes(false)} title={plantaTitulo(p)}>
+        <div className="grid gap-2.5 pb-safe">
+          <AcaoItem icon={<CalendarCheck size={22} />} title="Registrar cuidado" text="Reguei, adubei, podei… agora" onClick={acao(() => registrarCuidado(p.id))} />
+          <AcaoItem icon={<CalendarPlus size={22} />} title="Agendar cuidado" text="Criar uma tarefa para depois" onClick={acao(() => agendarCuidado(p.id))} />
+          <AcaoItem icon={<Camera size={22} />} title="Tirar foto" text="Abrir a câmera agora" onClick={acao(upload.tirarFoto)} />
+          <AcaoItem icon={<ImagePlus size={22} />} title="Adicionar fotos da galeria" text="Uma ou várias de uma vez" onClick={acao(upload.escolher)} />
+        </div>
+      </Sheet>
+    </div>
+  );
+}
+
+function Secao({ titulo, verMais, children }: { titulo: string; verMais?: string; children: ReactNode }) {
+  return (
+    <section>
+      <div className="mb-2.5 mt-7 flex items-center justify-between">
+        <h2 className="font-sans text-xs font-semibold uppercase tracking-wider text-muted">{titulo}</h2>
+        {verMais && (
+          <Link to={verMais} className="-mr-2 flex items-center rounded-full px-2 py-1 text-sm font-semibold text-primary hover:bg-primary-light">
+            Ver mais <ChevronRight size={16} />
+          </Link>
+        )}
       </div>
-
-      {planta.observacoes && (
-        <>
-          <SectionTitle>Observações</SectionTitle>
-          <p className="whitespace-pre-line text-sm leading-relaxed">{planta.observacoes}</p>
-        </>
-      )}
-    </div>
+      {children}
+    </section>
   );
 }
 
-function Stat({ label, value, tone }: { label: string; value: string; tone?: 'danger' }) {
-  return (
-    <div className="card p-3">
-      <dt className="text-xs text-muted">{label}</dt>
-      <dd className={`mt-0.5 text-sm font-semibold ${tone === 'danger' ? 'text-danger' : ''}`}>{value}</dd>
-    </div>
-  );
-}
+/** Faixa horizontal: pendentes (futuras → atrasadas), marcador de hoje, depois o passado. Abre centrada em "hoje". */
+function FaixaLinhaDoTempo({ pendentes, passado, abrirFoto }: { pendentes: ItemLinha[]; passado: ItemLinha[]; abrirFoto: (f: Foto) => void }) {
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const hojeRef = useRef<HTMLDivElement>(null);
 
-type ItemHistorico = { tipo: 'cuidado'; data: string; agenda: Agenda } | { tipo: 'foto'; data: string; foto: Foto };
-
-function Historico({ plantaId, agendas }: { plantaId: string; agendas: Agenda[] }) {
-  const fotos = useFotos(plantaId);
-
-  const itens = useMemo<ItemHistorico[]>(() => {
-    const cuidados: ItemHistorico[] = agendas
-      .filter((a) => a.status === 'CONCLUIDO')
-      .map((a) => ({ tipo: 'cuidado', data: a.dataConcluida ?? a.dataAgendada, agenda: a }));
-    const fts: ItemHistorico[] = (fotos.data ?? []).map((f) => ({ tipo: 'foto', data: f.dataCaptura ?? f.createdAt, foto: f }));
-    return [...cuidados, ...fts].sort((a, b) => b.data.localeCompare(a.data));
-  }, [agendas, fotos.data]);
-
-  if (fotos.isLoading) return <Spinner />;
-  if (itens.length === 0)
-    return <EmptyState title="Sem histórico ainda" text="Cuidados concluídos e fotos aparecem aqui, do mais recente ao mais antigo." />;
+  useLayoutEffect(() => {
+    const box = scrollRef.current;
+    const hoje = hojeRef.current;
+    if (!box || !hoje) return;
+    // Deixa a tarefa mais próxima de hoje visível sem rolar a página inteira
+    box.scrollLeft = Math.max(0, hoje.offsetLeft - box.clientWidth / 2);
+  }, [pendentes.length]);
 
   return (
-    <ol className="relative mt-5 space-y-4 border-l-2 border-line pl-5">
-      {itens.map((item) => (
-        <li key={item.tipo === 'cuidado' ? `c-${item.agenda.id}` : `f-${item.foto.id}`} className="relative">
-          <span className="absolute -left-[27px] top-1.5 size-3 rounded-full border-2 border-bg bg-primary" />
-          <p className="text-xs text-muted">{dataLonga(item.data)}</p>
-          {item.tipo === 'cuidado' ? (
-            <div className="mt-1">
-              <p className="font-semibold">{item.agenda.atividade?.nome}</p>
-              {item.agenda.detalhes && <p className="mt-0.5 text-sm">{item.agenda.detalhes}</p>}
-              {item.agenda.observacaoFutura && (
-                <p className="mt-1 text-sm text-accent">Próxima vez: {item.agenda.observacaoFutura}</p>
-              )}
-            </div>
-          ) : (
-            <div className="mt-1.5">
-              <img src={item.foto.caminhoArquivo} alt={item.foto.titulo ?? ''} loading="lazy" className="w-40 rounded-xl object-cover" />
-              {item.foto.titulo && <p className="mt-1 text-sm text-muted">{item.foto.titulo}</p>}
-            </div>
-          )}
-        </li>
+    <div ref={scrollRef} className="relative -mx-4 flex items-stretch gap-2.5 overflow-x-auto px-4 pb-2">
+      {pendentes.map((i) => (
+        <CardLinha key={chaveItem(i)} item={i} abrirFoto={abrirFoto} />
       ))}
-    </ol>
-  );
-}
-
-function Galeria({ planta }: { planta: Planta }) {
-  const fotos = useFotos(planta.id);
-  const queryClient = useQueryClient();
-  const toast = useToast();
-  const inputRef = useRef<HTMLInputElement>(null);
-  const cameraRef = useRef<HTMLInputElement>(null);
-  const [envios, setEnvios] = useState<{ nome: string; pct: number }[]>([]);
-  const [aberta, setAberta] = useState<Foto | null>(null);
-  const [confirmar, setConfirmar] = useState(false);
-  const [ocupado, setOcupado] = useState(false);
-
-  /** `daCamera`: foto tirada agora — a data do arquivo é a da captura, sem aviso de "sem data". */
-  async function enviar(files: FileList, daCamera = false) {
-    const lista = [...files].filter((f) => f.type.startsWith('image/'));
-    setEnvios(lista.map((f) => ({ nome: f.name, pct: 0 })));
-    let ok = 0;
-    let semData = 0;
-    for (const [i, file] of lista.entries()) {
-      try {
-        const [url, { data: dataCaptura, origem }] = await Promise.all([
-          uploadImage(file, (pct) => setEnvios((e) => e.map((x, j) => (j === i ? { ...x, pct } : x)))),
-          dataCapturaDe(file),
-        ]);
-        await fotosApi.create({ caminhoArquivo: url, plantaId: planta.id, dataCaptura });
-        ok++;
-        if (origem === 'arquivo' && !daCamera) semData++;
-      } catch (error) {
-        toast(`${file.name}: ${errorMessage(error)}`, 'error');
-      }
-    }
-    setEnvios([]);
-    queryClient.invalidateQueries({ queryKey: keys.fotos(planta.id) });
-    if (ok) toast(ok === 1 ? 'Foto adicionada' : `${ok} fotos adicionadas`);
-    if (semData)
-      toast(
-        semData === 1
-          ? 'A foto veio sem data de captura — usamos a data do arquivo.'
-          : `${semData} fotos vieram sem data de captura — usamos a data do arquivo.`,
-        'error',
-      );
-  }
-
-  async function definirCapa(foto: Foto) {
-    setOcupado(true);
-    try {
-      await plantasApi.update(planta.id, { fotoCapaUrl: foto.caminhoArquivo });
-      queryClient.invalidateQueries({ queryKey: keys.plantas });
-      toast('Capa atualizada');
-      setAberta(null);
-    } catch (error) {
-      toast(errorMessage(error), 'error');
-    } finally {
-      setOcupado(false);
-    }
-  }
-
-  async function excluir(foto: Foto) {
-    setOcupado(true);
-    try {
-      await fotosApi.remove(foto.id);
-      queryClient.invalidateQueries({ queryKey: keys.fotos(planta.id) });
-      // Se era a capa, o servidor promove a foto mais recente
-      if (foto.caminhoArquivo === planta.fotoCapaUrl) queryClient.invalidateQueries({ queryKey: keys.plantas });
-      toast('Foto excluída');
-      setConfirmar(false);
-      setAberta(null);
-    } catch (error) {
-      toast(errorMessage(error), 'error');
-    } finally {
-      setOcupado(false);
-    }
-  }
-
-  const imagens = (fotos.data ?? []).filter((f) => f.tipo !== 'VIDEO');
-
-  return (
-    <div className="pt-4">
-      <input
-        ref={inputRef}
-        type="file"
-        accept="image/*"
-        multiple
-        className="hidden"
-        onChange={(e) => {
-          if (e.target.files?.length) enviar(e.target.files);
-          e.target.value = '';
-        }}
-      />
-      <input
-        ref={cameraRef}
-        type="file"
-        accept="image/*"
-        capture="environment"
-        className="hidden"
-        onChange={(e) => {
-          if (e.target.files?.length) enviar(e.target.files, true);
-          e.target.value = '';
-        }}
-      />
-      <div className="grid grid-cols-2 gap-2">
-        <Button onClick={() => cameraRef.current?.click()} disabled={envios.length > 0}>
-          <Camera size={18} /> Tirar foto
-        </Button>
-        <Button variant="secondary" onClick={() => inputRef.current?.click()} disabled={envios.length > 0}>
-          <ImagePlus size={18} /> Galeria
-        </Button>
-      </div>
-
-      {envios.length > 0 && (
-        <div className="mt-3 space-y-2">
-          {envios.map((e, i) => (
-            <div key={i} className="card p-3">
-              <div className="flex justify-between text-xs">
-                <span className="truncate">{e.nome}</span>
-                <span className="text-muted">{e.pct}%</span>
-              </div>
-              <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-line">
-                <div className="h-full bg-primary transition-all" style={{ width: `${e.pct}%` }} />
-              </div>
-            </div>
-          ))}
+      {pendentes.length > 0 && (
+        <div ref={hojeRef} className="flex shrink-0 flex-col items-center gap-1 px-0.5">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-primary">Hoje</span>
+          <span className="w-0.5 flex-1 rounded-full bg-primary/40" />
         </div>
       )}
-
-      {fotos.isLoading ? (
-        <Spinner />
-      ) : imagens.length === 0 ? (
-        <EmptyState icon={<Camera size={26} />} title="Nenhuma foto ainda" text="Fotos ao longo do tempo mostram a evolução da planta." />
-      ) : (
-        <div className="mt-4 grid grid-cols-3 gap-1.5">
-          {imagens.map((f) => (
-            <button key={f.id} onClick={() => setAberta(f)} className="relative aspect-square overflow-hidden rounded-lg bg-primary-light">
-              <img src={f.caminhoArquivo} alt={f.titulo ?? ''} loading="lazy" className="size-full object-cover" />
-              {f.caminhoArquivo === planta.fotoCapaUrl && (
-                <Star size={16} className="absolute right-1.5 top-1.5 fill-white text-white drop-shadow" aria-label="Capa" />
-              )}
-            </button>
-          ))}
-        </div>
-      )}
-
-      {aberta && (
-        <div className="animate-fade-in fixed inset-0 z-50 flex flex-col bg-black" role="dialog" aria-modal="true">
-          <div className="flex items-center justify-between p-3 pt-safe text-white">
-            <span className="text-sm">{dataCurta(aberta.dataCaptura ?? aberta.createdAt)}{aberta.titulo ? ` · ${aberta.titulo}` : ''}</span>
-            <button onClick={() => setAberta(null)} className="flex size-10 items-center justify-center rounded-full hover:bg-white/10" aria-label="Fechar">
-              <X size={22} />
-            </button>
-          </div>
-          <img src={aberta.caminhoArquivo} alt={aberta.titulo ?? ''} className="min-h-0 flex-1 object-contain" />
-          <div className="grid grid-cols-2 gap-3 p-4 pb-safe">
-            <Button variant="secondary" onClick={() => definirCapa(aberta)} disabled={ocupado || aberta.caminhoArquivo === planta.fotoCapaUrl}>
-              <Star size={18} /> {aberta.caminhoArquivo === planta.fotoCapaUrl ? 'É a capa' : 'Usar como capa'}
-            </Button>
-            <Button variant="danger" onClick={() => setConfirmar(true)} disabled={ocupado}>
-              <Trash2 size={18} /> Excluir
-            </Button>
-          </div>
-        </div>
-      )}
-      <ConfirmSheet
-        open={confirmar && !!aberta}
-        onClose={() => setConfirmar(false)}
-        onConfirm={() => aberta && excluir(aberta)}
-        loading={ocupado}
-        title="Excluir foto?"
-      />
+      {passado.map((i) => (
+        <CardLinha key={chaveItem(i)} item={i} abrirFoto={abrirFoto} />
+      ))}
     </div>
   );
 }
 
-function Cuidados({ plantaId, agendas }: { plantaId: string; agendas: Agenda[] }) {
-  const { agendarCuidado } = useCare();
-  const pendentes = agendas.filter((a) => a.status === 'PENDENTE').sort((a, b) => a.dataAgendada.localeCompare(b.dataAgendada));
+function CardLinha({ item, abrirFoto }: { item: ItemLinha; abrirFoto: (f: Foto) => void }) {
+  const { abrirTarefa } = useCare();
+
+  if (item.tipo === 'fotos') {
+    const [primeira] = item.fotos;
+    return (
+      <button onClick={() => abrirFoto(primeira)} className="w-32 shrink-0 rounded-2xl border border-line bg-white p-2 text-left opacity-80">
+        <div className="relative">
+          <img src={primeira.caminhoArquivo} alt="" loading="lazy" className="aspect-square w-full rounded-lg object-cover" />
+          {item.fotos.length > 1 && (
+            <span className="absolute bottom-1 right-1 rounded-full bg-black/60 px-1.5 text-[11px] font-semibold text-white">+{item.fotos.length - 1}</span>
+          )}
+        </div>
+        <p className="mt-1.5 flex items-center gap-1 text-sm font-semibold">
+          <Camera size={14} className="shrink-0 text-muted" /> {item.fotos.length > 1 ? `${item.fotos.length} fotos` : 'Foto'}
+        </p>
+        <p className="text-xs text-muted">{dataCurta(item.data)}</p>
+      </button>
+    );
+  }
+
+  const { agenda, estado } = item;
+  const foto = agenda.fotos?.[0]?.caminhoArquivo;
+  const estilo = {
+    futura: 'border-2 border-dashed border-primary/40 bg-white',
+    atrasada: 'border-2 border-danger/40 bg-danger-light',
+    feita: 'border border-line bg-white opacity-80',
+  }[estado];
 
   return (
-    <div className="pt-4">
-      <Button block variant="secondary" onClick={() => agendarCuidado(plantaId)}>
-        <CalendarPlus size={18} /> Agendar cuidado
-      </Button>
-      {pendentes.length === 0 ? (
-        <EmptyState title="Nada agendado" text="Agende regas, adubações e podas para receber na tela Hoje." />
+    <button onClick={() => abrirTarefa(agenda)} className={`w-32 shrink-0 rounded-2xl p-2.5 text-left ${estilo}`}>
+      {foto ? (
+        <img src={foto} alt="" loading="lazy" className="mb-1.5 aspect-square w-full rounded-lg object-cover" />
       ) : (
-        <div className="mt-4 space-y-2">
-          {pendentes.map((a) => (
-            <TaskCard key={a.id} agenda={a} showPlanta={false} />
-          ))}
-        </div>
+        <span
+          className={`mb-2 flex size-7 items-center justify-center rounded-full ${
+            estado === 'atrasada' ? 'bg-white text-danger' : 'bg-primary-light text-primary'
+          }`}
+        >
+          {estado === 'feita' ? <Check size={15} strokeWidth={2.5} /> : <CalendarClock size={15} />}
+        </span>
       )}
-    </div>
+      <p className="line-clamp-2 text-sm font-semibold leading-tight">{agenda.atividade?.nome ?? 'Cuidado'}</p>
+      <p className={`mt-0.5 text-xs ${estado === 'atrasada' ? 'font-semibold text-danger' : 'text-muted'}`}>
+        {estado === 'feita' ? dataCurta(item.data) : estado === 'atrasada' ? `Atrasada · ${dataRelativa(item.data)}` : dataRelativa(item.data)}
+      </p>
+    </button>
+  );
+}
+
+function AcaoItem({ icon, title, text, onClick }: { icon: ReactNode; title: string; text: string; onClick: () => void }) {
+  return (
+    <button onClick={onClick} className="card flex items-center gap-4 p-4 text-left transition hover:border-primary/40 active:scale-[0.99]">
+      <span className="flex size-11 items-center justify-center rounded-xl bg-primary-light text-primary">{icon}</span>
+      <span>
+        <span className="block font-semibold">{title}</span>
+        <span className="block text-sm text-muted">{text}</span>
+      </span>
+    </button>
   );
 }
