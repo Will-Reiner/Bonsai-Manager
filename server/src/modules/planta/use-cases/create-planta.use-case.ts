@@ -7,9 +7,8 @@ export class CreatePlantaUseCase {
   ) {}
 
   async execute(data: CreatePlantaRequestDTO): Promise<PlantaWithEspecie> {
-    // Validar se a espécie existe
-    const especieExists = await this.especieRepository.existsById(data.especieId);
-    if (!especieExists) {
+    // Espécie é opcional (planta criada só com código + foto); se vier, precisa existir
+    if (data.especieId && !(await this.especieRepository.existsById(data.especieId))) {
       throw new Error('Espécie não encontrada');
     }
 

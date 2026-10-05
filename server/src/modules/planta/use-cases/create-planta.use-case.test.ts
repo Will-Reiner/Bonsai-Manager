@@ -76,6 +76,24 @@ describe('CreatePlantaUseCase', () => {
       expect(result).toEqual(mockCreatedPlanta);
     });
 
+    it('deve criar uma planta sem espécie (só código e capa)', async () => {
+      // Arrange
+      const dto: CreatePlantaRequestDTO = {
+        usuarioId: 'user-123',
+        identificador: '42',
+        fotoCapaUrl: 'https://r2.example.com/capa.webp',
+      };
+      mockPlantaRepository.create.mockResolvedValue({ ...mockCreatedPlanta, especieId: null, especie: null });
+
+      // Act
+      const result = await createPlantaUseCase.execute(dto);
+
+      // Assert
+      expect(mockEspecieRepository.existsById).not.toHaveBeenCalled();
+      expect(mockPlantaRepository.create).toHaveBeenCalledWith(dto);
+      expect(result.especie).toBeNull();
+    });
+
     it('deve lançar erro quando a espécie não existe', async () => {
       // Arrange
       mockEspecieRepository.existsById.mockResolvedValue(false);
