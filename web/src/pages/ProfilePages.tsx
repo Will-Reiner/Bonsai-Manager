@@ -1,15 +1,68 @@
 import { useState, type FormEvent, type ReactNode } from 'react';
 import { Link, useNavigate } from 'react-router';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { ChevronRight, LogOut, MapPin, Pencil, ShieldCheck } from 'lucide-react';
 import { Avatar, Button, Field, PageHeader } from '@/components/ui';
 import { PhotoInput } from '@/components/PhotoInput';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/context/ToastContext';
 import { errorMessage } from '@/lib/api';
-import { authApi } from '@/lib/endpoints';
-import { keys, useAgendas, usePlantas } from '@/lib/queries';
+import { authApi, preferenciasApi } from '@/lib/endpoints';
+import { keys, useAgendas, usePreferencias, useRevisaoDias, usePlantas } from '@/lib/queries';
 import { uploadImage } from '@/lib/upload';
+
+const OPCOES_REVISAO = [
+  { valor: '0', label: 'Desligada' },
+  { valor: '15', label: '15 dias' },
+  { valor: '30', label: '30 dias' },
+  { valor: '60', label: '60 dias' },
+  { valor: '90', label: '90 dias' },
+];
+
+/** Intervalo da Revisão geral criada quando uma conclusão não agenda nada. */
+function RevisaoAutomatica() {
+  const queryClient = useQueryClient();
+  const toast = useToast();
+  const prefs = usePreferencias();
+  const dias = useRevisaoDias();
+  const [salvando, setSalvando] = useState(false);
+
+  async function mudar(valor: string) {
+    setSalvando(true);
+    try {
+      await preferenciasApi.set('revisao_automatica_dias', valor);
+      await queryClient.invalidateQueries({ queryKey: keys.preferencias });
+      toast('Preferência salva');
+    } catch (error) {
+      toast(errorMessage(error), 'error');
+    } finally {
+      setSalvando(false);
+    }
+  }
+
+  return (
+    <section className="card mt-4 p-4">
+      <Field
+        label="Revisão automática"
+        hint="Ao concluir uma tarefa sem agendar próximos passos, cria uma Revisão geral para não esquecer da planta."
+      >
+        <select
+          className="input"
+          value={String(dias)}
+          disabled={prefs.isLoading || salvando}
+          onChange={(e) => mudar(e.target.value)}
+        >
+          {!OPCOES_REVISAO.some((o) => o.valor === String(dias)) && <option value={String(dias)}>{dias} dias</option>}
+          {OPCOES_REVISAO.map((o) => (
+            <option key={o.valor} value={o.valor}>
+              {o.label}
+            </option>
+          ))}
+        </select>
+      </Field>
+    </section>
+  );
+}
 
 export function ProfilePage() {
   const { user, isAdmin, logout } = useAuth();
@@ -46,6 +99,8 @@ export function ProfilePage() {
           <Numero label="Seguidores" valor={me.data?.seguidores?.length ?? 0} />
         </dl>
       </section>
+
+      <RevisaoAutomatica />
 
       <nav className="card mt-4 divide-y divide-line overflow-hidden">
         <MenuItem to="/perfil/editar" icon={<Pencil size={20} />} label="Editar perfil" />
