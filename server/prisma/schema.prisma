@@ -203,6 +203,9 @@ model Foto {
   usuarioId      String
   usuario        Usuario    @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
 
+  agendaId       String?
+  agenda         Agenda?    @relation(fields: [agendaId], references: [id], onDelete: SetNull)
+
   // Campos de mídia
   tipo           TipoMidia  @default(FOTO)
   descricao      String?    @db.Text
@@ -224,12 +227,13 @@ model Agenda {
 
   plantaId         String
   planta           Planta       @relation(fields: [plantaId], references: [id], onDelete: Cascade)
-  
+
   atividadeId      String
   atividade        Atividade    @relation(fields: [atividadeId], references: [id])
 
   // Relacionamentos
   recursosUtilizados AgendaRecursoUtilizado[]
+  fotos              Foto[]
 }
 
 model Recurso {
