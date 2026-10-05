@@ -84,7 +84,7 @@ export function BatchPhotosPage() {
       iniciados.current.add(item.key);
       atualizar(item.key, { upload: 'enviando' });
       Promise.all([uploadImage(item.file), dataCapturaDe(item.file)])
-        .then(([url, dataCaptura]) => atualizar(item.key, { upload: 'ok', url, dataCaptura }))
+        .then(([url, { data: dataCaptura }]) => atualizar(item.key, { upload: 'ok', url, dataCaptura }))
         .catch(() => atualizar(item.key, { upload: 'erro' }));
     }
   }, [items]);

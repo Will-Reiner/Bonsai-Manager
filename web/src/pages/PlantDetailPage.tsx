@@ -194,14 +194,16 @@ function Galeria({ planta }: { planta: Planta }) {
     const lista = [...files].filter((f) => f.type.startsWith('image/'));
     setEnvios(lista.map((f) => ({ nome: f.name, pct: 0 })));
     let ok = 0;
+    let semData = 0;
     for (const [i, file] of lista.entries()) {
       try {
-        const [url, dataCaptura] = await Promise.all([
+        const [url, { data: dataCaptura, origem }] = await Promise.all([
           uploadImage(file, (pct) => setEnvios((e) => e.map((x, j) => (j === i ? { ...x, pct } : x)))),
           dataCapturaDe(file),
         ]);
         await fotosApi.create({ caminhoArquivo: url, plantaId: planta.id, dataCaptura });
         ok++;
+        if (origem === 'arquivo') semData++;
       } catch (error) {
         toast(`${file.name}: ${errorMessage(error)}`, 'error');
       }
@@ -209,6 +211,13 @@ function Galeria({ planta }: { planta: Planta }) {
     setEnvios([]);
     queryClient.invalidateQueries({ queryKey: keys.fotos(planta.id) });
     if (ok) toast(ok === 1 ? 'Foto adicionada' : `${ok} fotos adicionadas`);
+    if (semData)
+      toast(
+        semData === 1
+          ? 'A foto veio sem data de captura — usamos a data do arquivo.'
+          : `${semData} fotos vieram sem data de captura — usamos a data do arquivo.`,
+        'error',
+      );
   }
 
   async function definirCapa(foto: Foto) {
