@@ -186,6 +186,7 @@ function Visualizador({
       if (vizinha) onTrocar(vizinha);
       else onFechar();
       queryClient.invalidateQueries({ queryKey: keys.fotos(plantaId) });
+      if (atual.agendaId) queryClient.invalidateQueries({ queryKey: keys.agendas });
       // Se era a capa, o servidor promove a foto mais recente
       if (ehCapa) queryClient.invalidateQueries({ queryKey: keys.plantas });
       toast('Foto excluída');

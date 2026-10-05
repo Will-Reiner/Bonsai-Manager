@@ -1,13 +1,14 @@
-import { useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { useMemo, useState, type ReactNode } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
 import { CalendarCheck, CalendarClock, CalendarPlus, Camera, Check, ChevronRight, Clock, ImagePlus, Pencil, Plus, ShoppingBag } from 'lucide-react';
 import { EmptyState, ErrorState, PageHeader, PlantThumb, SectionTitle, Spinner } from '@/components/ui';
 import { Sheet } from '@/components/Sheet';
+import { Roda } from '@/components/Roda';
 import { EnviosProgresso, useEnviarFotos } from '@/components/FotoUpload';
 import { useCare } from '@/context/CareContext';
 import { errorMessage } from '@/lib/api';
 import { dataCurta, dataRelativa, especieNome, modoAquisicaoLabel, plantaTitulo, tempoDesde } from '@/lib/format';
-import { chaveItem, fotosOrdenadas, linhaDoTempo, type ItemLinha } from '@/lib/linhaDoTempo';
+import { chaveItem, dataDaFoto, fotosOrdenadas, linhaDoTempo, type ItemLinha } from '@/lib/linhaDoTempo';
 import { useAgendas, useFotos, usePlanta } from '@/lib/queries';
 import type { Foto } from '@/types';
 
@@ -98,13 +99,15 @@ export function PlantDetailPage() {
               Nenhuma foto ainda. Toque para adicionar e acompanhar a evolução.
             </button>
           ) : (
-            <div className="-mx-4 flex snap-x gap-2 overflow-x-auto px-4 pb-1">
-              {imagens.map((f) => (
-                <button key={f.id} onClick={() => abrirFoto(f)} className="size-28 shrink-0 snap-start overflow-hidden rounded-2xl bg-primary-light">
-                  <img src={f.caminhoArquivo} alt={f.titulo ?? ''} loading="lazy" className="size-full object-cover" />
+            // Mais antiga à esquerda; abre nas duas mais novas
+            <Roda label="Fotos" inicio={imagens.length - 2}>
+              {[...imagens].reverse().map((f) => (
+                <button key={f.id} onClick={() => abrirFoto(f)} className="block w-full text-left">
+                  <img src={f.caminhoArquivo} alt={f.titulo ?? ''} loading="lazy" className="aspect-square w-full rounded-2xl bg-primary-light object-cover" />
+                  <span className="mt-1.5 block text-center text-xs text-muted">{dataCurta(dataDaFoto(f))}</span>
                 </button>
               ))}
-            </div>
+            </Roda>
           )}
           <EnviosProgresso envios={upload.envios} />
         </Secao>
@@ -115,7 +118,7 @@ export function PlantDetailPage() {
           ) : linha.pendentes.length + linha.passado.length === 0 ? (
             <EmptyState title="Nada por aqui ainda" text="Cuidados agendados, concluídos e fotos aparecem nesta linha do tempo." />
           ) : (
-            <FaixaLinhaDoTempo pendentes={linha.pendentes} passado={linha.passado} abrirFoto={abrirFoto} />
+            <RodaLinhaDoTempo passado={linha.passado} pendentes={linha.pendentes} abrirFoto={abrirFoto} />
           )}
         </Secao>
 
@@ -163,83 +166,71 @@ function Secao({ titulo, verMais, children }: { titulo: string; verMais?: string
   );
 }
 
-/** Faixa horizontal: pendentes (futuras → atrasadas), marcador de hoje, depois o passado. Abre centrada em "hoje". */
-function FaixaLinhaDoTempo({ pendentes, passado, abrirFoto }: { pendentes: ItemLinha[]; passado: ItemLinha[]; abrirFoto: (f: Foto) => void }) {
-  const scrollRef = useRef<HTMLDivElement>(null);
-  const hojeRef = useRef<HTMLDivElement>(null);
-
-  useLayoutEffect(() => {
-    const box = scrollRef.current;
-    const hoje = hojeRef.current;
-    if (!box || !hoje) return;
-    // Deixa a tarefa mais próxima de hoje visível sem rolar a página inteira
-    box.scrollLeft = Math.max(0, hoje.offsetLeft - box.clientWidth / 2);
-  }, [pendentes.length]);
+/**
+ * Linha do tempo em roda, da mais antiga (esquerda) para a mais nova (direita).
+ * Abre com a última tarefa feita e a próxima lado a lado no centro.
+ */
+function RodaLinhaDoTempo({ passado, pendentes, abrirFoto }: { passado: ItemLinha[]; pendentes: ItemLinha[]; abrirFoto: (f: Foto) => void }) {
+  const itens = [...passado, ...pendentes];
+  const ultima = passado.findLastIndex((i) => i.tipo === 'tarefa');
+  const proxima = pendentes.length ? passado.length : -1;
+  // Próxima no lugar da direita e o que veio logo antes (normalmente a última feita) à esquerda;
+  // sem pendentes, a última feita fica à esquerda
+  const inicio = proxima >= 0 ? proxima - 1 : ultima >= 0 ? ultima : itens.length - 2;
 
   return (
-    <div ref={scrollRef} className="relative -mx-4 flex items-stretch gap-2.5 overflow-x-auto px-4 pb-2">
-      {pendentes.map((i) => (
-        <CardLinha key={chaveItem(i)} item={i} abrirFoto={abrirFoto} />
+    <Roda label="Histórico e cuidados" inicio={inicio}>
+      {itens.map((item, i) => (
+        <CardLinha key={chaveItem(item)} item={item} rotulo={i === ultima ? 'Última' : i === proxima ? 'Próxima' : undefined} abrirFoto={abrirFoto} />
       ))}
-      {pendentes.length > 0 && (
-        <div ref={hojeRef} className="flex shrink-0 flex-col items-center gap-1 px-0.5">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-primary">Hoje</span>
-          <span className="w-0.5 flex-1 rounded-full bg-primary/40" />
-        </div>
-      )}
-      {passado.map((i) => (
-        <CardLinha key={chaveItem(i)} item={i} abrirFoto={abrirFoto} />
-      ))}
-    </div>
+    </Roda>
   );
 }
 
-function CardLinha({ item, abrirFoto }: { item: ItemLinha; abrirFoto: (f: Foto) => void }) {
+const ESTILO = {
+  feita: { card: 'border-accent/25 bg-accent-light', icone: 'bg-white text-accent', rotulo: 'bg-accent text-white' },
+  futura: { card: 'border-primary/30 bg-primary-light', icone: 'bg-white text-primary', rotulo: 'bg-primary text-white' },
+  atrasada: { card: 'border-danger/40 bg-danger-light', icone: 'bg-white text-danger', rotulo: 'bg-danger text-white' },
+};
+
+function CardLinha({ item, rotulo, abrirFoto }: { item: ItemLinha; rotulo?: string; abrirFoto: (f: Foto) => void }) {
   const { abrirTarefa } = useCare();
+  const estado = item.tipo === 'tarefa' ? item.estado : 'feita';
+  const estilo = ESTILO[estado];
+  const fotos = item.tipo === 'tarefa' ? (item.agenda.fotos ?? []) : item.fotos;
+  const capa = fotos[0]?.caminhoArquivo;
 
-  if (item.tipo === 'fotos') {
-    const [primeira] = item.fotos;
-    return (
-      <button onClick={() => abrirFoto(primeira)} className="w-32 shrink-0 rounded-2xl border border-line bg-white p-2 text-left opacity-80">
-        <div className="relative">
-          <img src={primeira.caminhoArquivo} alt="" loading="lazy" className="aspect-square w-full rounded-lg object-cover" />
-          {item.fotos.length > 1 && (
-            <span className="absolute bottom-1 right-1 rounded-full bg-black/60 px-1.5 text-[11px] font-semibold text-white">+{item.fotos.length - 1}</span>
-          )}
-        </div>
-        <p className="mt-1.5 flex items-center gap-1 text-sm font-semibold">
-          <Camera size={14} className="shrink-0 text-muted" /> {item.fotos.length > 1 ? `${item.fotos.length} fotos` : 'Foto'}
-        </p>
-        <p className="text-xs text-muted">{dataCurta(item.data)}</p>
-      </button>
-    );
-  }
-
-  const { agenda, estado } = item;
-  const foto = agenda.fotos?.[0]?.caminhoArquivo;
-  const estilo = {
-    futura: 'border-2 border-dashed border-primary/40 bg-white',
-    atrasada: 'border-2 border-danger/40 bg-danger-light',
-    feita: 'border border-line bg-white opacity-80',
-  }[estado];
+  const titulo = item.tipo === 'tarefa' ? (item.agenda.atividade?.nome ?? 'Cuidado') : fotos.length > 1 ? `${fotos.length} fotos` : 'Foto';
+  const quando =
+    estado === 'feita' ? dataCurta(item.data) : estado === 'atrasada' ? `Atrasada · ${dataRelativa(item.data)}` : dataRelativa(item.data);
 
   return (
-    <button onClick={() => abrirTarefa(agenda)} className={`w-32 shrink-0 rounded-2xl p-2.5 text-left ${estilo}`}>
-      {foto ? (
-        <img src={foto} alt="" loading="lazy" className="mb-1.5 aspect-square w-full rounded-lg object-cover" />
-      ) : (
-        <span
-          className={`mb-2 flex size-7 items-center justify-center rounded-full ${
-            estado === 'atrasada' ? 'bg-white text-danger' : 'bg-primary-light text-primary'
-          }`}
-        >
-          {estado === 'feita' ? <Check size={15} strokeWidth={2.5} /> : <CalendarClock size={15} />}
-        </span>
-      )}
-      <p className="line-clamp-2 text-sm font-semibold leading-tight">{agenda.atividade?.nome ?? 'Cuidado'}</p>
-      <p className={`mt-0.5 text-xs ${estado === 'atrasada' ? 'font-semibold text-danger' : 'text-muted'}`}>
-        {estado === 'feita' ? dataCurta(item.data) : estado === 'atrasada' ? `Atrasada · ${dataRelativa(item.data)}` : dataRelativa(item.data)}
+    <button
+      onClick={() => (item.tipo === 'tarefa' ? abrirTarefa(item.agenda) : abrirFoto(item.fotos[0]))}
+      className={`flex h-full w-full flex-col rounded-3xl border-2 p-3 text-left ${estilo.card}`}
+    >
+      <div className="relative">
+        {capa ? (
+          <img src={capa} alt="" loading="lazy" className="aspect-[4/3] w-full rounded-2xl object-cover" />
+        ) : (
+          <div className={`flex aspect-[4/3] w-full items-center justify-center rounded-2xl ${estilo.icone}`}>
+            {estado === 'feita' ? <Check size={28} strokeWidth={2.5} /> : <CalendarClock size={28} />}
+          </div>
+        )}
+        {fotos.length > 1 && item.tipo === 'tarefa' && (
+          <span className="absolute bottom-1.5 right-1.5 flex items-center gap-1 rounded-full bg-black/60 px-2 py-0.5 text-[11px] font-semibold text-white">
+            <Camera size={12} /> {fotos.length}
+          </span>
+        )}
+        {rotulo && (
+          <span className={`absolute left-1.5 top-1.5 rounded-full px-2 py-0.5 text-[11px] font-bold uppercase tracking-wider ${estilo.rotulo}`}>{rotulo}</span>
+        )}
+      </div>
+      <p className="mt-2.5 flex items-center gap-1.5 font-semibold leading-tight">
+        {item.tipo === 'fotos' && <Camera size={15} className="shrink-0 text-accent" />}
+        <span className="line-clamp-2">{titulo}</span>
       </p>
+      <p className={`mt-0.5 text-sm ${estado === 'atrasada' ? 'font-semibold text-danger' : 'text-muted'}`}>{quando}</p>
     </button>
   );
 }

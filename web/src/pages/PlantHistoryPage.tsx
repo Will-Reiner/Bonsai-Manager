@@ -19,10 +19,11 @@ export function PlantHistoryPage() {
 
   const daPlanta = useMemo(() => (agendas.data ?? []).filter((a) => a.plantaId === id), [agendas.data, id]);
   const { pendentes, passado } = useMemo(() => linhaDoTempo(daPlanta, fotos.data), [daPlanta, fotos.data]);
-  // Para fazer: a mais urgente primeiro
-  const urgentes = [...pendentes].reverse();
-  const atrasadas = urgentes.filter((i) => i.tipo === 'tarefa' && i.estado === 'atrasada');
-  const proximas = urgentes.filter((i) => i.tipo === 'tarefa' && i.estado === 'futura');
+  const recentesPrimeiro = useMemo(() => [...passado].reverse(), [passado]);
+  const abrirFoto = (fotoId: string) => navigate(`/plantas/${id}/galeria?foto=${fotoId}`);
+  // Para fazer: a mais urgente primeiro (pendentes já vêm em ordem de data)
+  const atrasadas = pendentes.filter((i) => i.tipo === 'tarefa' && i.estado === 'atrasada');
+  const proximas = pendentes.filter((i) => i.tipo === 'tarefa' && i.estado === 'futura');
 
   return (
     <div className="pb-8">
@@ -58,30 +59,23 @@ export function PlantHistoryPage() {
               <EmptyState title="Sem histórico ainda" text="Cuidados concluídos e fotos aparecem aqui, do mais recente ao mais antigo." />
             ) : (
               <ol className="relative ml-1.5 space-y-5 border-l-2 border-line pl-5">
-                {passado.map((item) => (
+                {recentesPrimeiro.map((item) => (
                   <li key={chaveItem(item)} className="relative">
                     <span className="absolute -left-[27px] top-1.5 size-3 rounded-full border-2 border-bg bg-primary" />
                     <p className="text-xs text-muted">{dataLonga(item.data)}</p>
                     {item.tipo === 'tarefa' ? (
-                      <button onClick={() => abrirTarefa(item.agenda)} className="mt-1 block text-left">
-                        <p className="font-semibold">{item.agenda.atividade?.nome ?? 'Cuidado'}</p>
-                        {item.agenda.detalhes && <p className="mt-0.5 text-sm">{item.agenda.detalhes}</p>}
-                        {item.agenda.observacaoFutura && (
-                          <p className="mt-1 text-sm text-accent">Próxima vez: {item.agenda.observacaoFutura}</p>
-                        )}
-                      </button>
+                      <>
+                        <button onClick={() => abrirTarefa(item.agenda)} className="mt-1 block text-left">
+                          <p className="font-semibold">{item.agenda.atividade?.nome ?? 'Cuidado'}</p>
+                          {item.agenda.detalhes && <p className="mt-0.5 text-sm">{item.agenda.detalhes}</p>}
+                          {item.agenda.observacaoFutura && (
+                            <p className="mt-1 text-sm text-accent">Próxima vez: {item.agenda.observacaoFutura}</p>
+                          )}
+                        </button>
+                        <Miniaturas fotos={item.agenda.fotos ?? []} abrir={abrirFoto} />
+                      </>
                     ) : (
-                      <div className="mt-1.5 flex flex-wrap gap-1.5">
-                        {item.fotos.map((f) => (
-                          <button
-                            key={f.id}
-                            onClick={() => navigate(`/plantas/${id}/galeria?foto=${f.id}`)}
-                            className="size-20 overflow-hidden rounded-xl bg-primary-light"
-                          >
-                            <img src={f.caminhoArquivo} alt={f.titulo ?? ''} loading="lazy" className="size-full object-cover" />
-                          </button>
-                        ))}
-                      </div>
+                      <Miniaturas fotos={item.fotos} abrir={abrirFoto} />
                     )}
                   </li>
                 ))}
@@ -90,6 +84,19 @@ export function PlantHistoryPage() {
           </>
         )}
       </div>
+    </div>
+  );
+}
+
+function Miniaturas({ fotos, abrir }: { fotos: { id: string; caminhoArquivo: string }[]; abrir: (fotoId: string) => void }) {
+  if (fotos.length === 0) return null;
+  return (
+    <div className="mt-1.5 flex flex-wrap gap-1.5">
+      {fotos.map((f) => (
+        <button key={f.id} onClick={() => abrir(f.id)} className="size-20 overflow-hidden rounded-xl bg-primary-light">
+          <img src={f.caminhoArquivo} alt="" loading="lazy" className="size-full object-cover" />
+        </button>
+      ))}
     </div>
   );
 }
