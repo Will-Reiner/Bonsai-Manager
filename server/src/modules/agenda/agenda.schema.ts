@@ -89,3 +89,31 @@ export const concluirAgendasSchema = z.object({
       }),
   }),
 });
+
+export const registrarCuidadosSchema = z.object({
+  body: z.object({
+    data: z.string().datetime({ message: 'Data inválida.' }),
+    plantas: z
+      .array(
+        z.object({
+          plantaId: z.string().uuid({ message: 'ID de planta inválido.' }),
+          atividadeIds: z
+            .array(z.string().uuid({ message: 'ID de atividade inválido.' }))
+            .min(1, { message: 'Informe ao menos um cuidado por planta.' })
+            .max(20, { message: 'Máximo de 20 cuidados por planta.' }),
+          detalhes: z.string().max(2000).optional(),
+          observacaoFutura: z.string().max(2000).optional(),
+          fotos: z
+            .array(z.object({ caminhoArquivo: z.string().url(), dataCaptura: z.string().datetime().optional() }))
+            .max(50, { message: 'Máximo de 50 fotos por planta.' })
+            .optional(),
+        }),
+      )
+      .min(1, { message: 'Informe ao menos uma planta.' })
+      .max(200, { message: 'Máximo de 200 plantas por vez.' }),
+    proximos: z
+      .array(z.object({ atividadeId: z.string().uuid(), dataAgendada: z.string().datetime() }))
+      .max(10)
+      .optional(),
+  }),
+});

@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import { ZodError } from 'zod';
 import { parsePagination, buildPaginatedResponse } from '../../utils/pagination';
-import { createAgendaSchema, createAgendasLoteSchema, updateAgendaSchema, agendaIdSchema, concluirAgendasSchema } from './agenda.schema';
+import { createAgendaSchema, createAgendasLoteSchema, updateAgendaSchema, agendaIdSchema, concluirAgendasSchema, registrarCuidadosSchema } from './agenda.schema';
 import { PrismaAgendaRepository } from './repositories/prisma-agenda.repository';
 import { PrismaConclusaoRepository } from './repositories/prisma-conclusao.repository';
 import {
@@ -12,8 +12,9 @@ import {
   UpdateAgendaUseCase,
   DeleteAgendaUseCase,
   ConcluirAgendasUseCase,
+  RegistrarCuidadosUseCase,
 } from './use-cases';
-import { CreateAgendaDTO, CreateAgendasLoteDTO, UpdateAgendaDTO, ConcluirAgendasDTO } from './agenda.types';
+import { CreateAgendaDTO, CreateAgendasLoteDTO, UpdateAgendaDTO, ConcluirAgendasDTO, RegistrarCuidadosDTO } from './agenda.types';
 import '../../middlewares/auth.middleware'; // Import para garantir que a extensão da interface Request seja reconhecida
 
 export class AgendaController {
@@ -24,6 +25,7 @@ export class AgendaController {
   private updateAgendaUseCase: UpdateAgendaUseCase;
   private deleteAgendaUseCase: DeleteAgendaUseCase;
   private concluirAgendasUseCase: ConcluirAgendasUseCase;
+  private registrarCuidadosUseCase: RegistrarCuidadosUseCase;
 
   constructor() {
     const agendaRepository = new PrismaAgendaRepository();
@@ -33,7 +35,9 @@ export class AgendaController {
     this.getAgendaByIdUseCase = new GetAgendaByIdUseCase(agendaRepository);
     this.updateAgendaUseCase = new UpdateAgendaUseCase(agendaRepository);
     this.deleteAgendaUseCase = new DeleteAgendaUseCase(agendaRepository);
-    this.concluirAgendasUseCase = new ConcluirAgendasUseCase(new PrismaConclusaoRepository());
+    const conclusaoRepository = new PrismaConclusaoRepository();
+    this.concluirAgendasUseCase = new ConcluirAgendasUseCase(conclusaoRepository);
+    this.registrarCuidadosUseCase = new RegistrarCuidadosUseCase(conclusaoRepository);
   }
 
   async getById(req: Request, res: Response) {
@@ -203,6 +207,36 @@ export class AgendaController {
       }
 
       console.error('Erro ao concluir agendamentos:', error);
+      res.status(500).json({ error: 'Erro interno do servidor' });
+    }
+  }
+
+  async registrar(req: Request, res: Response) {
+    try {
+      const { body } = registrarCuidadosSchema.parse({ body: req.body });
+      const usuarioId = req.user?.userId;
+
+      if (!usuarioId) {
+        return res.status(401).json({ error: 'Usuário não autenticado' });
+      }
+
+      const resultado = await this.registrarCuidadosUseCase.execute(body as RegistrarCuidadosDTO, usuarioId);
+      res.status(201).json(resultado);
+    } catch (error) {
+      if (error instanceof ZodError) {
+        return res.status(400).json({ error: error.errors[0]?.message ?? 'Dados inválidos' });
+      }
+      if (error instanceof Error && error.message === 'Acesso negado. A planta não pertence a si.') {
+        return res.status(403).json({ error: error.message });
+      }
+      if (
+        error instanceof Error &&
+        ['Atividade não encontrada.', 'Plantas repetidas na lista.', 'Informe ao menos um cuidado por planta.'].includes(error.message)
+      ) {
+        return res.status(400).json({ error: error.message });
+      }
+
+      console.error('Erro ao registrar cuidados:', error);
       res.status(500).json({ error: 'Erro interno do servidor' });
     }
   }

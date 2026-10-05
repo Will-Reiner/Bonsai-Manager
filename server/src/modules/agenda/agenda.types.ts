@@ -67,6 +67,33 @@ export interface PlanoConclusao {
   revisoes: { plantaId: string; dataAgendada: Date }[];
 }
 
+export interface RegistrarCuidadosDTO {
+  data: string;
+  plantas: {
+    plantaId: string;
+    atividadeIds: string[];
+    detalhes?: string;
+    observacaoFutura?: string;
+    fotos?: { caminhoArquivo: string; dataCaptura?: string }[];
+  }[];
+  proximos?: { atividadeId: string; dataAgendada: string }[];
+}
+
+export interface PlanoRegistro {
+  usuarioId: string;
+  data: Date;
+  /** Uma entrada por planta; detalhes/obs. e fotos vão no primeiro cuidado dela. */
+  cuidados: {
+    plantaId: string;
+    atividadeIds: string[];
+    detalhes?: string;
+    observacaoFutura?: string;
+    fotos: { caminhoArquivo: string; dataCaptura: Date }[];
+  }[];
+  criarPendentes: { plantaId: string; atividadeId: string; dataAgendada: Date }[];
+  revisoes: { plantaId: string; dataAgendada: Date }[];
+}
+
 export interface ResultadoConclusao {
   concluidas: any[];
   criadas: any[];
@@ -82,4 +109,7 @@ export interface ConclusaoRepository {
   /** Data da próxima PENDENTE da planta com dataAgendada >= aPartirDe, ignorando `excluir`. */
   proximaPendente(plantaId: string, aPartirDe: Date, excluir: string[]): Promise<Date | null>;
   executar(plano: PlanoConclusao): Promise<ResultadoConclusao>;
+  /** Quantas das plantas informadas são do usuário. */
+  contarPlantasDoUsuario(plantaIds: string[], usuarioId: string): Promise<number>;
+  registrar(plano: PlanoRegistro): Promise<ResultadoConclusao>;
 }
