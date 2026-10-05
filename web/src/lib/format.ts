@@ -24,6 +24,9 @@ const fmtSemana = new Intl.DateTimeFormat('pt-BR', { weekday: 'long' });
 
 export const dataCurta = (iso: string) => fmtCurta.format(new Date(iso)).replace('.', '');
 export const dataLonga = (iso: string) => fmtLonga.format(new Date(iso));
+const fmtNumerica = new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+/** "05/10/2026" */
+export const dataNumerica = (iso: string) => fmtNumerica.format(new Date(iso));
 
 /** "Hoje", "Amanhã", "Ontem", "há 3 dias", "quinta-feira", "12 de out." */
 export function dataRelativa(iso: string): string {

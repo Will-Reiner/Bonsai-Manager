@@ -9,6 +9,8 @@ import { CollectionPage } from '@/pages/CollectionPage';
 import { AddPlantPage } from '@/pages/AddPlantPage';
 import { PlantDetailPage } from '@/pages/PlantDetailPage';
 import { EditPlantPage } from '@/pages/EditPlantPage';
+import { PlantGalleryPage } from '@/pages/PlantGalleryPage';
+import { PlantHistoryPage } from '@/pages/PlantHistoryPage';
 import { TarefaPage } from '@/pages/TarefaPage';
 import { ConcluirPage } from '@/pages/ConcluirPage';
 import { BatchPhotosPage } from '@/pages/BatchPhotosPage';
@@ -57,6 +59,8 @@ export default function App() {
         <Route path="/plantas/nova" element={<Privada><AddPlantPage /></Privada>} />
         <Route path="/plantas/:id" element={<Privada><PlantDetailPage /></Privada>} />
         <Route path="/plantas/:id/editar" element={<Privada><EditPlantPage /></Privada>} />
+        <Route path="/plantas/:id/galeria" element={<Privada><PlantGalleryPage /></Privada>} />
+        <Route path="/plantas/:id/historico" element={<Privada><PlantHistoryPage /></Privada>} />
         <Route path="/tarefas/:id" element={<Privada><TarefaPage /></Privada>} />
         <Route path="/concluir" element={<Privada><ConcluirPage /></Privada>} />
         <Route path="/fotos/lote" element={<Privada><BatchPhotosPage /></Privada>} />

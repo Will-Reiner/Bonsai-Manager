@@ -1,7 +1,11 @@
-import { useEffect, useMemo, useRef } from 'react';
+import { type ChangeEvent, useEffect, useMemo, useRef } from 'react';
 import { Camera, ImagePlus, X } from 'lucide-react';
 
-/** Seletor de foto com pré-visualização. O upload em si acontece no submit do formulário pai. */
+/**
+ * Seletor de foto com pré-visualização. O upload em si acontece no submit do formulário pai.
+ * "Câmera" usa `capture` para abrir direto o app de câmera do celular (mesma qualidade de uma foto normal);
+ * "Galeria" abre o seletor do sistema. No desktop o `capture` é ignorado e os dois abrem o seletor de arquivos.
+ */
 export function PhotoInput({
   file,
   onChange,
@@ -15,7 +19,8 @@ export function PhotoInput({
   label?: string;
   aspect?: string;
 }) {
-  const inputRef = useRef<HTMLInputElement>(null);
+  const galeriaRef = useRef<HTMLInputElement>(null);
+  const cameraRef = useRef<HTMLInputElement>(null);
   const preview = useMemo(() => (file ? URL.createObjectURL(file) : null), [file]);
 
   useEffect(() => {
@@ -24,29 +29,38 @@ export function PhotoInput({
   }, [preview]);
 
   const shown = preview || currentUrl;
+  const inputProps = {
+    type: 'file',
+    accept: 'image/*',
+    className: 'hidden',
+    onChange: (e: ChangeEvent<HTMLInputElement>) => {
+      onChange(e.target.files?.[0] ?? null);
+      e.target.value = '';
+    },
+  } as const;
 
   return (
     <div>
-      <input
-        ref={inputRef}
-        type="file"
-        accept="image/*"
-        className="hidden"
-        onChange={(e) => {
-          onChange(e.target.files?.[0] ?? null);
-          e.target.value = '';
-        }}
-      />
+      <input ref={galeriaRef} {...inputProps} />
+      <input ref={cameraRef} capture="environment" {...inputProps} />
       {shown ? (
         <div className={`relative overflow-hidden rounded-2xl ${aspect}`}>
           <img src={shown} alt="Pré-visualização" className="size-full object-cover" />
           <div className="absolute inset-x-0 bottom-0 flex justify-end gap-2 bg-gradient-to-t from-black/50 to-transparent p-3">
             <button
               type="button"
-              onClick={() => inputRef.current?.click()}
+              onClick={() => cameraRef.current?.click()}
+              className="flex size-8 items-center justify-center rounded-full bg-white/90 text-ink"
+              aria-label="Tirar outra foto"
+            >
+              <Camera size={16} />
+            </button>
+            <button
+              type="button"
+              onClick={() => galeriaRef.current?.click()}
               className="flex items-center gap-1.5 rounded-full bg-white/90 px-3 py-1.5 text-sm font-medium text-ink"
             >
-              <Camera size={16} /> Trocar
+              <ImagePlus size={16} /> Trocar
             </button>
             {file && (
               <button
@@ -61,14 +75,27 @@ export function PhotoInput({
           </div>
         </div>
       ) : (
-        <button
-          type="button"
-          onClick={() => inputRef.current?.click()}
-          className={`flex w-full flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-line bg-white text-muted transition hover:border-primary hover:text-primary ${aspect}`}
+        <div
+          className={`flex w-full flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-line bg-white text-muted ${aspect}`}
         >
-          <ImagePlus size={28} />
           <span className="text-sm font-medium">{label}</span>
-        </button>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => cameraRef.current?.click()}
+              className="flex items-center gap-1.5 rounded-full bg-primary px-4 py-2 text-sm font-medium text-white transition hover:opacity-90"
+            >
+              <Camera size={16} /> Câmera
+            </button>
+            <button
+              type="button"
+              onClick={() => galeriaRef.current?.click()}
+              className="flex items-center gap-1.5 rounded-full border border-line px-4 py-2 text-sm font-medium text-ink transition hover:border-primary hover:text-primary"
+            >
+              <ImagePlus size={16} /> Galeria
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );
