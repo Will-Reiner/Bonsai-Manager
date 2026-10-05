@@ -40,3 +40,26 @@ export const agendaIdSchema = z.object({
     id: z.string().uuid({ message: 'ID da agenda inválido.' }),
   }),
 });
+
+export const concluirAgendasSchema = z.object({
+  body: z.object({
+    dataConcluida: z.string().datetime({ message: 'Data de conclusão inválida.' }),
+    atividadeId: z.string().uuid().optional(),
+    detalhes: z.string().optional(),
+    observacaoFutura: z.string().optional(),
+    extras: z.array(z.string().uuid()).optional(),
+    proximos: z
+      .array(z.object({ atividadeId: z.string().uuid(), dataAgendada: z.string().datetime() }))
+      .optional(),
+    itens: z
+      .array(
+        z.object({
+          agendaId: z.string().uuid(),
+          detalhes: z.string().optional(),
+          observacaoFutura: z.string().optional(),
+          fotos: z.array(z.string().url()).optional(),
+        }),
+      )
+      .min(1, { message: 'Informe ao menos uma tarefa.' }),
+  }),
+});

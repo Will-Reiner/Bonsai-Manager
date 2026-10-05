@@ -1,15 +1,18 @@
 import { Request, Response } from 'express';
+import { ZodError } from 'zod';
 import { parsePagination, buildPaginatedResponse } from '../../utils/pagination';
-import { createAgendaSchema, updateAgendaSchema, agendaIdSchema } from './agenda.schema';
+import { createAgendaSchema, updateAgendaSchema, agendaIdSchema, concluirAgendasSchema } from './agenda.schema';
 import { PrismaAgendaRepository } from './repositories/prisma-agenda.repository';
+import { PrismaConclusaoRepository } from './repositories/prisma-conclusao.repository';
 import {
   CreateAgendaUseCase,
   GetAllAgendasByUserUseCase,
   GetAgendaByIdUseCase,
   UpdateAgendaUseCase,
   DeleteAgendaUseCase,
+  ConcluirAgendasUseCase,
 } from './use-cases';
-import { CreateAgendaDTO, UpdateAgendaDTO } from './agenda.types';
+import { CreateAgendaDTO, UpdateAgendaDTO, ConcluirAgendasDTO } from './agenda.types';
 import '../../middlewares/auth.middleware'; // Import para garantir que a extensão da interface Request seja reconhecida
 
 export class AgendaController {
@@ -18,6 +21,7 @@ export class AgendaController {
   private getAgendaByIdUseCase: GetAgendaByIdUseCase;
   private updateAgendaUseCase: UpdateAgendaUseCase;
   private deleteAgendaUseCase: DeleteAgendaUseCase;
+  private concluirAgendasUseCase: ConcluirAgendasUseCase;
 
   constructor() {
     const agendaRepository = new PrismaAgendaRepository();
@@ -26,6 +30,7 @@ export class AgendaController {
     this.getAgendaByIdUseCase = new GetAgendaByIdUseCase(agendaRepository);
     this.updateAgendaUseCase = new UpdateAgendaUseCase(agendaRepository);
     this.deleteAgendaUseCase = new DeleteAgendaUseCase(agendaRepository);
+    this.concluirAgendasUseCase = new ConcluirAgendasUseCase(new PrismaConclusaoRepository());
   }
 
   async getById(req: Request, res: Response) {
@@ -136,6 +141,34 @@ export class AgendaController {
         return res.status(404).json({ error: error.message });
       }
       
+      res.status(500).json({ error: 'Erro interno do servidor' });
+    }
+  }
+
+  async concluir(req: Request, res: Response) {
+    try {
+      const { body } = concluirAgendasSchema.parse({ body: req.body });
+      const usuarioId = req.user?.userId;
+
+      if (!usuarioId) {
+        return res.status(401).json({ error: 'Usuário não autenticado' });
+      }
+
+      const resultado = await this.concluirAgendasUseCase.execute(body as ConcluirAgendasDTO, usuarioId);
+      res.json(resultado);
+    } catch (error) {
+      console.error('Erro ao concluir agendamentos:', error);
+
+      if (error instanceof ZodError) {
+        return res.status(400).json({ error: error.errors[0]?.message ?? 'Dados inválidos' });
+      }
+      if (error instanceof Error && error.message === 'Acesso negado ou agendamento não encontrado.') {
+        return res.status(404).json({ error: error.message });
+      }
+      if (error instanceof Error && error.message === 'Atividade não encontrada.') {
+        return res.status(400).json({ error: error.message });
+      }
+
       res.status(500).json({ error: 'Erro interno do servidor' });
     }
   }
