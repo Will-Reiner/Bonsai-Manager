@@ -1,0 +1,4 @@
+- na tela de agendar cuidado preciso que seja possivel escolher varios cuidados ao mesmo tempo
+- nao ta vindo o tempo certo de quando foi tirada a foto
+- ao adicionar planta, aba para adicionar fotos antes de selecionar capa
+- versao web, durante upload de fotos, se sair ou mudar a pagina, cancela as fotos restantes
