@@ -1,5 +1,5 @@
-import type { ReactNode } from 'react';
-import { BrowserRouter, Navigate, Route, Routes } from 'react-router';
+import { useEffect, type ReactNode } from 'react';
+import { BrowserRouter, Navigate, Route, Routes, useLocation, useNavigationType } from 'react-router';
 import { Layout } from '@/components/Layout';
 import { useAuth } from '@/context/AuthContext';
 import { CareProvider } from '@/context/CareContext';
@@ -29,9 +29,20 @@ function SoAdmin({ children }: { children: ReactNode }) {
   return isAdmin ? children : <Navigate to="/perfil" replace />;
 }
 
+/** Nova tela abre no topo; no "voltar" (POP) mantém a rolagem que o navegador restaurar. */
+function RolarParaTopo() {
+  const { pathname } = useLocation();
+  const tipo = useNavigationType();
+  useEffect(() => {
+    if (tipo !== 'POP') window.scrollTo(0, 0);
+  }, [pathname, tipo]);
+  return null;
+}
+
 export default function App() {
   return (
     <BrowserRouter>
+      <RolarParaTopo />
       <Routes>
         <Route path="/login" element={<Publica><LoginPage /></Publica>} />
         <Route path="/cadastro" element={<Publica><RegisterPage /></Publica>} />
