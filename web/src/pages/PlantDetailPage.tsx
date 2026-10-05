@@ -185,12 +185,14 @@ function Galeria({ planta }: { planta: Planta }) {
   const queryClient = useQueryClient();
   const toast = useToast();
   const inputRef = useRef<HTMLInputElement>(null);
+  const cameraRef = useRef<HTMLInputElement>(null);
   const [envios, setEnvios] = useState<{ nome: string; pct: number }[]>([]);
   const [aberta, setAberta] = useState<Foto | null>(null);
   const [confirmar, setConfirmar] = useState(false);
   const [ocupado, setOcupado] = useState(false);
 
-  async function enviar(files: FileList) {
+  /** `daCamera`: foto tirada agora — a data do arquivo é a da captura, sem aviso de "sem data". */
+  async function enviar(files: FileList, daCamera = false) {
     const lista = [...files].filter((f) => f.type.startsWith('image/'));
     setEnvios(lista.map((f) => ({ nome: f.name, pct: 0 })));
     let ok = 0;
@@ -203,7 +205,7 @@ function Galeria({ planta }: { planta: Planta }) {
         ]);
         await fotosApi.create({ caminhoArquivo: url, plantaId: planta.id, dataCaptura });
         ok++;
-        if (origem === 'arquivo') semData++;
+        if (origem === 'arquivo' && !daCamera) semData++;
       } catch (error) {
         toast(`${file.name}: ${errorMessage(error)}`, 'error');
       }
@@ -266,9 +268,25 @@ function Galeria({ planta }: { planta: Planta }) {
           e.target.value = '';
         }}
       />
-      <Button block onClick={() => inputRef.current?.click()} disabled={envios.length > 0}>
-        <ImagePlus size={18} /> Adicionar fotos
-      </Button>
+      <input
+        ref={cameraRef}
+        type="file"
+        accept="image/*"
+        capture="environment"
+        className="hidden"
+        onChange={(e) => {
+          if (e.target.files?.length) enviar(e.target.files, true);
+          e.target.value = '';
+        }}
+      />
+      <div className="grid grid-cols-2 gap-2">
+        <Button onClick={() => cameraRef.current?.click()} disabled={envios.length > 0}>
+          <Camera size={18} /> Tirar foto
+        </Button>
+        <Button variant="secondary" onClick={() => inputRef.current?.click()} disabled={envios.length > 0}>
+          <ImagePlus size={18} /> Galeria
+        </Button>
+      </div>
 
       {envios.length > 0 && (
         <div className="mt-3 space-y-2">

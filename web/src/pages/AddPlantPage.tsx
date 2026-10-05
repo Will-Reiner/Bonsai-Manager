@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { useQueryClient } from '@tanstack/react-query';
-import { Check, CheckCircle2, ImagePlus, X } from 'lucide-react';
+import { Camera, Check, CheckCircle2, ImagePlus, X } from 'lucide-react';
 import { Button, Field, PageHeader } from '@/components/ui';
 import { PhotoInput } from '@/components/PhotoInput';
 import { SpeciesPicker } from '@/components/SpeciesPicker';
@@ -286,6 +286,9 @@ export function AddPlantPage() {
 
 function SeletorFotos({ fotos, onAdd, onRemove }: { fotos: File[]; onAdd: (files: FileList | null) => void; onRemove: (i: number) => void }) {
   const inputRef = useRef<HTMLInputElement>(null);
+  const cameraRef = useRef<HTMLInputElement>(null);
+  const tile =
+    'flex flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed border-line bg-white text-muted transition hover:border-primary hover:text-primary';
   return (
     <div className="grid grid-cols-3 gap-2">
       {fotos.map((f, i) => (
@@ -306,21 +309,45 @@ function SeletorFotos({ fotos, onAdd, onRemove }: { fotos: File[]; onAdd: (files
           <span className="text-sm font-medium">Limite de {MAX_FOTOS}</span>
           <span className="text-[11px] leading-tight">Adicione mais pela galeria depois</span>
         </div>
+      ) : fotos.length ? (
+        <div className="grid aspect-square grid-rows-2 gap-2">
+          <button type="button" onClick={() => cameraRef.current?.click()} className={tile}>
+            <Camera size={18} />
+            <span className="text-xs font-medium">Câmera</span>
+          </button>
+          <button type="button" onClick={() => inputRef.current?.click()} className={tile}>
+            <ImagePlus size={18} />
+            <span className="text-xs font-medium">Galeria</span>
+          </button>
+        </div>
       ) : (
-        <button
-          type="button"
-          onClick={() => inputRef.current?.click()}
-          className={`flex flex-col items-center justify-center gap-1.5 rounded-xl border-2 border-dashed border-line bg-white text-muted transition hover:border-primary hover:text-primary ${fotos.length ? 'aspect-square' : 'col-span-3 aspect-[4/3]'}`}
-        >
-          <ImagePlus size={fotos.length ? 22 : 28} />
-          <span className="text-sm font-medium">{fotos.length ? 'Mais fotos' : 'Tirar ou escolher fotos'}</span>
-        </button>
+        <div className="col-span-3 grid aspect-[4/3] grid-cols-2 gap-2">
+          <button type="button" onClick={() => cameraRef.current?.click()} className={tile}>
+            <Camera size={28} />
+            <span className="text-sm font-medium">Tirar foto</span>
+          </button>
+          <button type="button" onClick={() => inputRef.current?.click()} className={tile}>
+            <ImagePlus size={28} />
+            <span className="text-sm font-medium">Escolher da galeria</span>
+          </button>
+        </div>
       )}
       <input
         ref={inputRef}
         type="file"
         accept="image/*"
         multiple
+        className="hidden"
+        onChange={(e) => {
+          onAdd(e.target.files);
+          e.target.value = '';
+        }}
+      />
+      <input
+        ref={cameraRef}
+        type="file"
+        accept="image/*"
+        capture="environment"
         className="hidden"
         onChange={(e) => {
           onAdd(e.target.files);
