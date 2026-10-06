@@ -1,10 +1,11 @@
+import { atualizarGruposAutomaticos } from './atualizar-grupos-automaticos';
 import { PlantaWithEspecie, PlantaRepository } from '../types/planta.types';
 
 export class GetPlantaByIdUseCase {
   constructor(private plantaRepository: PlantaRepository) {}
 
   async execute(id: string, usuarioId: string): Promise<PlantaWithEspecie> {
-    await this.plantaRepository.resolverGruposVencidos(usuarioId, new Date());
+    await atualizarGruposAutomaticos(this.plantaRepository, usuarioId, new Date());
     const planta = await this.plantaRepository.findByIdAndUser(id, usuarioId);
     
     if (!planta) {

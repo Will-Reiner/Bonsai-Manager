@@ -1,4 +1,6 @@
 import { PrismaClient } from '@prisma/client';
+import { ATIVIDADE_TRANSPLANTE, PREF_PRE_TRANSPLANTE_DIAS } from '../../agenda/agenda.types';
+import { diasDePreTransplante, PlantaPre } from '../dominio/grupo';
 import { PlantaRepository, CreatePlantaDTO, UpdatePlantaDTO, PlantaWithEspecie } from '../types/planta.types';
 
 const SELECT_PLANTA = {
@@ -16,6 +18,7 @@ const SELECT_PLANTA = {
   grupo: true,
   grupoAnterior: true,
   grupoExpiraEm: true,
+  preTransplanteAgendaId: true,
   createdAt: true,
   updatedAt: true,
   especie: { select: { nomeCientifico: true, nomeComum: true } },
@@ -127,5 +130,37 @@ export class PrismaPlantaRepository implements PlantaRepository {
       UPDATE "Planta"
       SET "grupo" = "grupoAnterior", "grupoAnterior" = NULL, "grupoExpiraEm" = NULL, "updatedAt" = NOW()
       WHERE "usuarioId" = ${usuarioId} AND "grupoExpiraEm" <= ${agora}`;
+  }
+
+  async estadoPreTransplante(usuarioId: string) {
+    const [pref, pendentes] = await Promise.all([
+      this.prisma.preferenciaUsuario.findUnique({
+        where: { usuarioId_chave: { usuarioId, chave: PREF_PRE_TRANSPLANTE_DIAS } },
+      }),
+      this.prisma.agenda.findMany({
+        where: { status: 'PENDENTE', atividade: { nome: ATIVIDADE_TRANSPLANTE }, planta: { usuarioId } },
+        select: { id: true, plantaId: true, dataAgendada: true },
+      }),
+    ]);
+    const plantas = await this.prisma.planta.findMany({
+      where: { usuarioId, OR: [{ grupo: 'PRE_TRANSPLANTE' }, { id: { in: [...new Set(pendentes.map((p) => p.plantaId))] } }] },
+      select: { id: true, grupo: true, grupoAnterior: true, preTransplanteAgendaId: true },
+    });
+    return {
+      dias: diasDePreTransplante(pref?.valor),
+      plantas: plantas.map(({ id, ...g }) => ({ plantaId: id, ...g })),
+      pendentes: pendentes.map((p) => ({ plantaId: p.plantaId, agendaId: p.id, dataAgendada: p.dataAgendada })),
+    };
+  }
+
+  async aplicarMudancasPre(mudancas: PlantaPre[]): Promise<void> {
+    await this.prisma.$transaction(
+      mudancas.map((m) =>
+        this.prisma.planta.update({
+          where: { id: m.plantaId },
+          data: { grupo: m.grupo, grupoAnterior: m.grupoAnterior, preTransplanteAgendaId: m.preTransplanteAgendaId },
+        }),
+      ),
+    );
   }
 }

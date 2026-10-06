@@ -16,6 +16,8 @@ describe('GetPlantaByIdUseCase', () => {
       existsByIdAndUser: jest.fn(),
       findUrlsDeMidia: jest.fn(),
       resolverGruposVencidos: jest.fn().mockResolvedValue(undefined),
+      estadoPreTransplante: jest.fn().mockResolvedValue({ dias: 30, plantas: [], pendentes: [] }),
+      aplicarMudancasPre: jest.fn().mockResolvedValue(undefined),
     };
 
     getPlantaByIdUseCase = new GetPlantaByIdUseCase(mockPlantaRepository);

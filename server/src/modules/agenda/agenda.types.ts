@@ -54,6 +54,7 @@ export const ATIVIDADE_REVISAO = 'Revisão geral';
 export const PREF_REVISAO_DIAS = 'revisao_automatica_dias';
 export const ATIVIDADE_TRANSPLANTE = 'Transplante';
 export const PREF_TRANSPLANTE_DIAS = 'transplante_dias';
+export const PREF_PRE_TRANSPLANTE_DIAS = 'pre_transplante_dias';
 
 export type AtualizacaoGrupo = { plantaId: string } & EstadoGrupo;
 

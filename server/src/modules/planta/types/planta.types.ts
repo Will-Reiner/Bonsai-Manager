@@ -1,4 +1,5 @@
 import { GrupoPlanta, ModoAquisicao } from '@prisma/client';
+import type { PlantaPre, TransplantePendente } from '../dominio/grupo';
 
 // DTOs para entrada do controller (com string para data)
 export interface CreatePlantaRequestDTO {
@@ -73,6 +74,7 @@ export interface PlantaWithEspecie {
   grupo?: GrupoPlanta | null;
   grupoAnterior?: GrupoPlanta | null;
   grupoExpiraEm?: Date | null;
+  preTransplanteAgendaId?: string | null;
   createdAt: Date;
   updatedAt: Date;
   especie: {
@@ -92,6 +94,9 @@ export interface PlantaRepository {
   findUrlsDeMidia(id: string): Promise<string[]>;
   /** Plantas do usuário com `grupoExpiraEm <= agora` voltam ao grupo anterior. */
   resolverGruposVencidos(usuarioId: string, agora: Date): Promise<void>;
+  /** Dias da preferência, Transplantes pendentes e plantas candidatas (em Pré-transplante ou com Transplante pendente). */
+  estadoPreTransplante(usuarioId: string): Promise<{ dias: number; plantas: PlantaPre[]; pendentes: TransplantePendente[] }>;
+  aplicarMudancasPre(mudancas: PlantaPre[]): Promise<void>;
 }
 
 export interface EspecieRepository {

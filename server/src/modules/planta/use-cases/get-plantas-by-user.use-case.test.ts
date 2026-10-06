@@ -16,6 +16,8 @@ describe('GetPlantasByUserUseCase', () => {
       existsByIdAndUser: jest.fn(),
       findUrlsDeMidia: jest.fn(),
       resolverGruposVencidos: jest.fn().mockResolvedValue(undefined),
+      estadoPreTransplante: jest.fn().mockResolvedValue({ dias: 30, plantas: [], pendentes: [] }),
+      aplicarMudancasPre: jest.fn().mockResolvedValue(undefined),
     };
 
     getPlantasByUserUseCase = new GetPlantasByUserUseCase(mockPlantaRepository);
@@ -29,6 +31,17 @@ describe('GetPlantasByUserUseCase', () => {
 
       expect(mockPlantaRepository.resolverGruposVencidos).toHaveBeenCalledWith('user-123', expect.any(Date));
       expect(mockPlantaRepository.resolverGruposVencidos.mock.invocationCallOrder[0]).toBeLessThan(
+        mockPlantaRepository.findManyByUser.mock.invocationCallOrder[0],
+      );
+    });
+
+    it('calcula o Pré-transplante antes de listar', async () => {
+      mockPlantaRepository.findManyByUser.mockResolvedValue([]);
+
+      await getPlantasByUserUseCase.execute(usuarioId);
+
+      expect(mockPlantaRepository.estadoPreTransplante).toHaveBeenCalledWith(usuarioId);
+      expect(mockPlantaRepository.estadoPreTransplante.mock.invocationCallOrder[0]).toBeLessThan(
         mockPlantaRepository.findManyByUser.mock.invocationCallOrder[0],
       );
     });
