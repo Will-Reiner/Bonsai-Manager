@@ -1,27 +1,33 @@
+import { useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router';
-import { CalendarCheck, CheckCheck, PartyPopper } from 'lucide-react';
+import { CheckCheck, PartyPopper } from 'lucide-react';
 import { Button, EmptyState, ErrorState, SectionTitle, Spinner } from '@/components/ui';
 import { BenchTaskCard } from '@/components/BenchTaskCard';
 import { useAuth } from '@/context/AuthContext';
-import { useCare } from '@/context/CareContext';
-import { agruparPorAtividade, tarefasDaBancada, type GrupoAtividade } from '@/lib/format';
+import { AGRUPAMENTOS, PERIODOS, blocosDaBancada, tarefasDaBancada, type Agrupar, type Bloco, type Periodo } from '@/lib/bancada';
 import { useAgendas, usePlantas } from '@/lib/queries';
 import { errorMessage } from '@/lib/api';
+import type { Planta } from '@/types';
 
-const ESTACAO_DICA: Record<string, string> = {
-  verao: 'Verão: atenção redobrada à rega nos dias quentes — prefira o início da manhã.',
-  outono: 'Outono: reduza a adubação nitrogenada e prepare as plantas para o repouso.',
-  inverno: 'Inverno: regas mais espaçadas e proteção das espécies sensíveis ao frio.',
-  primavera: 'Primavera: época de brotação — bom momento para transplantes e adubação.',
-};
+const PERIODO_KEY = 'bonsai_bancada_periodo';
+const AGRUPAR_KEY = 'bonsai_bancada_agrupar';
 
-/** Estação no hemisfério sul (o app é usado no Brasil). */
-function estacaoAtual() {
-  const m = new Date().getMonth();
-  if (m === 11 || m <= 1) return 'verao';
-  if (m <= 4) return 'outono';
-  if (m <= 7) return 'inverno';
-  return 'primavera';
+/** Lê uma escolha salva; armazenamento indisponível ou valor estranho → padrão. */
+function lerEscolha<T extends string>(chave: string, validos: { value: T }[], padrao: T): T {
+  try {
+    const v = localStorage.getItem(chave);
+    return validos.some((o) => o.value === v) ? (v as T) : padrao;
+  } catch {
+    return padrao;
+  }
+}
+
+function salvarEscolha(chave: string, valor: string) {
+  try {
+    localStorage.setItem(chave, valor);
+  } catch {
+    // sem armazenamento: a escolha vale só nesta visita
+  }
 }
 
 function saudacao() {
@@ -29,22 +35,27 @@ function saudacao() {
   return h < 12 ? 'Bom dia' : h < 18 ? 'Boa tarde' : 'Boa noite';
 }
 
-/** Bancada de trabalho: atrasadas + próximas tarefas, agrupadas por tipo de cuidado. */
+/** Bancada de trabalho: atrasadas + próximas do período, por grupo da planta, tarefa ou espécie. */
 export function BancadaPage() {
   const { user } = useAuth();
-  const { registrarCuidado } = useCare();
   const agendas = useAgendas();
   const plantas = usePlantas();
+  const [periodo, setPeriodo] = useState<Periodo>(() => lerEscolha(PERIODO_KEY, PERIODOS, 'semana'));
+  const [agrupar, setAgrupar] = useState<Agrupar>(() => lerEscolha(AGRUPAR_KEY, AGRUPAMENTOS, 'grupos'));
 
   const nome = (user?.nomePublico || user?.nome || '').split(' ')[0];
-  const { atrasadas, proximas } = tarefasDaBancada(agendas.data ?? []);
   const semPlantas = plantas.data?.length === 0;
+  const plantasPorId = useMemo(() => new Map<string, Planta>((plantas.data ?? []).map((p) => [p.id, p])), [plantas.data]);
+  const { atrasadas, proximas } = tarefasDaBancada(agendas.data ?? [], periodo);
+  const vazio = PERIODOS.find((p) => p.value === periodo)!.vazio;
 
   return (
     <div className="mx-auto max-w-2xl px-4 pt-safe">
       <header className="pb-2 pt-6">
-        <p className="text-sm text-muted">{saudacao()}{nome && `, ${nome}`}</p>
-        <h1 className="text-3xl font-semibold">Bancada</h1>
+        <p className="text-sm text-muted">
+          {saudacao()}
+          {nome && `, ${nome}`}
+        </p>
       </header>
 
       {agendas.isLoading || plantas.isLoading ? (
@@ -63,54 +74,92 @@ export function BancadaPage() {
         />
       ) : (
         <>
+          <div className="flex gap-2 pt-2">
+            <select
+              className="input min-w-0 flex-1 py-2 text-sm"
+              value={periodo}
+              aria-label="Período"
+              onChange={(e) => {
+                setPeriodo(e.target.value as Periodo);
+                salvarEscolha(PERIODO_KEY, e.target.value);
+              }}
+            >
+              {PERIODOS.map((p) => (
+                <option key={p.value} value={p.value}>
+                  {p.label}
+                </option>
+              ))}
+            </select>
+            <select
+              className="input min-w-0 flex-1 py-2 text-sm"
+              value={agrupar}
+              aria-label="Agrupar por"
+              onChange={(e) => {
+                setAgrupar(e.target.value as Agrupar);
+                salvarEscolha(AGRUPAR_KEY, e.target.value);
+              }}
+            >
+              {AGRUPAMENTOS.map((a) => (
+                <option key={a.value} value={a.value}>
+                  {a.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
           {atrasadas.length > 0 && (
             <section>
               <SectionTitle tone="danger">Atrasadas · {atrasadas.length}</SectionTitle>
-              <Grupos grupos={agruparPorAtividade(atrasadas)} />
+              <Blocos blocos={blocosDaBancada(atrasadas, agrupar, plantasPorId)} />
             </section>
           )}
 
-          <section>
+          <section className="pb-6">
             <SectionTitle>Próximas tarefas</SectionTitle>
             {proximas.length > 0 ? (
-              <Grupos grupos={agruparPorAtividade(proximas)} />
+              <Blocos blocos={blocosDaBancada(proximas, agrupar, plantasPorId)} />
             ) : atrasadas.length === 0 ? (
               <div className="card flex items-center gap-3 p-4">
                 <PartyPopper className="shrink-0 text-primary" size={24} />
                 <p className="text-sm">
-                  <span className="font-semibold">Nada pendente nos próximos dias.</span>{' '}
+                  <span className="font-semibold">Nada pendente {vazio}.</span>{' '}
                   <span className="text-muted">Aproveite para observar suas plantas 🌿</span>
                 </p>
               </div>
             ) : (
-              <p className="text-sm text-muted">Nenhuma tarefa nos próximos 7 dias.</p>
+              <p className="text-sm text-muted">Nenhuma tarefa {vazio}.</p>
             )}
           </section>
-
-          <section className="mt-6 rounded-2xl bg-accent-light p-4">
-            <p className="text-xs font-semibold uppercase tracking-wider text-accent">Dica da estação</p>
-            <p className="mt-1 text-sm text-ink">{ESTACAO_DICA[estacaoAtual()]}</p>
-          </section>
-
-          <Button variant="secondary" block className="mt-4" onClick={() => registrarCuidado()}>
-            <CalendarCheck size={18} /> Registrar cuidado sem agendamento
-          </Button>
         </>
       )}
     </div>
   );
 }
 
-function Grupos({ grupos }: { grupos: GrupoAtividade[] }) {
+function Blocos({ blocos }: { blocos: Bloco[] }) {
+  return (
+    <div className="space-y-6">
+      {blocos.map((b) => (
+        <div key={b.chave}>
+          {b.titulo && <h3 className="mb-3 border-b border-line pb-1.5 text-xl font-semibold">{b.titulo}</h3>}
+          <GruposAtividade grupos={b.grupos} grande={!b.titulo} />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/** `grande`: sem título de bloco acima (modo "Por tarefa"), a atividade é o cabeçalho principal. */
+function GruposAtividade({ grupos, grande }: { grupos: Bloco['grupos']; grande: boolean }) {
   const navigate = useNavigate();
   return (
     <div className="space-y-5">
       {grupos.map((g) => (
         <div key={g.atividadeId}>
           <div className="mb-2 flex items-center justify-between gap-2">
-            <h3 className="text-lg font-semibold">
+            <h4 className={`${grande ? 'text-lg' : 'text-base'} font-semibold`}>
               {g.nome} <span className="text-muted">· {g.agendas.length}</span>
-            </h3>
+            </h4>
             {g.agendas.length > 1 && (
               <Button
                 variant="ghost"

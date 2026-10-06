@@ -75,18 +75,6 @@ export const daquiADias = (dias: number) => new Date(Date.now() + dias * 86_400_
 export const plantaRotulo = (p?: Agenda['planta']) =>
   p?.identificador || p?.nome || p?.especie?.nomeComum || p?.especie?.nomeCientifico || 'Planta';
 
-/** Pendentes da bancada: atrasadas e próximas (hoje até +6 dias). */
-export function tarefasDaBancada(agendas: Agenda[]) {
-  const pendentes = agendas.filter((a) => a.status === 'PENDENTE');
-  return {
-    atrasadas: pendentes.filter((a) => diasAte(a.dataAgendada) < 0),
-    proximas: pendentes.filter((a) => {
-      const d = diasAte(a.dataAgendada);
-      return d >= 0 && d <= 6;
-    }),
-  };
-}
-
 export interface GrupoAtividade {
   atividadeId: string;
   nome: string;
