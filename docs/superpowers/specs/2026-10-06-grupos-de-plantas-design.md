@@ -43,19 +43,19 @@ Funções puras em `server/src/modules/planta/dominio/grupo.ts`, com testes:
   - se `grupo !== RECEM_TRANSPLANTADA`: `grupoAnterior = grupo` (pode ser null);
   - se já estava em `RECEM_TRANSPLANTADA` com expiração: mantém o `grupoAnterior` original;
   - `grupo = RECEM_TRANSPLANTADA`, `grupoExpiraEm = dataRegistro + dias`.
-- **`resolverExpiracao(estado, agora)`** — se `grupoExpiraEm && grupoExpiraEm <= agora`: `grupo = grupoAnterior`, `grupoAnterior = null`, `grupoExpiraEm = null`. Caso contrário, inalterado.
+- **Expiração** — se `grupoExpiraEm <= agora`: `grupo = grupoAnterior`, `grupoAnterior = null`, `grupoExpiraEm = null` (um `UPDATE` no repositório, ver abaixo).
 - **Troca manual** (`PUT /plantas/:id` com `grupo`, inclusive `null`): define o grupo e zera `grupoAnterior` e `grupoExpiraEm` (cancela o retorno automático). Atualizações de planta sem o campo `grupo` não mexem nesses campos. Escolher manualmente `RECEM_TRANSPLANTADA` não cria expiração.
 - Registro de transplante com a opção desmarcada (ou ausente): nenhuma mudança de grupo.
 
 ### Expiração "lazy"
 
-Sem cron (Vercel free). Em `GET /plantas` e `GET /plantas/:id`, plantas com `grupoExpiraEm <= agora` são resolvidas com `resolverExpiracao` e persistidas (`updateMany`/update por planta) antes de responder. `GET /agendas` que inclui `planta` também precisa do grupo correto: a Bancada agrupa pelo grupo da planta vindo de `usePlantas()` (mapa `plantaId → grupo`), então basta a resolução em `GET /plantas`.
+Sem cron (Vercel free). Em `GET /plantas` e `GET /plantas/:id`, antes de ler, o use case chama `resolverGruposVencidos(usuarioId, agora)`: um único `UPDATE "Planta" SET grupo = grupoAnterior, ...` (SQL bruto, pois o Prisma não copia coluna→coluna) nas plantas do usuário com `grupoExpiraEm <= agora`. `GET /agendas` que inclui `planta` também precisa do grupo correto: a Bancada agrupa pelo grupo da planta vindo de `usePlantas()` (mapa `plantaId → grupo`), então basta a resolução em `GET /plantas`.
 
 ### API
 
 - `POST /api/plantas` e `PUT /api/plantas/:id`: aceitam `grupo` (enum ou null) no schema Zod.
 - Resposta de planta inclui `grupo`, `grupoAnterior`, `grupoExpiraEm`.
-- `POST /api/agendas/registrar`: novo campo opcional `moverRecemTransplantada: boolean`. O use case `registrar-cuidados` identifica a atividade "Transplante" (por nome, como a "Revisão geral" é identificada hoje) entre as atividades registradas por planta e aplica `aplicarTransplante` com a preferência `transplante_dias` do usuário (padrão 15). A data base é a data do registro (retroativo usa a data informada; se a expiração já passou, a planta fica no grupo anterior imediatamente — `resolverExpiracao` resolve na próxima leitura).
+- `POST /api/agendas/registrar`: novo campo opcional `moverRecemTransplantada: boolean`. O use case `registrar-cuidados` identifica a atividade "Transplante" (por nome, como a "Revisão geral" é identificada hoje) entre as atividades registradas por planta e aplica `aplicarTransplante` com a preferência `transplante_dias` do usuário (padrão 15). A data base é a data do registro (retroativo usa a data informada; se a expiração já passou, a próxima leitura devolve a planta ao grupo anterior).
 
 ## 3. Frontend (web/)
 
@@ -73,7 +73,7 @@ Remover: título "Bancada", dica da estação (`ESTACAO_DICA`), botão "Registra
 
 Dois controles independentes no topo:
 
-- **Período** — `semana` (próximos 7 dias, hoje–hoje+6; padrão), `mes` (até o último dia do mês corrente), `estacao` (até o fim da estação corrente, hemisfério sul: verão dez–fev, outono mar–mai, inverno jun–ago, primavera set–nov), `todas` (todas as pendentes futuras).
+- **Período** — `semana` (próximos 7 dias, hoje–hoje+6; padrão), `mes` (até o último dia do mês corrente), `estacao` (até o fim da estação corrente, hemisfério sul — mesmas datas aproximadas de `web/src/lib/estacoes.ts`, ex.: primavera termina em 20/12), `todas` (todas as pendentes futuras).
 - **Agrupar por** — `grupos` (padrão), `tarefas` (agrupamento atual por atividade), `especies`.
 
 Seções:
@@ -89,7 +89,7 @@ Lógica pura em `src/lib/format.ts` (ou `src/lib/bancada.ts`): `tarefasDaBancada
 
 ## Testes
 
-- Server (TDD, Jest): `dominio/grupo.test.ts` (aplicarTransplante, resolverExpiracao, retransplante mantém anterior); `registrar-cuidados` com/sem `moverRecemTransplantada`; `update-planta` troca manual zera expiração; `get-plantas-by-user` resolve expiração vencida.
+- Server (TDD, Jest): `dominio/grupo.test.ts` (aplicarTransplante, retransplante mantém anterior, trocaManual, diasDeTransplante); `registrar-cuidados` com/sem `moverRecemTransplantada`; `update-planta` troca manual zera expiração; `get-plantas-by-user` resolve expiração vencida.
 - Web: `npm run build` + `npm run lint`; teste manual no navegador com a conta de teste `testeclaude@bonsai.dev` (Bancada nos 3 modos × 4 períodos, filtro da Coleção, registro de transplante, preferência no Perfil).
 
 ## Compatibilidade
