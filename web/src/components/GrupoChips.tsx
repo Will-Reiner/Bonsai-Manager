@@ -1,4 +1,4 @@
-import { GRUPOS_PLANTA, type GrupoPlanta } from '@/types';
+import { GRUPOS_MANUAIS, type GrupoPlanta } from '@/types';
 
 /** Escolha do grupo da planta; tocar no ativo deixa sem grupo. */
 export function GrupoChips({ value, onChange }: { value: GrupoPlanta | null; onChange: (g: GrupoPlanta | null) => void }) {
@@ -6,7 +6,7 @@ export function GrupoChips({ value, onChange }: { value: GrupoPlanta | null; onC
     <div>
       <span className="label">Grupo</span>
       <div className="flex flex-wrap gap-2">
-        {GRUPOS_PLANTA.map((g) => (
+        {GRUPOS_MANUAIS.map((g) => (
           <button
             key={g.value}
             type="button"

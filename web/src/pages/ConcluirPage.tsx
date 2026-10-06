@@ -11,6 +11,7 @@ import { errorMessage } from '@/lib/api';
 import { agendasApi } from '@/lib/endpoints';
 import { fromDateInput, plantaRotulo, toDateInput } from '@/lib/format';
 import { keys, useAgendas, useAtividadesOrdenadas } from '@/lib/queries';
+import { ATIVIDADE_TRANSPLANTE } from '@/types';
 import { uploadImage } from '@/lib/upload';
 
 interface Ajuste {
@@ -48,11 +49,16 @@ export function ConcluirPage() {
   const [observacaoFutura, setObservacaoFutura] = useState('');
   const [foto, setFoto] = useState<File | null>(null);
   const [proximos, setProximos] = useState<Proximo[]>([]);
+  const [moverTransplante, setMoverTransplante] = useState(true);
   const [salvando, setSalvando] = useState(false);
 
   const marcadas = tarefas.filter((t) => !desmarcadas.has(t.id));
   const atividadeAtual = tarefas[0]?.atividade;
   const nomeAtividade = (id: string) => atividades.data.find((a) => a.id === id)?.nome ?? '…';
+  const transplanteId = atividades.data.find((a) => a.nome === ATIVIDADE_TRANSPLANTE)?.id;
+  const comTransplante =
+    !!transplanteId &&
+    (marcadas.some((t) => (atividadeId || t.atividadeId) === transplanteId) || extras.includes(transplanteId));
 
   const alternar = (id: string) =>
     setDesmarcadas((s) => {
@@ -95,10 +101,12 @@ export function ConcluirPage() {
         extras: extrasFinais.length ? extrasFinais : undefined,
         proximos: proximosParaApi(proximos),
         itens,
+        moverRecemTransplantada: comTransplante && moverTransplante ? true : undefined,
       });
       queryClient.invalidateQueries({ queryKey: keys.agendas });
       queryClient.invalidateQueries({ queryKey: keys.rotinas });
       queryClient.invalidateQueries({ queryKey: ['fotos'] });
+      queryClient.invalidateQueries({ queryKey: keys.plantas });
       toast(`${marcadas.length > 1 ? `${marcadas.length} tarefas concluídas` : 'Tarefa concluída'} 🌿`);
       navigate('/', { replace: true });
     } catch (error) {
@@ -306,6 +314,20 @@ export function ConcluirPage() {
           aspect="aspect-[16/9]"
         />
 
+        {comTransplante && (
+          <label className="card flex cursor-pointer items-center gap-3 p-3">
+            <input
+              type="checkbox"
+              className="size-5 shrink-0 accent-primary"
+              checked={moverTransplante}
+              onChange={(e) => setMoverTransplante(e.target.checked)}
+            />
+            <span className="min-w-0 flex-1">
+              <span className="block font-semibold">Mover para Recém transplantadas</span>
+              <span className="block text-xs text-muted">Depois do prazo (ajustável no Perfil) a planta volta ao grupo de antes.</span>
+            </span>
+          </label>
+        )}
         <ProximosPassos value={proximos} onChange={setProximos} />
       </div>
 

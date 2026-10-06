@@ -78,6 +78,7 @@ export interface ConcluirInput {
   extras?: string[];
   proximos?: ProximoInput[];
   itens: { agendaId: string; detalhes?: string; observacaoFutura?: string; fotos?: string[] }[];
+  moverRecemTransplantada?: boolean;
 }
 
 export interface RegistrarInput {

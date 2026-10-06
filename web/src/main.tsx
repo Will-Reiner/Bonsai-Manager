@@ -18,6 +18,13 @@ const queryClient = new QueryClient({
   },
 });
 
+// O Pré-transplante depende das tarefas: quando a lista de tarefas é invalidada, as plantas também são
+queryClient.getQueryCache().subscribe((evento) => {
+  if (evento.type === 'updated' && evento.action.type === 'invalidate' && evento.query.queryKey[0] === 'agendas') {
+    queryClient.invalidateQueries({ queryKey: ['plantas'] });
+  }
+});
+
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>

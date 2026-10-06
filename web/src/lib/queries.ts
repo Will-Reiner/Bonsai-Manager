@@ -55,6 +55,13 @@ export function useTransplanteDias() {
   return Number.isNaN(dias) ? 15 : Math.min(365, Math.max(1, dias));
 }
 
+/** Dias antes de um Transplante agendado em que a planta entra no Pré-transplante (padrão 30, 1–365) — mesma regra do backend. */
+export function usePreTransplanteDias() {
+  const prefs = usePreferencias();
+  const dias = parseInt(prefs.data?.pre_transplante_dias ?? '30', 10);
+  return Number.isNaN(dias) ? 30 : Math.min(365, Math.max(1, dias));
+}
+
 /** Atividades ordenadas: as rastreadas nas preferências do usuário primeiro. */
 export function useAtividadesOrdenadas() {
   const atividades = useAtividades();

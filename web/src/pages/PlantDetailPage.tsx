@@ -99,6 +99,7 @@ export function PlantDetailPage() {
               <span className="flex items-center gap-1.5">
                 <Layers size={16} className="text-primary" /> {grupoLabel(p.grupo)}
                 {p.grupoExpiraEm && ` · volta para ${grupoLabel(p.grupoAnterior)} em ${dataCurta(p.grupoExpiraEm)}`}
+                {p.grupo === 'PRE_TRANSPLANTE' && p.grupoAnterior && ` · antes: ${grupoLabel(p.grupoAnterior)}`}
               </span>
             )}
             {idade && (

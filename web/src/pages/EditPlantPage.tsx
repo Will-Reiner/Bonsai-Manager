@@ -133,6 +133,11 @@ function EditPlantForm({ planta: p }: { planta: Planta }) {
               Volta para {grupoLabel(p.grupoAnterior)} em {dataCurta(p.grupoExpiraEm)}. Trocar o grupo cancela o retorno.
             </p>
           )}
+          {p.grupo === 'PRE_TRANSPLANTE' && grupo === p.grupo && (
+            <p className="mt-1.5 text-xs text-muted">
+              Em Pré-transplante (automático, pelo transplante agendado). Escolher um grupo tira a planta dele.
+            </p>
+          )}
         </div>
         <Field label="Observações">
           <textarea className="input min-h-28" value={observacoes} onChange={(e) => setObservacoes(e.target.value)} />

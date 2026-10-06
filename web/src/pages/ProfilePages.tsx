@@ -8,7 +8,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/context/ToastContext';
 import { errorMessage } from '@/lib/api';
 import { authApi, preferenciasApi } from '@/lib/endpoints';
-import { keys, useAgendas, usePreferencias, useRevisaoDias, useTransplanteDias, usePlantas } from '@/lib/queries';
+import { keys, useAgendas, usePreferencias, useRevisaoDias, useTransplanteDias, usePreTransplanteDias, usePlantas } from '@/lib/queries';
 import { uploadImage } from '@/lib/upload';
 
 const OPCOES_REVISAO = [
@@ -17,6 +17,13 @@ const OPCOES_REVISAO = [
   { valor: '30', label: '30 dias' },
   { valor: '60', label: '60 dias' },
   { valor: '90', label: '90 dias' },
+];
+
+const OPCOES_PRE_TRANSPLANTE = [
+  { valor: '15', label: '15 dias' },
+  { valor: '30', label: '30 dias' },
+  { valor: '45', label: '45 dias' },
+  { valor: '60', label: '60 dias' },
 ];
 
 const OPCOES_TRANSPLANTE = [
@@ -101,6 +108,19 @@ function TempoTransplante() {
   );
 }
 
+/** Quantos dias antes de um Transplante agendado a planta entra no Pré-transplante. */
+function TempoPreTransplante() {
+  return (
+    <PreferenciaDias
+      chave="pre_transplante_dias"
+      dias={usePreTransplanteDias()}
+      opcoes={OPCOES_PRE_TRANSPLANTE}
+      label="Dias de Pré-transplante"
+      hint="Com um Transplante agendado, a planta entra no grupo Pré-transplante este tempo antes da data. Feito o transplante, vai para Recém transplantada."
+    />
+  );
+}
+
 export function ProfilePage() {
   const { user, isAdmin, logout } = useAuth();
   const me = useQuery({ queryKey: keys.me, queryFn: authApi.me });
@@ -138,6 +158,7 @@ export function ProfilePage() {
       </section>
 
       <RevisaoAutomatica />
+      <TempoPreTransplante />
       <TempoTransplante />
 
       <nav className="card mt-4 divide-y divide-line overflow-hidden">

@@ -4,7 +4,7 @@ export type Role = 'USER' | 'ADMIN';
 export type AgendaStatus = 'PENDENTE' | 'CONCLUIDO' | 'CANCELADO';
 export type ModoAquisicao = 'SEMENTE' | 'ESTACA' | 'ALPORQUIA' | 'YAMADORI' | 'COMPRA';
 export type TipoPlanta = 'PERENE' | 'CADUCIFOLIA' | 'SEMI_CADUCA' | 'ARVORE' | 'ARBUSTO' | 'CONIFERA';
-export type GrupoPlanta = 'RECEM_TRANSPLANTADA' | 'DEBILITADA' | 'EM_CRESCIMENTO' | 'REFINAMENTO';
+export type GrupoPlanta = 'PRE_TRANSPLANTE' | 'RECEM_TRANSPLANTADA' | 'DEBILITADA' | 'EM_CRESCIMENTO' | 'REFINAMENTO';
 export type StatusEspecie = 'VERIFICADO' | 'SUGERIDO';
 export type TipoMidia = 'FOTO' | 'VIDEO' | 'VISAO_FUTURA';
 
@@ -64,6 +64,7 @@ export interface Planta {
   /** Grupo de retorno quando o período em Recém transplantada acabar. */
   grupoAnterior?: GrupoPlanta | null;
   grupoExpiraEm?: string | null;
+  preTransplanteAgendaId?: string | null;
   createdAt: string;
   updatedAt: string;
   usuarioId: string;
@@ -147,6 +148,7 @@ export interface Preferencias {
   usa_nome_planta?: string;
   revisao_automatica_dias?: string;
   transplante_dias?: string;
+  pre_transplante_dias?: string;
   [chave: string]: string | undefined;
 }
 
@@ -169,11 +171,15 @@ export const TIPOS_PLANTA: { value: TipoPlanta; label: string }[] = [
 
 /** Ordem de exibição (Bancada, filtros, seletor). */
 export const GRUPOS_PLANTA: { value: GrupoPlanta; label: string }[] = [
+  { value: 'PRE_TRANSPLANTE', label: 'Pré-transplante' },
   { value: 'RECEM_TRANSPLANTADA', label: 'Recém transplantada' },
   { value: 'DEBILITADA', label: 'Debilitada' },
   { value: 'EM_CRESCIMENTO', label: 'Em crescimento' },
   { value: 'REFINAMENTO', label: 'Refinamento' },
 ];
+
+/** Grupos que o usuário escolhe à mão (Pré-transplante é automático). */
+export const GRUPOS_MANUAIS = GRUPOS_PLANTA.filter((g) => g.value !== 'PRE_TRANSPLANTE');
 
 /** Nome da atividade (seed) que move a planta para Recém transplantada. */
 export const ATIVIDADE_TRANSPLANTE = 'Transplante';
