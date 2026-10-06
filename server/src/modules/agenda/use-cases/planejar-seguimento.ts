@@ -1,11 +1,11 @@
-import { ConclusaoRepository } from '../agenda.types';
+import { ConclusaoRepository, NovaPendente } from '../agenda.types';
 
 const DIA = 86_400_000;
 /** Folga além do intervalo da revisão: uma pendente até N + 30 dias já "cuida" da planta. */
 const MARGEM_REVISAO_DIAS = 30;
 
 export interface Seguimento {
-  criarPendentes: { plantaId: string; atividadeId: string; dataAgendada: Date }[];
+  criarPendentes: NovaPendente[];
   revisoes: { plantaId: string; dataAgendada: Date }[];
 }
 
@@ -17,7 +17,15 @@ export async function planejarSeguimento(
     plantas,
     proximos,
     excluir,
-  }: { usuarioId: string; plantas: string[]; proximos: { atividadeId: string; dataAgendada: string }[]; excluir: string[] },
+    jaAgendadas = [],
+  }: {
+    usuarioId: string;
+    plantas: string[];
+    proximos: { atividadeId: string; dataAgendada: string }[];
+    excluir: string[];
+    /** Pendentes que serão criadas junto (ex.: próxima da rotina): contam como próxima tarefa. */
+    jaAgendadas?: { plantaId: string; dataAgendada: Date }[];
+  },
 ): Promise<Seguimento> {
   const criarPendentes = plantas.flatMap((plantaId) =>
     proximos.map((p) => ({ plantaId, atividadeId: p.atividadeId, dataAgendada: new Date(p.dataAgendada) })),
@@ -30,6 +38,11 @@ export async function planejarSeguimento(
       const agora = new Date();
       const limite = agora.getTime() + (dias + MARGEM_REVISAO_DIAS) * DIA;
       const proximas = await repo.proximasPendentes(plantas, agora, excluir);
+      for (const j of jaAgendadas) {
+        if (j.dataAgendada < agora) continue;
+        const atual = proximas.get(j.plantaId);
+        if (!atual || j.dataAgendada < atual) proximas.set(j.plantaId, j.dataAgendada);
+      }
       for (const plantaId of plantas) {
         const proxima = proximas.get(plantaId);
         if (proxima && proxima.getTime() <= limite) continue;

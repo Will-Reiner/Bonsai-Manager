@@ -1,4 +1,5 @@
 import { ConclusaoRepository, ConcluirAgendasDTO, PlanoConclusao } from '../agenda.types';
+import { planejarRotinas } from './planejar-rotinas';
 import { planejarSeguimento } from './planejar-seguimento';
 
 /** Conclui uma ou várias tarefas e agenda o que vem depois (próximos passos ou Revisão geral). */
@@ -25,7 +26,12 @@ export class ConcluirAgendasUseCase {
     const plantaDe = new Map(pendentes.map((p) => [p.id, p.plantaId]));
     const plantas = [...new Set(pendentes.map((p) => p.plantaId))];
 
-    const seguimento = await planejarSeguimento(this.repo, { usuarioId, plantas, proximos, excluir: ids });
+    const rotinas = await planejarRotinas(
+      this.repo,
+      pendentes.map((p) => ({ rotinaId: p.rotinaId, data: dataConcluida })),
+      ids,
+    );
+    const seguimento = await planejarSeguimento(this.repo, { usuarioId, plantas, proximos, excluir: ids, jaAgendadas: rotinas });
     const plano: PlanoConclusao = {
       usuarioId,
       dataConcluida,
@@ -46,6 +52,7 @@ export class ConcluirAgendasUseCase {
         extras.map((atividadeId) => ({ plantaId, atividadeId, data: dataConcluida, detalhes: dto.detalhes })),
       ),
       ...seguimento,
+      criarPendentes: [...seguimento.criarPendentes, ...rotinas],
     };
 
     return this.repo.executar(plano);

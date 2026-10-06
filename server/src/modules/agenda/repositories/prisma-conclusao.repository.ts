@@ -15,15 +15,31 @@ export class PrismaConclusaoRepository implements ConclusaoRepository {
   async findPendentesDoUsuario(ids: string[], usuarioId: string) {
     return prisma.agenda.findMany({
       where: { id: { in: ids }, status: 'PENDENTE', planta: { usuarioId } },
-      select: { id: true, plantaId: true },
+      select: { id: true, plantaId: true, rotinaId: true },
     });
   }
 
   async findPendentesParaReconciliar(ids: string[], usuarioId: string) {
     return prisma.agenda.findMany({
       where: { id: { in: ids }, status: 'PENDENTE', planta: { usuarioId } },
-      select: { id: true, plantaId: true, atividadeId: true, dataAgendada: true },
+      select: { id: true, plantaId: true, atividadeId: true, dataAgendada: true, rotinaId: true },
     });
+  }
+
+  async estadoRotinas(rotinaIds: string[], excluirAgendaIds: string[]) {
+    const rotinas = await prisma.rotina.findMany({
+      where: { id: { in: rotinaIds } },
+      select: {
+        id: true,
+        plantaId: true,
+        atividadeId: true,
+        intervaloDias: true,
+        dataFim: true,
+        pausada: true,
+        _count: { select: { agendas: { where: { status: 'PENDENTE', id: { notIn: excluirAgendaIds } } } } },
+      },
+    });
+    return rotinas.map(({ _count, ...r }) => ({ ...r, temPendente: _count.agendas > 0 }));
   }
 
   async atividadesExistem(ids: string[]) {

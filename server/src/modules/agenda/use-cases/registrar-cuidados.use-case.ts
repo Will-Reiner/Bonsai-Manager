@@ -1,5 +1,6 @@
 import { ConclusaoRepository, RegistrarCuidadosDTO } from '../agenda.types';
 import { reconciliar } from '../dominio/reconciliar';
+import { planejarRotinas } from './planejar-rotinas';
 import { planejarSeguimento } from './planejar-seguimento';
 
 /** Folga para o fuso do aparelho: registra o que já foi feito, não o futuro. */
@@ -40,9 +41,24 @@ export class RegistrarCuidadosUseCase {
     if (pendentes.length !== concluirIds.length) throw new Error('Acesso negado ou agendamento não encontrado.');
     const { absorver, cancelar } = reconciliar(cuidados, pendentes);
 
-    // As pendentes concluídas aqui não podem "segurar" a Revisão geral
-    const seguimento = await planejarSeguimento(this.repo, { usuarioId, plantas, proximos, excluir: concluirIds });
+    // Pendentes concluídas/canceladas aqui avançam a rotina e não "seguram" a Revisão geral
+    const rotinas = await planejarRotinas(this.repo, pendentes.map((p) => ({ rotinaId: p.rotinaId, data })), concluirIds);
+    const seguimento = await planejarSeguimento(this.repo, {
+      usuarioId,
+      plantas,
+      proximos,
+      excluir: concluirIds,
+      jaAgendadas: rotinas,
+    });
 
-    return this.repo.registrar({ usuarioId, data, cuidados, absorver, cancelar, ...seguimento });
+    return this.repo.registrar({
+      usuarioId,
+      data,
+      cuidados,
+      absorver,
+      cancelar,
+      ...seguimento,
+      criarPendentes: [...seguimento.criarPendentes, ...rotinas],
+    });
   }
 }

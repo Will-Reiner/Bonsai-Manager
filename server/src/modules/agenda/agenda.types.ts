@@ -1,5 +1,6 @@
 import { AgendaStatus } from '@prisma/client';
 import { PendenteReconciliavel } from './dominio/reconciliar';
+import { RotinaEstado } from './dominio/rotina';
 
 export interface CreateAgendaDTO {
   plantaId: string;
@@ -60,13 +61,21 @@ export interface ConcluirAgendasDTO {
   itens: { agendaId: string; detalhes?: string; observacaoFutura?: string; fotos?: string[] }[];
 }
 
+/** Pendente a criar; com `rotinaId` quando é a próxima de uma rotina. */
+export interface NovaPendente {
+  plantaId: string;
+  atividadeId: string;
+  dataAgendada: Date;
+  rotinaId?: string;
+}
+
 export interface PlanoConclusao {
   usuarioId: string;
   dataConcluida: Date;
   atualizacoes: { agendaId: string; atividadeId?: string; detalhes?: string; observacaoFutura?: string }[];
   fotos: { agendaId: string; plantaId: string; caminhoArquivo: string }[];
   criarConcluidas: { plantaId: string; atividadeId: string; data: Date; detalhes?: string }[];
-  criarPendentes: { plantaId: string; atividadeId: string; dataAgendada: Date }[];
+  criarPendentes: NovaPendente[];
   revisoes: { plantaId: string; dataAgendada: Date }[];
 }
 
@@ -99,7 +108,7 @@ export interface PlanoRegistro {
   absorver: { agendaId: string; plantaId: string; atividadeId: string }[];
   /** Pendentes repetidas do mesmo cuidado: canceladas. */
   cancelar: string[];
-  criarPendentes: { plantaId: string; atividadeId: string; dataAgendada: Date }[];
+  criarPendentes: NovaPendente[];
   revisoes: { plantaId: string; dataAgendada: Date }[];
 }
 
@@ -111,7 +120,7 @@ export interface ResultadoConclusao {
 
 export interface ConclusaoRepository {
   /** Agendas PENDENTE do usuário dentre os ids informados. */
-  findPendentesDoUsuario(ids: string[], usuarioId: string): Promise<{ id: string; plantaId: string }[]>;
+  findPendentesDoUsuario(ids: string[], usuarioId: string): Promise<{ id: string; plantaId: string; rotinaId: string | null }[]>;
   /** Agendas PENDENTE do usuário dentre os ids, com planta, atividade e data. */
   findPendentesParaReconciliar(ids: string[], usuarioId: string): Promise<PendenteReconciliavel[]>;
   atividadesExistem(ids: string[]): Promise<boolean>;
@@ -119,6 +128,8 @@ export interface ConclusaoRepository {
   getRevisaoDias(usuarioId: string): Promise<number>;
   /** Por planta, a data da próxima PENDENTE com dataAgendada >= aPartirDe, ignorando `excluir` (sem pendente = fora do Map). */
   proximasPendentes(plantaIds: string[], aPartirDe: Date, excluir: string[]): Promise<Map<string, Date>>;
+  /** Estado das rotinas; `temPendente` ignora as agendas em `excluirAgendaIds` (as que estão sendo concluídas). */
+  estadoRotinas(rotinaIds: string[], excluirAgendaIds: string[]): Promise<RotinaEstado[]>;
   executar(plano: PlanoConclusao): Promise<ResultadoConclusao>;
   /** Quantas das plantas informadas são do usuário. */
   contarPlantasDoUsuario(plantaIds: string[], usuarioId: string): Promise<number>;

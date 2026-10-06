@@ -17,11 +17,12 @@ describe('ConcluirAgendasUseCase', () => {
   beforeEach(() => {
     jest.useFakeTimers().setSystemTime(AGORA);
     repo = {
-      findPendentesDoUsuario: jest.fn().mockResolvedValue([{ id: 'ag-1', plantaId: 'pl-1' }]),
+      findPendentesDoUsuario: jest.fn().mockResolvedValue([{ id: 'ag-1', plantaId: 'pl-1', rotinaId: null }]),
       findPendentesParaReconciliar: jest.fn(),
       atividadesExistem: jest.fn().mockResolvedValue(true),
       getRevisaoDias: jest.fn().mockResolvedValue(30),
       proximasPendentes: jest.fn().mockResolvedValue(new Map()),
+      estadoRotinas: jest.fn().mockResolvedValue([]),
       executar: jest.fn().mockResolvedValue({ concluidas: [], criadas: [], revisoes: [] }),
       contarPlantasDoUsuario: jest.fn(),
       registrar: jest.fn(),
@@ -46,8 +47,8 @@ describe('ConcluirAgendasUseCase', () => {
 
   it('ajuste por planta sobrescreve os campos comuns e vincula fotos', async () => {
     repo.findPendentesDoUsuario.mockResolvedValue([
-      { id: 'ag-1', plantaId: 'pl-1' },
-      { id: 'ag-2', plantaId: 'pl-2' },
+      { id: 'ag-1', plantaId: 'pl-1', rotinaId: null },
+      { id: 'ag-2', plantaId: 'pl-2', rotinaId: null },
     ]);
     await useCase.execute(
       {
@@ -118,8 +119,8 @@ describe('ConcluirAgendasUseCase', () => {
 
   it('avalia a revisão uma vez por planta distinta', async () => {
     repo.findPendentesDoUsuario.mockResolvedValue([
-      { id: 'ag-1', plantaId: 'pl-1' },
-      { id: 'ag-2', plantaId: 'pl-1' },
+      { id: 'ag-1', plantaId: 'pl-1', rotinaId: null },
+      { id: 'ag-2', plantaId: 'pl-1', rotinaId: null },
     ]);
     await useCase.execute({ ...base, itens: [{ agendaId: 'ag-1' }, { agendaId: 'ag-2' }] }, 'user-1');
     expect(repo.proximasPendentes).toHaveBeenCalledTimes(1);
@@ -137,5 +138,27 @@ describe('ConcluirAgendasUseCase', () => {
     repo.atividadesExistem.mockResolvedValue(false);
     await expect(useCase.execute({ ...base, extras: ['x'] }, 'user-1')).rejects.toThrow('Atividade não encontrada.');
     expect(repo.executar).not.toHaveBeenCalled();
+  });
+
+  describe('rotinas', () => {
+    it('concluir tarefa de rotina agenda a próxima a partir da data feita e dispensa a revisão', async () => {
+      repo.findPendentesDoUsuario.mockResolvedValue([{ id: 'ag-1', plantaId: 'pl-1', rotinaId: 'r1' }]);
+      repo.estadoRotinas.mockResolvedValue([
+        { id: 'r1', plantaId: 'pl-1', atividadeId: 'at-1', intervaloDias: 14, dataFim: null, pausada: false, temPendente: false },
+      ]);
+
+      await useCase.execute(base, 'user-1');
+
+      expect(repo.estadoRotinas).toHaveBeenCalledWith(['r1'], ['ag-1']);
+      expect(plano().criarPendentes).toEqual([
+        { rotinaId: 'r1', plantaId: 'pl-1', atividadeId: 'at-1', dataAgendada: emDias(14) },
+      ]);
+      expect(plano().revisoes).toEqual([]);
+    });
+
+    it('tarefa avulsa não consulta rotinas', async () => {
+      await useCase.execute(base, 'user-1');
+      expect(repo.estadoRotinas).not.toHaveBeenCalled();
+    });
   });
 });

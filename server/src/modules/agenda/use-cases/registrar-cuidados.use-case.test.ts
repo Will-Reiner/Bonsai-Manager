@@ -21,6 +21,7 @@ describe('RegistrarCuidadosUseCase', () => {
       atividadesExistem: jest.fn().mockResolvedValue(true),
       getRevisaoDias: jest.fn().mockResolvedValue(30),
       proximasPendentes: jest.fn().mockResolvedValue(new Map()),
+      estadoRotinas: jest.fn().mockResolvedValue([]),
       executar: jest.fn(),
       contarPlantasDoUsuario: jest.fn().mockResolvedValue(1),
       registrar: jest.fn().mockResolvedValue({ concluidas: [], criadas: [], revisoes: [] }),
@@ -129,7 +130,22 @@ describe('RegistrarCuidadosUseCase', () => {
   });
 
   describe('concluir tarefas pendentes pelo registro', () => {
-    const pendente = { id: 'ag-1', plantaId: 'p1', atividadeId: 'at-1', dataAgendada: new Date('2026-10-20T12:00:00.000Z') };
+    const pendente = { id: 'ag-1', plantaId: 'p1', atividadeId: 'at-1', dataAgendada: new Date('2026-10-20T12:00:00.000Z'), rotinaId: null };
+
+    it('tarefa de rotina concluída pelo registro agenda a próxima', async () => {
+      repo.findPendentesParaReconciliar.mockResolvedValue([{ ...pendente, rotinaId: 'r1' }]);
+      repo.estadoRotinas.mockResolvedValue([
+        { id: 'r1', plantaId: 'p1', atividadeId: 'at-1', intervaloDias: 10, dataFim: null, pausada: false, temPendente: false },
+      ]);
+
+      await useCase.execute({ ...base, concluirAgendaIds: ['ag-1'] }, 'user-1');
+
+      expect(repo.estadoRotinas).toHaveBeenCalledWith(['r1'], ['ag-1']);
+      expect(plano().criarPendentes).toEqual([
+        { rotinaId: 'r1', plantaId: 'p1', atividadeId: 'at-1', dataAgendada: new Date(AGORA.getTime() + 10 * DIA) },
+      ]);
+      expect(plano().revisoes).toEqual([]);
+    });
 
     it('sem tarefas escolhidas, não busca pendentes', async () => {
       await useCase.execute(base, 'user-1');

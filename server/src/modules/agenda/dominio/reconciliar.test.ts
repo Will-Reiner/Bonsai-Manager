@@ -5,6 +5,7 @@ const pendente = (id: string, plantaId: string, atividadeId: string, data: strin
   plantaId,
   atividadeId,
   dataAgendada: new Date(data),
+  rotinaId: null,
 });
 
 describe('reconciliar', () => {

@@ -46,4 +46,16 @@ describe('planejarSeguimento', () => {
 
     expect(r).toEqual({ criarPendentes: [], revisoes: [] });
   });
+
+  it('uma pendente recém-planejada (rotina) dentro da margem evita a revisão', async () => {
+    const r = await planejarSeguimento(repo, {
+      usuarioId: 'u',
+      plantas: ['p1', 'p2'],
+      proximos: [],
+      excluir: [],
+      jaAgendadas: [{ plantaId: 'p1', dataAgendada: new Date(AGORA.getTime() + 14 * DIA) }],
+    });
+
+    expect(r.revisoes).toEqual([{ plantaId: 'p2', dataAgendada: new Date(AGORA.getTime() + 30 * DIA) }]);
+  });
 });

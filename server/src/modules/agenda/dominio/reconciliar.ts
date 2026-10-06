@@ -3,6 +3,7 @@ export interface PendenteReconciliavel {
   plantaId: string;
   atividadeId: string;
   dataAgendada: Date;
+  rotinaId: string | null;
 }
 
 export interface Reconciliacao {
