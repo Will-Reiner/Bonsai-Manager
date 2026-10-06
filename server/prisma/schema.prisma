@@ -85,6 +85,7 @@ enum TipoMidia {
 
 /// Grupos fixos de fase da planta (um por planta, opcional).
 enum GrupoPlanta {
+  PRE_TRANSPLANTE
   RECEM_TRANSPLANTADA
   DEBILITADA
   EM_CRESCIMENTO
@@ -166,6 +167,8 @@ model Planta {
   grupoAnterior    GrupoPlanta?
   /// Fim do período automático em RECEM_TRANSPLANTADA.
   grupoExpiraEm    DateTime?
+  /// Agendamento de Transplante que já colocou a planta no Pré-transplante (impede reentrada pelo mesmo).
+  preTransplanteAgendaId String?
   createdAt        DateTime      @default(now())
   updatedAt        DateTime      @updatedAt
 
