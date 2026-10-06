@@ -1,11 +1,12 @@
 import { CreatePlantaUseCase } from './create-planta.use-case';
-import { PlantaRepository, EspecieRepository, CreatePlantaRequestDTO, PlantaWithEspecie } from '../types/planta.types';
+import { PlantaRepository, EspecieRepository, CreatePlantaRequestDTO, PlantaWithEspecie, RevisaoInicialRepository } from '../types/planta.types';
 import { ModoAquisicao } from '@prisma/client';
 
 describe('CreatePlantaUseCase', () => {
   let createPlantaUseCase: CreatePlantaUseCase;
   let mockPlantaRepository: jest.Mocked<PlantaRepository>;
   let mockEspecieRepository: jest.Mocked<EspecieRepository>;
+  let mockRevisao: jest.Mocked<RevisaoInicialRepository>;
 
   beforeEach(() => {
     mockPlantaRepository = {
@@ -22,7 +23,9 @@ describe('CreatePlantaUseCase', () => {
       existsById: jest.fn(),
     };
 
-    createPlantaUseCase = new CreatePlantaUseCase(mockPlantaRepository, mockEspecieRepository);
+    mockRevisao = { getRevisaoDias: jest.fn().mockResolvedValue(30), criarRevisao: jest.fn().mockResolvedValue(undefined) };
+
+    createPlantaUseCase = new CreatePlantaUseCase(mockPlantaRepository, mockEspecieRepository, mockRevisao);
   });
 
   describe('execute', () => {
@@ -177,6 +180,40 @@ describe('CreatePlantaUseCase', () => {
         ...mockCreatePlantaDTO,
         dataAquisicao: new Date('2024-01-01T00:00:00.000Z'),
       });
+    });
+  });
+
+  describe('Revisão geral da planta nova', () => {
+    const AGORA = new Date('2026-10-05T12:00:00.000Z');
+    beforeEach(() => jest.useFakeTimers().setSystemTime(AGORA));
+    afterEach(() => jest.useRealTimers());
+
+    it('cria a rotina de revisão com o intervalo da preferência', async () => {
+      mockPlantaRepository.create.mockResolvedValue({ id: 'planta-1' } as PlantaWithEspecie);
+
+      await createPlantaUseCase.execute({ usuarioId: 'user-123' } as CreatePlantaRequestDTO);
+
+      expect(mockRevisao.getRevisaoDias).toHaveBeenCalledWith('user-123');
+      expect(mockRevisao.criarRevisao).toHaveBeenCalledWith('planta-1', 30, new Date('2026-11-04T12:00:00.000Z'));
+    });
+
+    it('preferência 0 não cria revisão', async () => {
+      mockRevisao.getRevisaoDias.mockResolvedValue(0);
+      mockPlantaRepository.create.mockResolvedValue({ id: 'planta-1' } as PlantaWithEspecie);
+
+      await createPlantaUseCase.execute({ usuarioId: 'user-123' } as CreatePlantaRequestDTO);
+
+      expect(mockRevisao.criarRevisao).not.toHaveBeenCalled();
+    });
+
+    it('falha ao criar a revisão não impede a planta', async () => {
+      const erro = jest.spyOn(console, 'error').mockImplementation(() => undefined);
+      mockRevisao.criarRevisao.mockRejectedValue(new Error('db'));
+      mockPlantaRepository.create.mockResolvedValue({ id: 'planta-1' } as PlantaWithEspecie);
+
+      await expect(createPlantaUseCase.execute({ usuarioId: 'user-123' } as CreatePlantaRequestDTO)).resolves.toEqual({ id: 'planta-1' });
+      expect(erro).toHaveBeenCalled();
+      erro.mockRestore();
     });
   });
 });
