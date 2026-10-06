@@ -5,7 +5,7 @@ import { Button, EmptyState, ErrorState, PlantThumb, Spinner } from '@/component
 import { errorMessage } from '@/lib/api';
 import { especieNome, plantaTitulo } from '@/lib/format';
 import { useAgendas, usePlantas } from '@/lib/queries';
-import type { Planta } from '@/types';
+import { GRUPOS_PLANTA, type GrupoPlanta, type Planta } from '@/types';
 
 type Ordem = 'recentes' | 'alfabetica' | 'tarefa';
 const VIEW_KEY = 'bonsai_colecao_view';
@@ -17,6 +17,7 @@ export function CollectionPage() {
   const fotosRef = useRef<HTMLInputElement>(null);
   const [busca, setBusca] = useState('');
   const [especie, setEspecie] = useState('');
+  const [grupo, setGrupo] = useState<'' | 'sem' | GrupoPlanta>('');
   const [ordem, setOrdem] = useState<Ordem>('recentes');
   const [view, setView] = useState<'grid' | 'lista'>(() =>
     localStorage.getItem(VIEW_KEY) === 'lista' ? 'lista' : 'grid',
@@ -50,6 +51,7 @@ export function CollectionPage() {
     const termo = busca.trim().toLowerCase();
     const filtradas = (plantas.data ?? []).filter((p) => {
       if (especie === 'sem' ? !!p.especieId : especie && p.especieId !== especie) return false;
+      if (grupo === 'sem' ? !!p.grupo : grupo && p.grupo !== grupo) return false;
       if (!termo) return true;
       return [p.nome, p.identificador, p.especie?.nomeComum, p.especie?.nomeCientifico]
         .filter(Boolean)
@@ -66,7 +68,7 @@ export function CollectionPage() {
             ? porTarefa(a).localeCompare(porTarefa(b))
             : b.createdAt.localeCompare(a.createdAt)),
     );
-  }, [plantas.data, busca, especie, ordem, proximaTarefa]);
+  }, [plantas.data, busca, especie, grupo, ordem, proximaTarefa]);
 
   return (
     <div className="mx-auto max-w-2xl px-4 pt-safe">
@@ -129,6 +131,15 @@ export function CollectionPage() {
               />
             </div>
             <div className="flex gap-2">
+              <select className="input min-w-0 flex-1 py-2 text-sm" value={grupo} onChange={(e) => setGrupo(e.target.value as typeof grupo)} aria-label="Filtrar por grupo">
+                <option value="">Todos os grupos</option>
+                {GRUPOS_PLANTA.map((g) => (
+                  <option key={g.value} value={g.value}>
+                    {g.label}
+                  </option>
+                ))}
+                <option value="sem">Sem grupo</option>
+              </select>
               <select className="input min-w-0 flex-1 py-2 text-sm" value={especie} onChange={(e) => setEspecie(e.target.value)}>
                 <option value="">Todas as espécies</option>
                 {plantas.data?.some((p) => !p.especieId) && <option value="sem">Sem espécie</option>}
@@ -138,7 +149,9 @@ export function CollectionPage() {
                   </option>
                 ))}
               </select>
-              <select className="input w-auto py-2 text-sm" value={ordem} onChange={(e) => setOrdem(e.target.value as Ordem)}>
+            </div>
+            <div className="flex gap-2">
+              <select className="input min-w-0 flex-1 py-2 text-sm" value={ordem} onChange={(e) => setOrdem(e.target.value as Ordem)}>
                 <option value="recentes">Recentes</option>
                 <option value="alfabetica">A–Z</option>
                 <option value="tarefa">Próxima tarefa</option>

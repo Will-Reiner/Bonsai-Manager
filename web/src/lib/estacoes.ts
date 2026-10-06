@@ -47,3 +47,9 @@ export function atalhosDeData(hoje = new Date()): AtalhoData[] {
     ]),
   ];
 }
+
+/** Último dia da estação atual (o "final" mais próximo a partir de hoje, inclusive). */
+export function fimDaEstacao(hoje = new Date()): Date {
+  const ontem = meioDia(hoje.getFullYear(), hoje.getMonth(), hoje.getDate() - 1);
+  return ESTACOES.map((e) => proximaOcorrencia(e.final, ontem)).reduce((a, b) => (b < a ? b : a));
+}

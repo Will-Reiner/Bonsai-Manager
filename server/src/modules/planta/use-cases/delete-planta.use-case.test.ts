@@ -16,6 +16,7 @@ describe('DeletePlantaUseCase', () => {
       delete: jest.fn(),
       existsByIdAndUser: jest.fn(),
       findUrlsDeMidia: jest.fn(),
+      resolverGruposVencidos: jest.fn().mockResolvedValue(undefined),
     };
 
     mockLimpeza = { execute: jest.fn().mockResolvedValue(undefined) };

@@ -1,9 +1,12 @@
 import { prisma } from '../../../lib/prisma';
 import { Prisma } from '@prisma/client';
 import { ehRevisao } from '../dominio/rotina';
+import { diasDeTransplante } from '../../planta/dominio/grupo';
 import {
   ConclusaoRepository,
   ATIVIDADE_REVISAO,
+  ATIVIDADE_TRANSPLANTE,
+  PREF_TRANSPLANTE_DIAS,
   NovaRotinaDePasso,
   PlanoConclusao,
   PlanoRegistro,
@@ -128,6 +131,24 @@ export class PrismaConclusaoRepository implements ConclusaoRepository {
     return prisma.planta.count({ where: { id: { in: plantaIds }, usuarioId } });
   }
 
+  async transplanteDasPlantas(plantaIds: string[], usuarioId: string) {
+    const [atividade, pref, plantas] = await Promise.all([
+      prisma.atividade.findUnique({ where: { nome: ATIVIDADE_TRANSPLANTE }, select: { id: true } }),
+      prisma.preferenciaUsuario.findUnique({
+        where: { usuarioId_chave: { usuarioId, chave: PREF_TRANSPLANTE_DIAS } },
+      }),
+      prisma.planta.findMany({
+        where: { id: { in: plantaIds }, usuarioId },
+        select: { id: true, grupo: true, grupoAnterior: true, grupoExpiraEm: true },
+      }),
+    ]);
+    return {
+      atividadeId: atividade?.id ?? null,
+      dias: diasDeTransplante(pref?.valor),
+      plantas: plantas.map(({ id, ...g }) => ({ plantaId: id, ...g })),
+    };
+  }
+
   async registrar(plano: PlanoRegistro): Promise<ResultadoConclusao> {
     return prisma.$transaction(
       async (tx: Prisma.TransactionClient) => {
@@ -208,6 +229,12 @@ export class PrismaConclusaoRepository implements ConclusaoRepository {
           ...(await this.criarComRotinas(tx, plano.criarRotinas)),
         ];
         await this.moverPendentes(tx, plano.moverPendentes);
+        for (const g of plano.atualizarGrupos) {
+          await tx.planta.update({
+            where: { id: g.plantaId },
+            data: { grupo: g.grupo, grupoAnterior: g.grupoAnterior, grupoExpiraEm: g.grupoExpiraEm },
+          });
+        }
         return { concluidas, criadas };
       },
       { timeout: 20_000 },

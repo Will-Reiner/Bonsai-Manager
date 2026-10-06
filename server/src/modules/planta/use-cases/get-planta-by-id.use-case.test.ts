@@ -15,12 +15,21 @@ describe('GetPlantaByIdUseCase', () => {
       delete: jest.fn(),
       existsByIdAndUser: jest.fn(),
       findUrlsDeMidia: jest.fn(),
+      resolverGruposVencidos: jest.fn().mockResolvedValue(undefined),
     };
 
     getPlantaByIdUseCase = new GetPlantaByIdUseCase(mockPlantaRepository);
   });
 
   describe('execute', () => {
+    it('resolve prazos vencidos antes de buscar', async () => {
+      mockPlantaRepository.findByIdAndUser.mockResolvedValue({ id: 'planta-1' } as any);
+
+      await getPlantaByIdUseCase.execute('planta-1', 'user-123');
+
+      expect(mockPlantaRepository.resolverGruposVencidos).toHaveBeenCalledWith('user-123', expect.any(Date));
+    });
+
     const plantaId = 'planta-123';
     const usuarioId = 'user-123';
 

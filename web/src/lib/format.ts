@@ -1,5 +1,5 @@
-import type { Agenda, ModoAquisicao, Planta } from '@/types';
-import { MODOS_AQUISICAO } from '@/types';
+import type { Agenda, GrupoPlanta, ModoAquisicao, Planta } from '@/types';
+import { GRUPOS_PLANTA, MODOS_AQUISICAO } from '@/types';
 
 export const plantaTitulo = (p?: Partial<Planta> | null) =>
   p?.nome || p?.identificador || p?.especie?.nomeComum || p?.especie?.nomeCientifico || 'Planta sem nome';
@@ -9,6 +9,8 @@ export const especieNome = (e?: { nomeComum?: string | null; nomeCientifico?: st
 
 export const modoAquisicaoLabel = (m?: ModoAquisicao | null) =>
   MODOS_AQUISICAO.find((x) => x.value === m)?.label ?? '—';
+
+export const grupoLabel = (g?: GrupoPlanta | null) => GRUPOS_PLANTA.find((x) => x.value === g)?.label ?? 'Sem grupo';
 
 const startOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
 
@@ -72,18 +74,6 @@ export const daquiADias = (dias: number) => new Date(Date.now() + dias * 86_400_
 /** Rótulo curto para identificar a planta: o identificador (ex.: JB-03) tem prioridade. */
 export const plantaRotulo = (p?: Agenda['planta']) =>
   p?.identificador || p?.nome || p?.especie?.nomeComum || p?.especie?.nomeCientifico || 'Planta';
-
-/** Pendentes da bancada: atrasadas e próximas (hoje até +6 dias). */
-export function tarefasDaBancada(agendas: Agenda[]) {
-  const pendentes = agendas.filter((a) => a.status === 'PENDENTE');
-  return {
-    atrasadas: pendentes.filter((a) => diasAte(a.dataAgendada) < 0),
-    proximas: pendentes.filter((a) => {
-      const d = diasAte(a.dataAgendada);
-      return d >= 0 && d <= 6;
-    }),
-  };
-}
 
 export interface GrupoAtividade {
   atividadeId: string;

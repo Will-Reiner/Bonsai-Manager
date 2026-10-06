@@ -5,14 +5,15 @@ import { Trash2 } from 'lucide-react';
 import { Button, ErrorState, Field, PageHeader, Spinner } from '@/components/ui';
 import { ConfirmSheet, Sheet } from '@/components/Sheet';
 import { PhotoInput } from '@/components/PhotoInput';
+import { GrupoChips } from '@/components/GrupoChips';
 import { SpeciesPicker } from '@/components/SpeciesPicker';
 import { useToast } from '@/context/ToastContext';
 import { errorMessage } from '@/lib/api';
 import { plantasApi } from '@/lib/endpoints';
-import { especieNome, fromDateInput, toDateInput } from '@/lib/format';
+import { dataCurta, especieNome, fromDateInput, grupoLabel, toDateInput } from '@/lib/format';
 import { keys, useEspecies, usePlanta } from '@/lib/queries';
 import { uploadImage } from '@/lib/upload';
-import { MODOS_AQUISICAO, type ModoAquisicao, type Planta } from '@/types';
+import { MODOS_AQUISICAO, type GrupoPlanta, type ModoAquisicao, type Planta } from '@/types';
 
 export function EditPlantPage() {
   const { id = '' } = useParams();
@@ -36,6 +37,7 @@ function EditPlantForm({ planta: p }: { planta: Planta }) {
   const [identificador, setIdentificador] = useState(p.identificador ?? '');
   const [dataAquisicao, setDataAquisicao] = useState(p.dataAquisicao ? toDateInput(p.dataAquisicao) : '');
   const [modo, setModo] = useState<ModoAquisicao | ''>(p.modoAquisicao ?? '');
+  const [grupo, setGrupo] = useState<GrupoPlanta | null>(p.grupo ?? null);
   const [observacoes, setObservacoes] = useState(p.observacoes ?? '');
   const [foto, setFoto] = useState<File | null>(null);
   const [trocarEspecie, setTrocarEspecie] = useState(false);
@@ -55,6 +57,8 @@ function EditPlantForm({ planta: p }: { planta: Planta }) {
         dataAquisicao: dataAquisicao ? fromDateInput(dataAquisicao) : null,
         modoAquisicao: modo || null,
         observacoes: observacoes.trim(),
+        // só envia se mudou, para não cancelar o retorno automático à toa
+        ...(grupo !== (p.grupo ?? null) ? { grupo } : {}),
         ...(fotoCapaUrl ? { fotoCapaUrl } : {}),
       });
       await queryClient.invalidateQueries({ queryKey: keys.plantas });
@@ -121,6 +125,14 @@ function EditPlantForm({ planta: p }: { planta: Planta }) {
               </button>
             ))}
           </div>
+        </div>
+        <div>
+          <GrupoChips value={grupo} onChange={setGrupo} />
+          {p.grupoExpiraEm && grupo === p.grupo && (
+            <p className="mt-1.5 text-xs text-muted">
+              Volta para {grupoLabel(p.grupoAnterior)} em {dataCurta(p.grupoExpiraEm)}. Trocar o grupo cancela o retorno.
+            </p>
+          )}
         </div>
         <Field label="Observações">
           <textarea className="input min-h-28" value={observacoes} onChange={(e) => setObservacoes(e.target.value)} />

@@ -18,6 +18,7 @@ describe('UpdatePlantaUseCase', () => {
       delete: jest.fn(),
       existsByIdAndUser: jest.fn(),
       findUrlsDeMidia: jest.fn(),
+      resolverGruposVencidos: jest.fn().mockResolvedValue(undefined),
     };
 
     mockEspecieRepository = {
@@ -30,6 +31,31 @@ describe('UpdatePlantaUseCase', () => {
   });
 
   describe('execute', () => {
+    it('troca manual de grupo cancela o retorno automático', async () => {
+      mockPlantaRepository.existsByIdAndUser.mockResolvedValue(true);
+      mockPlantaRepository.update.mockResolvedValue({ id: 'planta-123' } as any);
+
+      await updatePlantaUseCase.execute('planta-123', 'user-123', { grupo: 'EM_CRESCIMENTO' });
+
+      expect(mockPlantaRepository.update).toHaveBeenCalledWith(
+        'planta-123',
+        'user-123',
+        expect.objectContaining({ grupo: 'EM_CRESCIMENTO', grupoAnterior: null, grupoExpiraEm: null }),
+      );
+    });
+
+    it('sem o campo grupo, não mexe no grupo', async () => {
+      mockPlantaRepository.existsByIdAndUser.mockResolvedValue(true);
+      mockPlantaRepository.update.mockResolvedValue({ id: 'planta-123' } as any);
+
+      await updatePlantaUseCase.execute('planta-123', 'user-123', { nome: 'X' });
+
+      const dados = mockPlantaRepository.update.mock.calls[0][2];
+      expect(dados).not.toHaveProperty('grupo');
+      expect(dados).not.toHaveProperty('grupoAnterior');
+      expect(dados).not.toHaveProperty('grupoExpiraEm');
+    });
+
     const plantaId = 'planta-123';
     const usuarioId = 'user-123';
 

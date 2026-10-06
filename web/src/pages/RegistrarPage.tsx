@@ -14,7 +14,8 @@ import { errorMessage } from '@/lib/api';
 import { agendasApi } from '@/lib/endpoints';
 import { diasAte, fromDateInput, plantaRotulo, plantaTitulo, toDateInput } from '@/lib/format';
 import { ehNova, useLoteFotos } from '@/lib/loteFotos';
-import { keys, useAgendas, usePlantas } from '@/lib/queries';
+import { keys, useAgendas, useAtividades, usePlantas } from '@/lib/queries';
+import { ATIVIDADE_TRANSPLANTE } from '@/types';
 import { candidatasReconciliacao, rotuloUltima, textoPrazo, ultimasPorPlanta } from '@/lib/cuidados';
 
 interface Ajuste {
@@ -52,6 +53,9 @@ export function RegistrarPage() {
   const [proximos, setProximos] = useState<Proximo[]>([]);
   /** Candidatas que o usuário desmarcou (as demais são concluídas pelo registro). */
   const [desmarcadas, setDesmarcadas] = useState<string[]>([]);
+  const atividades = useAtividades();
+  /** "Mover para Recém transplantadas" — vem marcado quando há Transplante. */
+  const [moverTransplante, setMoverTransplante] = useState(true);
   const ultimas = useMemo(() => ultimasPorPlanta(agendas.data ?? []), [agendas.data]);
   const cameraRef = useRef<HTMLInputElement>(null);
   const galeriaRef = useRef<HTMLInputElement>(null);
@@ -84,6 +88,8 @@ export function RegistrarPage() {
     reais.map((pid) => ({ plantaId: pid, atividadeIds: tiposDe(pid) })),
   );
   const concluirAgendaIds = candidatas.filter((a) => !desmarcadas.includes(a.id)).map((a) => a.id);
+  const transplanteId = atividades.data?.find((a) => a.nome === ATIVIDADE_TRANSPLANTE)?.id;
+  const comTransplante = !!transplanteId && tocadas.some((pid) => tiposDe(pid).includes(transplanteId));
 
   function escolherArquivos(files: FileList | null) {
     const lista = [...(files ?? [])].filter((f) => f.type.startsWith('image/'));
@@ -156,6 +162,7 @@ export function RegistrarPage() {
           })),
           proximos: proximosParaApi(proximos),
           concluirAgendaIds: concluirAgendaIds.length ? concluirAgendaIds : undefined,
+          moverRecemTransplantada: comTransplante && moverTransplante ? true : undefined,
         });
         queryClient.invalidateQueries({ queryKey: keys.agendas });
         queryClient.invalidateQueries({ queryKey: keys.rotinas });
@@ -328,6 +335,20 @@ export function RegistrarPage() {
           )}
         </section>
 
+        {comTransplante && (
+          <label className="card flex cursor-pointer items-center gap-3 p-3">
+            <input
+              type="checkbox"
+              className="size-5 shrink-0 accent-primary"
+              checked={moverTransplante}
+              onChange={(e) => setMoverTransplante(e.target.checked)}
+            />
+            <span className="min-w-0 flex-1">
+              <span className="block font-semibold">Mover para Recém transplantadas</span>
+              <span className="block text-xs text-muted">Depois do prazo (ajustável no Perfil) a planta volta ao grupo de antes.</span>
+            </span>
+          </label>
+        )}
         {candidatas.length > 0 && (
           <section>
             <span className="label">Tarefas que serão concluídas</span>

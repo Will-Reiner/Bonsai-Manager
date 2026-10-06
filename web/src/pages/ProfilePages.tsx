@@ -8,7 +8,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/context/ToastContext';
 import { errorMessage } from '@/lib/api';
 import { authApi, preferenciasApi } from '@/lib/endpoints';
-import { keys, useAgendas, usePreferencias, useRevisaoDias, usePlantas } from '@/lib/queries';
+import { keys, useAgendas, usePreferencias, useRevisaoDias, useTransplanteDias, usePlantas } from '@/lib/queries';
 import { uploadImage } from '@/lib/upload';
 
 const OPCOES_REVISAO = [
@@ -19,18 +19,37 @@ const OPCOES_REVISAO = [
   { valor: '90', label: '90 dias' },
 ];
 
-/** Intervalo da rotina de Revisão geral criada em cada planta nova. */
-function RevisaoAutomatica() {
+const OPCOES_TRANSPLANTE = [
+  { valor: '7', label: '7 dias' },
+  { valor: '15', label: '15 dias' },
+  { valor: '30', label: '30 dias' },
+  { valor: '45', label: '45 dias' },
+  { valor: '60', label: '60 dias' },
+];
+
+/** Preferência numérica (dias) escolhida numa lista. */
+function PreferenciaDias({
+  chave,
+  dias,
+  opcoes,
+  label,
+  hint,
+}: {
+  chave: string;
+  dias: number;
+  opcoes: { valor: string; label: string }[];
+  label: string;
+  hint: string;
+}) {
   const queryClient = useQueryClient();
   const toast = useToast();
   const prefs = usePreferencias();
-  const dias = useRevisaoDias();
   const [salvando, setSalvando] = useState(false);
 
   async function mudar(valor: string) {
     setSalvando(true);
     try {
-      await preferenciasApi.set('revisao_automatica_dias', valor);
+      await preferenciasApi.set(chave, valor);
       await queryClient.invalidateQueries({ queryKey: keys.preferencias });
       toast('Preferência salva');
     } catch (error) {
@@ -42,18 +61,10 @@ function RevisaoAutomatica() {
 
   return (
     <section className="card mt-4 p-4">
-      <Field
-        label="Revisão geral das plantas novas"
-        hint="Cada planta nova ganha uma rotina de Revisão geral com este intervalo, remarcada a cada cuidado. Para mudar numa planta, use a seção Rotinas dela."
-      >
-        <select
-          className="input"
-          value={String(dias)}
-          disabled={prefs.isLoading || salvando}
-          onChange={(e) => mudar(e.target.value)}
-        >
-          {!OPCOES_REVISAO.some((o) => o.valor === String(dias)) && <option value={String(dias)}>{dias} dias</option>}
-          {OPCOES_REVISAO.map((o) => (
+      <Field label={label} hint={hint}>
+        <select className="input" value={String(dias)} disabled={prefs.isLoading || salvando} onChange={(e) => mudar(e.target.value)}>
+          {!opcoes.some((o) => o.valor === String(dias)) && <option value={String(dias)}>{dias} dias</option>}
+          {opcoes.map((o) => (
             <option key={o.valor} value={o.valor}>
               {o.label}
             </option>
@@ -61,6 +72,32 @@ function RevisaoAutomatica() {
         </select>
       </Field>
     </section>
+  );
+}
+
+/** Intervalo da rotina de Revisão geral criada em cada planta nova. */
+function RevisaoAutomatica() {
+  return (
+    <PreferenciaDias
+      chave="revisao_automatica_dias"
+      dias={useRevisaoDias()}
+      opcoes={OPCOES_REVISAO}
+      label="Revisão geral das plantas novas"
+      hint="Cada planta nova ganha uma rotina de Revisão geral com este intervalo, remarcada a cada cuidado. Para mudar numa planta, use a seção Rotinas dela."
+    />
+  );
+}
+
+/** Quanto tempo a planta fica em Recém transplantada depois de um Transplante. */
+function TempoTransplante() {
+  return (
+    <PreferenciaDias
+      chave="transplante_dias"
+      dias={useTransplanteDias()}
+      opcoes={OPCOES_TRANSPLANTE}
+      label="Dias em Recém transplantada"
+      hint="Ao registrar um Transplante, a planta vai para o grupo Recém transplantada por este tempo e depois volta ao grupo em que estava."
+    />
   );
 }
 
@@ -101,6 +138,7 @@ export function ProfilePage() {
       </section>
 
       <RevisaoAutomatica />
+      <TempoTransplante />
 
       <nav className="card mt-4 divide-y divide-line overflow-hidden">
         <MenuItem to="/perfil/editar" icon={<Pencil size={20} />} label="Editar perfil" />
