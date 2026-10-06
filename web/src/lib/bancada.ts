@@ -9,7 +9,7 @@ export const PERIODOS: { value: Periodo; label: string; vazio: string }[] = [
   { value: 'semana', label: 'Esta semana', vazio: 'nos próximos 7 dias' },
   { value: 'mes', label: 'Este mês', vazio: 'neste mês' },
   { value: 'estacao', label: 'Esta estação', vazio: 'nesta estação' },
-  { value: 'todas', label: 'Todas', vazio: 'agendada' },
+  { value: 'todas', label: 'Todas', vazio: 'por enquanto' },
 ];
 
 export const AGRUPAMENTOS: { value: Agrupar; label: string }[] = [

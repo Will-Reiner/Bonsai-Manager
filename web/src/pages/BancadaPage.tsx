@@ -60,8 +60,8 @@ export function BancadaPage() {
 
       {agendas.isLoading || plantas.isLoading ? (
         <Spinner />
-      ) : agendas.isError ? (
-        <ErrorState text={errorMessage(agendas.error)} onRetry={() => agendas.refetch()} />
+      ) : agendas.isError || plantas.isError ? (
+        <ErrorState text={errorMessage(agendas.error ?? plantas.error)} onRetry={() => { if (agendas.isError) agendas.refetch(); if (plantas.isError) plantas.refetch(); }} />
       ) : semPlantas ? (
         <EmptyState
           title="Adicione sua primeira planta"
