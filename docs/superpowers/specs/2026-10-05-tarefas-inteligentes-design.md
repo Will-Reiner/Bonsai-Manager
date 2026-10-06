@@ -88,6 +88,8 @@ Funções puras em `server/src/modules/agenda/dominio/`, testadas isoladamente.
 | POST | `/api/agendas/registrar` | + `concluirAgendaIds[]`, + `repetir` nos `proximos`. |
 | POST | `/api/agendas/concluir`, `/lote` | + `repetir` nos `proximos` / itens. |
 
+> **Fase 1 (implementada):** candidatas e "última vez" são calculadas no cliente a partir de `GET /api/agendas` (já traz o histórico completo, em cache via `useAgendas`) — `web/src/lib/cuidados.ts`. `GET /agendas/candidatas` e `/ultimas` só se o volume justificar.
+
 `GET /api/agendas` e `GET /api/agendas/:id` passam a incluir `rotina` (intervalo, pausada) para o ícone ↻.
 
 ## Interface (web/)
