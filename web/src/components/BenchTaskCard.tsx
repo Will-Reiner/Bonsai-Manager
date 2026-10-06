@@ -1,7 +1,8 @@
 import { useNavigate } from 'react-router';
-import { Check, StickyNote } from 'lucide-react';
+import { Check, Repeat, StickyNote } from 'lucide-react';
 import { PlantThumb } from './ui';
 import { useCare } from '@/context/CareContext';
+import { textoIntervalo } from '@/lib/cuidados';
 import { dataRelativa, diasAte, plantaRotulo } from '@/lib/format';
 import type { Agenda } from '@/types';
 
@@ -26,6 +27,12 @@ export function BenchTaskCard({ agenda }: { agenda: Agenda }) {
           {subtitulo && <p className="truncate text-sm font-medium">{subtitulo}</p>}
           <p className={`truncate text-xs ${atrasada ? 'font-medium text-danger' : 'text-muted'}`}>
             {dataRelativa(agenda.dataAgendada)}
+            {agenda.rotina && (
+              <>
+                {' · '}
+                <Repeat size={11} className="inline align-[-1px]" /> {textoIntervalo(agenda.rotina.intervaloDias)}
+              </>
+            )}
           </p>
           {agenda.detalhes && (
             <p className="mt-0.5 flex items-center gap-1 truncate text-xs text-primary-dark">
