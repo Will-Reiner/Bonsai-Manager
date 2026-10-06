@@ -95,11 +95,22 @@ export interface TipoRecurso {
   nome: string;
 }
 
+export type Estacao = 'PRIMAVERA' | 'VERAO' | 'OUTONO' | 'INVERNO';
+export type MomentoIdeal = 'DEVE_FAZER' | 'PODE_FAZER' | 'EVITAR';
+export interface GuiaSazonal {
+  especieId: string;
+  atividadeId: string;
+  estacao: Estacao;
+  momentoIdeal: MomentoIdeal;
+  observacoes?: string | null;
+}
+
 export interface Rotina {
   id: string;
   intervaloDias: number;
   pausada: boolean;
   dataFim?: string | null;
+  estacoes?: Estacao[] | null;
   plantaId: string;
   atividadeId: string;
   atividade?: Pick<Atividade, 'id' | 'nome'>;

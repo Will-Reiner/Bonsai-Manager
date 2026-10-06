@@ -5,7 +5,9 @@ import type {
   AgendaStatus,
   Atividade,
   Especie,
+  Estacao,
   Foto,
+  GuiaSazonal,
   ModoAquisicao,
   Planta,
   Preferencias,
@@ -56,6 +58,7 @@ export interface AgendaUpdate {
 export interface Repetir {
   intervaloDias: number;
   dataFim?: string;
+  estacoes?: Estacao[];
 }
 
 export interface ProximoInput {
@@ -112,6 +115,10 @@ export const agendasApi = {
   pular: (id: string) => data<{ proxima: boolean }>(api.post(`/agendas/${id}/pular`)),
 };
 
+export const guiasSazonaisApi = {
+  porEspecie: (especieId: string) => data<GuiaSazonal[]>(api.get(`/guias-sazonais/especie/${especieId}`)),
+};
+
 export const rotinasApi = {
   list: () => data<Rotina[]>(api.get('/rotinas')),
   /** Uma rotina por planta+atividade; as que já existiam voltam em `conflitos` (mantidas). */
@@ -120,10 +127,11 @@ export const rotinasApi = {
     atividadeIds: string[];
     intervaloDias: number;
     dataFim?: string;
+    estacoes?: Estacao[];
     primeiraData?: string;
     detalhes?: string;
   }) => data<{ criadas: Rotina[]; conflitos: { plantaId: string; atividadeId: string }[] }>(api.post('/rotinas', body)),
-  update: (id: string, body: { intervaloDias?: number; dataFim?: string | null }) =>
+  update: (id: string, body: { intervaloDias?: number; dataFim?: string | null; estacoes?: Estacao[] }) =>
     data<Rotina>(api.put(`/rotinas/${id}`, body)),
   remove: (id: string) => api.delete(`/rotinas/${id}`),
   pausar: (id: string) => data<Rotina>(api.post(`/rotinas/${id}/pausar`)),

@@ -1,4 +1,4 @@
-import type { Agenda } from '@/types';
+import type { Agenda, Estacao, GuiaSazonal } from '@/types';
 import { diasAte } from './format';
 
 /** Reconciliação: pendentes atrasadas (qualquer idade) ou que vencem em até 90 dias. */
@@ -73,3 +73,24 @@ export function medianaIntervaloDias(agendas: Agenda[], plantaId: string, ativid
 
 /** "todo dia", "a cada 14 dias". */
 export const textoIntervalo = (dias: number) => (dias === 1 ? 'todo dia' : `a cada ${dias} dias`);
+
+export const ESTACOES_LISTA: { valor: Estacao; nome: string; curto: string }[] = [
+  { valor: 'PRIMAVERA', nome: 'Primavera', curto: 'Prim' },
+  { valor: 'VERAO', nome: 'Verão', curto: 'Ver' },
+  { valor: 'OUTONO', nome: 'Outono', curto: 'Out' },
+  { valor: 'INVERNO', nome: 'Inverno', curto: 'Inv' },
+];
+
+/** "" para ano todo; senão "Prim/Ver". */
+export function textoEstacoes(estacoes?: Estacao[] | null): string {
+  if (!estacoes?.length || estacoes.length === 4) return '';
+  return ESTACOES_LISTA.filter((e) => estacoes.includes(e.valor)).map((e) => e.curto).join('/');
+}
+
+/** Estações sugeridas pelo guia sazonal para a atividade: todas menos as "evitar"; sem guia → null. */
+export function estacoesDoGuia(guias: GuiaSazonal[] | undefined, atividadeId: string): Estacao[] | null {
+  const daAtividade = (guias ?? []).filter((g) => g.atividadeId === atividadeId);
+  if (!daAtividade.length) return null;
+  const evitar = new Set(daAtividade.filter((g) => g.momentoIdeal === 'EVITAR').map((g) => g.estacao));
+  return ESTACOES_LISTA.map((e) => e.valor).filter((e) => !evitar.has(e));
+}

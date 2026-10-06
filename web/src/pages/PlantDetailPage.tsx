@@ -9,7 +9,7 @@ import { EnviosProgresso, useEnviarFotos } from '@/components/FotoUpload';
 import { useCare } from '@/context/CareContext';
 import { errorMessage } from '@/lib/api';
 import { dataCurta, dataRelativa, especieNome, modoAquisicaoLabel, plantaTitulo, tempoDesde } from '@/lib/format';
-import { rotuloUltima, textoIntervalo, ultimasPorPlanta } from '@/lib/cuidados';
+import { rotuloUltima, textoEstacoes, textoIntervalo, ultimasPorPlanta } from '@/lib/cuidados';
 import { chaveItem, dataDaFoto, fotosOrdenadas, linhaDoTempo, type ItemLinha } from '@/lib/linhaDoTempo';
 import { useAgendas, useFotos, usePlanta, useRotinas } from '@/lib/queries';
 import type { Foto } from '@/types';
@@ -165,7 +165,8 @@ export function PlantDetailPage() {
                     <span className="truncate">{r.atividade?.nome ?? 'Cuidado'}</span>
                   </span>
                   <span className="shrink-0 text-muted">
-                    {textoIntervalo(r.intervaloDias)} ·{' '}
+                    {textoIntervalo(r.intervaloDias)}
+                    {textoEstacoes(r.estacoes) && ` · ${textoEstacoes(r.estacoes)}`} ·{' '}
                     {r.pausada ? 'pausada' : r.proxima ? dataRelativa(r.proxima.dataAgendada).toLowerCase() : 'sem próxima'}
                   </span>
                 </button>

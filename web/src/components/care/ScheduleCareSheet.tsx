@@ -1,5 +1,5 @@
 import { useMemo, useState, type FormEvent } from 'react';
-import { useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Sheet } from '@/components/Sheet';
 import { Button, Field } from '@/components/ui';
 import { AtividadeChips } from './AtividadeChips';
@@ -7,11 +7,11 @@ import { PlantasCampo } from './PlantasPicker';
 import { RepetirCampo, repetirParaApi, repetirValido, type RepetirValor } from './RepetirCampo';
 import { useToast } from '@/context/ToastContext';
 import { errorMessage } from '@/lib/api';
-import { agendasApi, rotinasApi } from '@/lib/endpoints';
+import { agendasApi, guiasSazonaisApi, rotinasApi } from '@/lib/endpoints';
 import { atalhosDeData } from '@/lib/estacoes';
 import { daquiADias, dataNumerica, fromDateInput, toDateInput } from '@/lib/format';
-import { keys, useAgendas, useRotinas } from '@/lib/queries';
-import { medianaIntervaloDias, rotuloUltima, textoIntervalo, ultimasPorPlanta } from '@/lib/cuidados';
+import { keys, useAgendas, usePlantas, useRotinas } from '@/lib/queries';
+import { estacoesDoGuia, medianaIntervaloDias, rotuloUltima, textoIntervalo, ultimasPorPlanta } from '@/lib/cuidados';
 import type { Agenda } from '@/types';
 
 /** Agendar cuidados para uma ou várias plantas — ou reagendar uma tarefa existente (quando `agenda` vem preenchida). */
@@ -44,12 +44,21 @@ export function ScheduleCareSheet({
     : undefined;
   const rotinas = useRotinas();
   const [repetir, setRepetir] = useState<RepetirValor | null>(
-    repetirInicial ? { intervaloDias: 14, dataFim: '' } : null,
+    repetirInicial ? { intervaloDias: 14, dataFim: '', estacoes: ['PRIMAVERA', 'VERAO', 'OUTONO', 'INVERNO'] } : null,
   );
   const sugestao =
     plantaIds.length === 1 && atividadeIds.length === 1
       ? medianaIntervaloDias(agendas.data ?? [], plantaIds[0], atividadeIds[0])
       : null;
+  const plantas = usePlantas();
+  const especieId = plantaIds.length === 1 ? plantas.data?.find((p) => p.id === plantaIds[0])?.especieId : undefined;
+  const guias = useQuery({
+    queryKey: ['guias-sazonais', especieId],
+    queryFn: () => guiasSazonaisApi.porEspecie(especieId!),
+    enabled: !!especieId,
+    staleTime: 5 * 60_000,
+  });
+  const estacoesSugeridas = atividadeIds.length === 1 && especieId ? estacoesDoGuia(guias.data, atividadeIds[0]) : null;
   const jaTem = (rotinas.data ?? []).filter((r) => plantaIds.includes(r.plantaId) && atividadeIds.includes(r.atividadeId));
 
   const total = plantaIds.length * atividadeIds.length;
@@ -114,7 +123,7 @@ export function ScheduleCareSheet({
           <>
             <PlantasCampo ids={plantaIds} onChange={setPlantaIds} />
             <AtividadeChips value={atividadeIds} onChange={setAtividadeIds} dica={dica} />
-            <RepetirCampo value={repetir} onChange={setRepetir} sugestao={sugestao} />
+            <RepetirCampo value={repetir} onChange={setRepetir} sugestao={sugestao} estacoesSugeridas={estacoesSugeridas} />
             {repetir && jaTem.length > 0 && (
               <p className="text-xs text-muted">
                 {jaTem.length === 1
