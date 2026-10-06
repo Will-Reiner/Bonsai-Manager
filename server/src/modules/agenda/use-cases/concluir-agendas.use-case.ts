@@ -1,7 +1,9 @@
 import { ConclusaoRepository, ConcluirAgendasDTO, PlanoConclusao } from '../agenda.types';
+import { remarcarRevisoes } from '../dominio/rotina';
+import { planejarRotinas } from './planejar-rotinas';
 import { planejarSeguimento } from './planejar-seguimento';
 
-/** Conclui uma ou várias tarefas e agenda o que vem depois (próximos passos ou Revisão geral). */
+/** Conclui uma ou várias tarefas, avança rotinas, remarca a Revisão geral e agenda os próximos passos. */
 export class ConcluirAgendasUseCase {
   constructor(private repo: ConclusaoRepository) {}
 
@@ -25,7 +27,19 @@ export class ConcluirAgendasUseCase {
     const plantaDe = new Map(pendentes.map((p) => [p.id, p.plantaId]));
     const plantas = [...new Set(pendentes.map((p) => p.plantaId))];
 
-    const seguimento = await planejarSeguimento(this.repo, { usuarioId, plantas, proximos, excluir: ids });
+    // Tarefa de rotina concluída como outra atividade sai da rotina; a rotina segue a partir de hoje (como um "pular")
+    const desvinculadas = new Set(
+      pendentes.filter((p) => p.rotinaId && dto.atividadeId && dto.atividadeId !== p.atividadeId).map((p) => p.id),
+    );
+    const hoje = new Date();
+    const rotinas = await planejarRotinas(
+      this.repo,
+      pendentes.map((p) => ({ rotinaId: p.rotinaId, data: desvinculadas.has(p.id) ? hoje : dataConcluida })),
+      ids,
+    );
+    const seguimento = planejarSeguimento(plantas, proximos);
+    // Qualquer cuidado na planta remarca a Revisão geral dela
+    const revisoes = remarcarRevisoes(await this.repo.revisoesDasPlantas(plantas, ids), dataConcluida);
     const plano: PlanoConclusao = {
       usuarioId,
       dataConcluida,
@@ -34,6 +48,7 @@ export class ConcluirAgendasUseCase {
         atividadeId: dto.atividadeId,
         detalhes: i.detalhes ?? dto.detalhes,
         observacaoFutura: i.observacaoFutura ?? dto.observacaoFutura,
+        ...(desvinculadas.has(i.agendaId) ? { desvincularRotina: true } : {}),
       })),
       fotos: dto.itens.flatMap((i) =>
         (i.fotos ?? []).map((caminhoArquivo) => ({
@@ -46,6 +61,8 @@ export class ConcluirAgendasUseCase {
         extras.map((atividadeId) => ({ plantaId, atividadeId, data: dataConcluida, detalhes: dto.detalhes })),
       ),
       ...seguimento,
+      criarPendentes: [...seguimento.criarPendentes, ...rotinas, ...revisoes.criar],
+      moverPendentes: revisoes.mover,
     };
 
     return this.repo.executar(plano);

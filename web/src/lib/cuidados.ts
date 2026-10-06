@@ -1,4 +1,4 @@
-import type { Agenda } from '@/types';
+import type { Agenda, Estacao, GuiaSazonal } from '@/types';
 import { diasAte } from './format';
 
 /** Reconciliação: pendentes atrasadas (qualquer idade) ou que vencem em até 90 dias. */
@@ -53,4 +53,44 @@ export function candidatasReconciliacao(
         diasAte(a.dataAgendada) <= JANELA_RECONCILIACAO_DIAS,
     )
     .sort((a, b) => a.dataAgendada.localeCompare(b.dataAgendada));
+}
+
+/** Mediana (em dias) dos intervalos entre execuções do cuidado na planta; null com menos de 2 execuções. */
+export function medianaIntervaloDias(agendas: Agenda[], plantaId: string, atividadeId: string): number | null {
+  const datas = agendas
+    .filter((a) => a.status === 'CONCLUIDO' && a.plantaId === plantaId && a.atividadeId === atividadeId)
+    .map((a) => new Date(a.dataConcluida ?? a.dataAgendada).getTime())
+    .sort((x, y) => x - y);
+  const intervalos = datas
+    .slice(1)
+    .map((d, i) => Math.round((d - datas[i]) / 86_400_000))
+    .filter((d) => d > 0)
+    .sort((x, y) => x - y);
+  if (!intervalos.length) return null;
+  const meio = Math.floor(intervalos.length / 2);
+  return intervalos.length % 2 ? intervalos[meio] : Math.round((intervalos[meio - 1] + intervalos[meio]) / 2);
+}
+
+/** "todo dia", "a cada 14 dias". */
+export const textoIntervalo = (dias: number) => (dias === 1 ? 'todo dia' : `a cada ${dias} dias`);
+
+export const ESTACOES_LISTA: { valor: Estacao; nome: string; curto: string }[] = [
+  { valor: 'PRIMAVERA', nome: 'Primavera', curto: 'Prim' },
+  { valor: 'VERAO', nome: 'Verão', curto: 'Ver' },
+  { valor: 'OUTONO', nome: 'Outono', curto: 'Out' },
+  { valor: 'INVERNO', nome: 'Inverno', curto: 'Inv' },
+];
+
+/** "" para ano todo; senão "Prim/Ver". */
+export function textoEstacoes(estacoes?: Estacao[] | null): string {
+  if (!estacoes?.length || estacoes.length === 4) return '';
+  return ESTACOES_LISTA.filter((e) => estacoes.includes(e.valor)).map((e) => e.curto).join('/');
+}
+
+/** Estações sugeridas pelo guia sazonal para a atividade: todas menos as "evitar"; sem guia → null. */
+export function estacoesDoGuia(guias: GuiaSazonal[] | undefined, atividadeId: string): Estacao[] | null {
+  const daAtividade = (guias ?? []).filter((g) => g.atividadeId === atividadeId);
+  if (!daAtividade.length) return null;
+  const evitar = new Set(daAtividade.filter((g) => g.momentoIdeal === 'EVITAR').map((g) => g.estacao));
+  return ESTACOES_LISTA.map((e) => e.valor).filter((e) => !evitar.has(e));
 }

@@ -3,7 +3,8 @@ import { useNavigate, useSearchParams } from 'react-router';
 import { useQueryClient } from '@tanstack/react-query';
 import { Check, ChevronDown, Plus, X } from 'lucide-react';
 import { Button, EmptyState, ErrorState, Field, PageHeader, PlantThumb, Spinner } from '@/components/ui';
-import { ProximosPassos, type Proximo } from '@/components/care/ProximosPassos';
+import { ProximosPassos, proximosParaApi, type Proximo } from '@/components/care/ProximosPassos';
+import { repetirValido } from '@/components/care/RepetirCampo';
 import { PhotoInput } from '@/components/PhotoInput';
 import { useToast } from '@/context/ToastContext';
 import { errorMessage } from '@/lib/api';
@@ -68,7 +69,7 @@ export function ConcluirPage() {
     if (!marcadas.length) return toast('Marque ao menos uma planta.', 'error');
     if (!data) return toast('Informe a data.', 'error');
     if (data > toDateInput()) return toast('A data não pode ser no futuro.', 'error');
-    if (proximos.some((p) => !p.atividadeId || !p.data)) return toast('Complete os próximos passos.', 'error');
+    if (proximos.some((p) => !p.atividadeId || !p.data || !repetirValido(p.repetir))) return toast('Complete os próximos passos.', 'error');
     setSalvando(true);
     try {
       const urlComum = foto ? await uploadImage(foto) : null;
@@ -86,25 +87,19 @@ export function ConcluirPage() {
       const hoje = data === toDateInput();
       const principalId = atividadeId || atividadeAtual?.id;
       const extrasFinais = extras.filter((e) => e !== principalId);
-      const resultado = await agendasApi.concluir({
+      await agendasApi.concluir({
         dataConcluida: hoje ? new Date().toISOString() : fromDateInput(data),
         atividadeId: atividadeId || undefined,
         detalhes: detalhes.trim() || undefined,
         observacaoFutura: observacaoFutura.trim() || undefined,
         extras: extrasFinais.length ? extrasFinais : undefined,
-        proximos: proximos.length
-          ? proximos.map((p) => ({ atividadeId: p.atividadeId, dataAgendada: fromDateInput(p.data) }))
-          : undefined,
+        proximos: proximosParaApi(proximos),
         itens,
       });
       queryClient.invalidateQueries({ queryKey: keys.agendas });
+      queryClient.invalidateQueries({ queryKey: keys.rotinas });
       queryClient.invalidateQueries({ queryKey: ['fotos'] });
-      const n = resultado.revisoes.length;
-      toast(
-        n
-          ? `Concluído 🌿 · ${n === 1 ? 'Revisão geral agendada' : `${n} revisões gerais agendadas`}`
-          : `${marcadas.length > 1 ? `${marcadas.length} tarefas concluídas` : 'Tarefa concluída'} 🌿`,
-      );
+      toast(`${marcadas.length > 1 ? `${marcadas.length} tarefas concluídas` : 'Tarefa concluída'} 🌿`);
       navigate('/', { replace: true });
     } catch (error) {
       toast(errorMessage(error), 'error');

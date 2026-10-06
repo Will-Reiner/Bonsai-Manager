@@ -6,6 +6,7 @@ import {
   fotosApi,
   plantasApi,
   preferenciasApi,
+  rotinasApi,
   tiposRecursoApi,
 } from './endpoints';
 
@@ -19,6 +20,7 @@ export const keys = {
   atividades: ['atividades'] as const,
   tiposRecurso: ['tipos-recurso'] as const,
   preferencias: ['preferencias'] as const,
+  rotinas: ['rotinas'] as const,
   me: ['me'] as const,
 };
 
@@ -26,6 +28,8 @@ export const usePlantas = () => useQuery({ queryKey: keys.plantas, queryFn: plan
 export const usePlanta = (id: string) =>
   useQuery({ queryKey: keys.planta(id), queryFn: () => plantasApi.get(id), enabled: !!id });
 export const useAgendas = () => useQuery({ queryKey: keys.agendas, queryFn: agendasApi.list });
+/** Todas as rotinas do usuário (um cache só; filtre por planta no componente). */
+export const useRotinas = () => useQuery({ queryKey: keys.rotinas, queryFn: rotinasApi.list });
 export const useFotos = (plantaId: string) =>
   useQuery({ queryKey: keys.fotos(plantaId), queryFn: () => fotosApi.listByPlanta(plantaId) });
 export const useEspecies = () =>
@@ -37,7 +41,7 @@ export const useTiposRecurso = () => useQuery({ queryKey: keys.tiposRecurso, que
 export const usePreferencias = () =>
   useQuery({ queryKey: keys.preferencias, queryFn: preferenciasApi.get, staleTime: 5 * 60_000 });
 
-/** Dias da Revisão geral automática (padrão 30, 0 = desligada) — mesma regra do backend. */
+/** Intervalo (dias) da rotina de Revisão geral criada em plantas novas (padrão 30, 0 = sem rotina) — mesma regra do backend. */
 export function useRevisaoDias() {
   const prefs = usePreferencias();
   const dias = parseInt(prefs.data?.revisao_automatica_dias ?? '30', 10);

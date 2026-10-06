@@ -1,16 +1,17 @@
 import { useMemo, useState, type FormEvent } from 'react';
-import { useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Sheet } from '@/components/Sheet';
 import { Button, Field } from '@/components/ui';
 import { AtividadeChips } from './AtividadeChips';
 import { PlantasCampo } from './PlantasPicker';
+import { RepetirCampo, repetirParaApi, repetirValido, type RepetirValor } from './RepetirCampo';
 import { useToast } from '@/context/ToastContext';
 import { errorMessage } from '@/lib/api';
-import { agendasApi } from '@/lib/endpoints';
+import { agendasApi, guiasSazonaisApi, rotinasApi } from '@/lib/endpoints';
 import { atalhosDeData } from '@/lib/estacoes';
 import { daquiADias, dataNumerica, fromDateInput, toDateInput } from '@/lib/format';
-import { keys, useAgendas } from '@/lib/queries';
-import { rotuloUltima, ultimasPorPlanta } from '@/lib/cuidados';
+import { keys, useAgendas, usePlantas, useRotinas } from '@/lib/queries';
+import { estacoesDoGuia, medianaIntervaloDias, rotuloUltima, textoIntervalo, ultimasPorPlanta } from '@/lib/cuidados';
 import type { Agenda } from '@/types';
 
 /** Agendar cuidados para uma ou várias plantas — ou reagendar uma tarefa existente (quando `agenda` vem preenchida). */
@@ -19,11 +20,14 @@ export function ScheduleCareSheet({
   onClose,
   plantaId: plantaInicial,
   agenda,
+  repetirInicial,
 }: {
   open: boolean;
   onClose: () => void;
   plantaId?: string;
   agenda?: Agenda;
+  /** Começa com "Repetir" marcado (+ Nova rotina). */
+  repetirInicial?: boolean;
 }) {
   const queryClient = useQueryClient();
   const toast = useToast();
@@ -38,6 +42,24 @@ export function ScheduleCareSheet({
   const dica = agendas.data && plantaIds.length
     ? (atividadeId: string) => rotuloUltima(plantaIds.map((p) => ultimas.get(p)?.get(atividadeId)))
     : undefined;
+  const rotinas = useRotinas();
+  const [repetir, setRepetir] = useState<RepetirValor | null>(
+    repetirInicial ? { intervaloDias: 14, dataFim: '', estacoes: ['PRIMAVERA', 'VERAO', 'OUTONO', 'INVERNO'] } : null,
+  );
+  const sugestao =
+    plantaIds.length === 1 && atividadeIds.length === 1
+      ? medianaIntervaloDias(agendas.data ?? [], plantaIds[0], atividadeIds[0])
+      : null;
+  const plantas = usePlantas();
+  const especieId = plantaIds.length === 1 ? plantas.data?.find((p) => p.id === plantaIds[0])?.especieId : undefined;
+  const guias = useQuery({
+    queryKey: ['guias-sazonais', especieId],
+    queryFn: () => guiasSazonaisApi.porEspecie(especieId!),
+    enabled: !!especieId,
+    staleTime: 5 * 60_000,
+  });
+  const estacoesSugeridas = atividadeIds.length === 1 && especieId ? estacoesDoGuia(guias.data, atividadeIds[0]) : null;
+  const jaTem = (rotinas.data ?? []).filter((r) => plantaIds.includes(r.plantaId) && atividadeIds.includes(r.atividadeId));
 
   const total = plantaIds.length * atividadeIds.length;
 
@@ -46,8 +68,34 @@ export function ScheduleCareSheet({
     if (!agenda && (!plantaIds.length || !atividadeIds.length)) return toast('Escolha as plantas e o tipo de cuidado.', 'error');
     setSalvando(true);
     try {
+      let mensagem: string;
       if (agenda) {
         await agendasApi.update(agenda.id, { dataAgendada: fromDateInput(data) });
+        mensagem = 'Tarefa reagendada';
+      } else if (repetir) {
+        if (!repetir.estacoes.length) {
+          setSalvando(false);
+          return toast('Escolha ao menos uma estação.', 'error');
+        }
+        if (!repetirValido(repetir)) {
+          setSalvando(false);
+          return toast('Informe o intervalo em dias (1 a 3650).', 'error');
+        }
+        const r = await rotinasApi.create({
+          plantaIds,
+          atividadeIds,
+          ...repetirParaApi(repetir),
+          primeiraData: fromDateInput(data),
+          detalhes: detalhes.trim() || undefined,
+        });
+        const n = r.criadas.length;
+        const k = r.conflitos.length;
+        mensagem = [
+          n ? (n === 1 ? 'Rotina criada' : `${n} rotinas criadas`) : '',
+          k ? (k === 1 ? '1 rotina já existia e foi mantida' : `${k} rotinas já existiam e foram mantidas`) : '',
+        ]
+          .filter(Boolean)
+          .join(' · ');
       } else {
         await agendasApi.createLote({
           plantaIds,
@@ -55,9 +103,11 @@ export function ScheduleCareSheet({
           dataAgendada: fromDateInput(data),
           detalhes: detalhes.trim() || undefined,
         });
+        mensagem = total > 1 ? `${total} cuidados agendados` : 'Cuidado agendado';
       }
       queryClient.invalidateQueries({ queryKey: keys.agendas });
-      toast(agenda ? 'Tarefa reagendada' : total > 1 ? `${total} cuidados agendados` : 'Cuidado agendado');
+      queryClient.invalidateQueries({ queryKey: keys.rotinas });
+      toast(mensagem);
       onClose();
     } catch (error) {
       toast(errorMessage(error), 'error');
@@ -77,6 +127,14 @@ export function ScheduleCareSheet({
           <>
             <PlantasCampo ids={plantaIds} onChange={setPlantaIds} />
             <AtividadeChips value={atividadeIds} onChange={setAtividadeIds} dica={dica} />
+            <RepetirCampo value={repetir} onChange={setRepetir} sugestao={sugestao} estacoesSugeridas={estacoesSugeridas} />
+            {repetir && jaTem.length > 0 && (
+              <p className="text-xs text-muted">
+                {jaTem.length === 1
+                  ? `Já existe rotina de ${jaTem[0].atividade?.nome ?? 'cuidado'} (${textoIntervalo(jaTem[0].intervaloDias)}) — ela será mantida.`
+                  : `${jaTem.length} rotinas já existem e serão mantidas.`}
+              </p>
+            )}
             <Field label="Observação (opcional)">
               <textarea
                 className="input min-h-16"
@@ -88,7 +146,7 @@ export function ScheduleCareSheet({
           </>
         )}
         <div>
-          <Field label="Data">
+          <Field label={repetir && !agenda ? 'Primeira vez' : 'Data'}>
             <input type="date" className="input" value={data} min={agenda ? undefined : toDateInput()} onChange={(e) => setData(e.target.value)} required />
           </Field>
           <div className="mt-2 flex flex-wrap gap-2">
@@ -105,7 +163,7 @@ export function ScheduleCareSheet({
           </div>
         </div>
         <Button type="submit" block loading={salvando}>
-          {agenda ? 'Salvar nova data' : total > 1 ? `Agendar ${total} cuidados` : 'Agendar'}
+          {agenda ? 'Salvar nova data' : repetir ? (total > 1 ? `Criar ${total} rotinas` : 'Criar rotina') : total > 1 ? `Agendar ${total} cuidados` : 'Agendar'}
         </Button>
       </form>
     </Sheet>

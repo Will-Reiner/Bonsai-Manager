@@ -4,12 +4,13 @@ import { ScheduleCareSheet } from '@/components/care/ScheduleCareSheet';
 import type { Agenda } from '@/types';
 
 type Aberto =
-  | { tipo: 'agendar'; plantaId?: string; agenda?: Agenda }
+  | { tipo: 'agendar'; plantaId?: string; agenda?: Agenda; repetir?: boolean }
   | null;
 
 interface CareContextData {
   registrarCuidado: (plantaId?: string) => void;
-  agendarCuidado: (plantaId?: string) => void;
+  /** `repetir`: abre já em "Repetir" (ex.: + Nova rotina). */
+  agendarCuidado: (plantaId?: string, opcoes?: { repetir?: boolean }) => void;
   abrirTarefa: (agenda: Agenda) => void;
   reagendar: (agenda: Agenda) => void;
 }
@@ -31,7 +32,8 @@ export function CareProvider({ children }: { children: ReactNode }) {
   const value = useMemo(
     () => ({
       registrarCuidado: (plantaId?: string) => navigate(plantaId ? `/registrar?planta=${plantaId}` : '/registrar'),
-      agendarCuidado: (plantaId?: string) => abrir({ tipo: 'agendar', plantaId }),
+      agendarCuidado: (plantaId?: string, opcoes?: { repetir?: boolean }) =>
+        abrir({ tipo: 'agendar', plantaId, repetir: opcoes?.repetir }),
       abrirTarefa: (agenda: Agenda) => navigate(`/tarefas/${agenda.id}`),
       reagendar: (agenda: Agenda) => abrir({ tipo: 'agendar', agenda }),
     }),
@@ -42,7 +44,14 @@ export function CareProvider({ children }: { children: ReactNode }) {
     <CareContext.Provider value={value}>
       {children}
       {aberto?.tipo === 'agendar' && (
-        <ScheduleCareSheet key={versao} open onClose={fechar} plantaId={aberto.plantaId} agenda={aberto.agenda} />
+        <ScheduleCareSheet
+          key={versao}
+          open
+          onClose={fechar}
+          plantaId={aberto.plantaId}
+          agenda={aberto.agenda}
+          repetirInicial={aberto.repetir}
+        />
       )}
     </CareContext.Provider>
   );

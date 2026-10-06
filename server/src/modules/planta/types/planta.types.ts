@@ -86,3 +86,10 @@ export interface PlantaRepository {
 export interface EspecieRepository {
   existsById(id: string): Promise<boolean>;
 }
+
+/** Rotina de Revisão geral criada junto com cada planta nova. */
+export interface RevisaoInicialRepository {
+  /** Preferência `revisao_automatica_dias` (padrão 30, 0 = desligada). */
+  getRevisaoDias(usuarioId: string): Promise<number>;
+  criarRevisao(plantaId: string, intervaloDias: number, primeiraData: Date): Promise<void>;
+}

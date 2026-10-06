@@ -1,29 +1,46 @@
 import { prisma } from '../../../lib/prisma';
 import { Prisma } from '@prisma/client';
+import { ehRevisao } from '../dominio/rotina';
 import {
-  ATIVIDADE_REVISAO,
   ConclusaoRepository,
+  ATIVIDADE_REVISAO,
+  NovaRotinaDePasso,
   PlanoConclusao,
   PlanoRegistro,
-  PREF_REVISAO_DIAS,
   ResultadoConclusao,
 } from '../agenda.types';
-
-const REVISAO_PADRAO_DIAS = 30;
 
 export class PrismaConclusaoRepository implements ConclusaoRepository {
   async findPendentesDoUsuario(ids: string[], usuarioId: string) {
     return prisma.agenda.findMany({
       where: { id: { in: ids }, status: 'PENDENTE', planta: { usuarioId } },
-      select: { id: true, plantaId: true },
+      select: { id: true, plantaId: true, atividadeId: true, rotinaId: true },
     });
   }
 
   async findPendentesParaReconciliar(ids: string[], usuarioId: string) {
     return prisma.agenda.findMany({
       where: { id: { in: ids }, status: 'PENDENTE', planta: { usuarioId } },
-      select: { id: true, plantaId: true, atividadeId: true, dataAgendada: true },
+      select: { id: true, plantaId: true, atividadeId: true, dataAgendada: true, rotinaId: true },
     });
+  }
+
+  async estadoRotinas(rotinaIds: string[], excluirAgendaIds: string[]) {
+    const rotinas = await prisma.rotina.findMany({
+      where: { id: { in: rotinaIds } },
+      select: {
+        id: true,
+        plantaId: true,
+        atividadeId: true,
+        intervaloDias: true,
+        dataFim: true,
+        pausada: true,
+        estacoes: true,
+        revisao: true,
+        _count: { select: { agendas: { where: { status: 'PENDENTE', id: { notIn: excluirAgendaIds } } } } },
+      },
+    });
+    return rotinas.map(({ _count, ...r }) => ({ ...r, temPendente: _count.agendas > 0 }));
   }
 
   async atividadesExistem(ids: string[]) {
@@ -31,43 +48,80 @@ export class PrismaConclusaoRepository implements ConclusaoRepository {
     return total === ids.length;
   }
 
-  async getRevisaoDias(usuarioId: string) {
-    const pref = await prisma.preferenciaUsuario.findUnique({
-      where: { usuarioId_chave: { usuarioId, chave: PREF_REVISAO_DIAS } },
-    });
-    const dias = pref ? parseInt(pref.valor, 10) : REVISAO_PADRAO_DIAS;
-    if (Number.isNaN(dias)) return REVISAO_PADRAO_DIAS;
-    return Math.max(0, dias);
-  }
-
-  async proximasPendentes(plantaIds: string[], aPartirDe: Date, excluir: string[]) {
-    if (!plantaIds.length) return new Map<string, Date>();
-    const grupos = await prisma.agenda.groupBy({
-      by: ['plantaId'],
-      where: {
-        plantaId: { in: plantaIds },
-        status: 'PENDENTE',
-        dataAgendada: { gte: aPartirDe },
-        id: { notIn: excluir },
+  async revisoesDasPlantas(plantaIds: string[], excluirAgendaIds: string[]) {
+    const rotinas = await prisma.rotina.findMany({
+      where: { plantaId: { in: plantaIds }, revisao: true },
+      select: {
+        id: true,
+        plantaId: true,
+        atividadeId: true,
+        intervaloDias: true,
+        dataFim: true,
+        pausada: true,
+        estacoes: true,
+        agendas: {
+          where: { status: 'PENDENTE', id: { notIn: excluirAgendaIds } },
+          select: { id: true, dataAgendada: true },
+          orderBy: { dataAgendada: 'asc' },
+          take: 1,
+        },
       },
-      _min: { dataAgendada: true },
     });
-    const proximas = new Map<string, Date>();
-    for (const g of grupos) if (g._min.dataAgendada) proximas.set(g.plantaId, g._min.dataAgendada);
-    return proximas;
+    return rotinas.map(({ agendas, ...r }) => ({
+      ...r,
+      pendenteId: agendas[0]?.id ?? null,
+      pendenteData: agendas[0]?.dataAgendada ?? null,
+    }));
   }
 
-  private async criarRevisoes(tx: Prisma.TransactionClient, revisoes: { plantaId: string; dataAgendada: Date }[]) {
-    if (!revisoes.length) return [];
-    // Garante a atividade mesmo se o seed não tiver rodado no ambiente
-    const revisao = await tx.atividade.upsert({
-      where: { nome: ATIVIDADE_REVISAO },
-      update: {},
-      create: { nome: ATIVIDADE_REVISAO, descricao: 'Observar a planta como um todo e decidir os próximos cuidados.' },
-    });
-    return tx.agenda.createManyAndReturn({
-      data: revisoes.map((r) => ({ plantaId: r.plantaId, atividadeId: revisao.id, dataAgendada: r.dataAgendada })),
-    });
+  /** Remarca pendentes (Revisão geral); revalida PENDENTE para não mexer em tarefa já resolvida. */
+  private async moverPendentes(tx: Prisma.TransactionClient, itens: { agendaId: string; dataAgendada: Date }[]) {
+    for (const m of itens) {
+      await tx.agenda.updateMany({ where: { id: m.agendaId, status: 'PENDENTE' }, data: { dataAgendada: m.dataAgendada } });
+    }
+  }
+
+  /** Próximo passo com repetição: cria a rotina (ou usa a existente) e a pendente, mantendo 1 pendente por rotina. */
+  private async criarComRotinas(tx: Prisma.TransactionClient, itens: NovaRotinaDePasso[]) {
+    if (!itens.length) return [];
+    const criadas = [];
+    const idRevisao =
+      (await tx.atividade.findUnique({ where: { nome: ATIVIDADE_REVISAO }, select: { id: true } }))?.id ?? null;
+    for (const r of itens) {
+      const existente = await tx.rotina.findUnique({
+        where: { plantaId_atividadeId: { plantaId: r.plantaId, atividadeId: r.atividadeId } },
+        select: {
+          id: true,
+          pausada: true,
+          dataFim: true,
+          _count: { select: { agendas: { where: { status: 'PENDENTE' } } } },
+        },
+      });
+      // Rotina existente com pendente, pausada ou encerrada antes da data: a nova tarefa fica avulsa
+      // (não reativa a rotina nem cria tarefa depois da data final dela)
+      const rotinaId = existente
+        ? existente._count.agendas || existente.pausada || (existente.dataFim && existente.dataFim < r.dataAgendada)
+          ? undefined
+          : existente.id
+        : (
+            await tx.rotina.create({
+              data: {
+                plantaId: r.plantaId,
+                atividadeId: r.atividadeId,
+                intervaloDias: r.intervaloDias,
+                dataFim: r.dataFim,
+                estacoes: r.estacoes,
+                revisao: ehRevisao(r.atividadeId, idRevisao),
+              },
+            })
+          ).id;
+      criadas.push(
+        await tx.agenda.create({
+          data: { plantaId: r.plantaId, atividadeId: r.atividadeId, dataAgendada: r.dataAgendada, rotinaId },
+        }),
+      );
+    }
+    return criadas;
   }
 
   async contarPlantasDoUsuario(plantaIds: string[], usuarioId: string) {
@@ -149,11 +203,12 @@ export class PrismaConclusaoRepository implements ConclusaoRepository {
           });
         }
 
-        const criadas = plano.criarPendentes.length
-          ? await tx.agenda.createManyAndReturn({ data: plano.criarPendentes })
-          : [];
-        const revisoes = await this.criarRevisoes(tx, plano.revisoes);
-        return { concluidas, criadas, revisoes };
+        const criadas = [
+          ...(plano.criarPendentes.length ? await tx.agenda.createManyAndReturn({ data: plano.criarPendentes }) : []),
+          ...(await this.criarComRotinas(tx, plano.criarRotinas)),
+        ];
+        await this.moverPendentes(tx, plano.moverPendentes);
+        return { concluidas, criadas };
       },
       { timeout: 20_000 },
     );
@@ -171,6 +226,7 @@ export class PrismaConclusaoRepository implements ConclusaoRepository {
               status: 'CONCLUIDO',
               dataConcluida: plano.dataConcluida,
               ...(a.atividadeId ? { atividadeId: a.atividadeId } : {}),
+              ...(a.desvincularRotina ? { rotinaId: null } : {}),
               ...(a.detalhes !== undefined ? { detalhes: a.detalhes } : {}),
               ...(a.observacaoFutura !== undefined ? { observacaoFutura: a.observacaoFutura } : {}),
             },
@@ -215,10 +271,10 @@ export class PrismaConclusaoRepository implements ConclusaoRepository {
         for (const p of plano.criarPendentes) {
           criadas.push(await tx.agenda.create({ data: p }));
         }
+        criadas.push(...(await this.criarComRotinas(tx, plano.criarRotinas)));
 
-        const revisoes = await this.criarRevisoes(tx, plano.revisoes);
-
-        return { concluidas, criadas, revisoes };
+        await this.moverPendentes(tx, plano.moverPendentes);
+        return { concluidas, criadas };
       },
       { timeout: 20_000 },
     );

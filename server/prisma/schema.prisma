@@ -167,6 +167,7 @@ model Planta {
   fotos       Foto[]
   agendas     Agenda[]
   inspiracoes Inspiracao[]
+  rotinas     Rotina[]
 
   @@unique([usuarioId, identificador])
 }
@@ -183,6 +184,7 @@ model Atividade {
 
   // Relacionamentos
   agendas                Agenda[]
+  rotinas                Rotina[]
   guiasDeTecnicas        GuiaDeTecnicas[]
   guiasSazonais          GuiaSazonal[]
   recursosSugeridos      AtividadeRecursoSugerido[]
@@ -222,6 +224,8 @@ model Agenda {
   status           AgendaStatus @default(PENDENTE)
   detalhes         String?      @db.Text
   observacaoFutura String?      @db.Text
+  /// Cancelada por "pular esta vez" (rotina) — distingue de cancelamento comum.
+  pulada           Boolean      @default(false)
   createdAt        DateTime     @default(now())
   updatedAt        DateTime     @updatedAt
 
@@ -231,9 +235,33 @@ model Agenda {
   atividadeId      String
   atividade        Atividade    @relation(fields: [atividadeId], references: [id])
 
+  rotinaId         String?
+  rotina           Rotina?      @relation(fields: [rotinaId], references: [id], onDelete: SetNull)
+
   // Relacionamentos
   recursosUtilizados AgendaRecursoUtilizado[]
   fotos              Foto[]
+}
+
+/// Tarefa recorrente rolante: a próxima nasce de "quando foi feito + intervalo". Uma por planta+atividade.
+model Rotina {
+  id            String    @id @default(uuid())
+  intervaloDias Int
+  estacoes      Estacao[] @default([]) // vazio = ano todo (regras na fase 3)
+  pausada       Boolean   @default(false)
+  dataFim       DateTime?
+  revisao       Boolean   @default(false) // Revisão geral da planta (fase 3)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  plantaId      String
+  planta        Planta    @relation(fields: [plantaId], references: [id], onDelete: Cascade)
+  atividadeId   String
+  atividade     Atividade @relation(fields: [atividadeId], references: [id])
+
+  agendas       Agenda[]
+
+  @@unique([plantaId, atividadeId])
 }
 
 model Recurso {

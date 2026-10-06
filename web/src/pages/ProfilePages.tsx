@@ -19,7 +19,7 @@ const OPCOES_REVISAO = [
   { valor: '90', label: '90 dias' },
 ];
 
-/** Intervalo da Revisão geral criada quando uma conclusão não agenda nada. */
+/** Intervalo da rotina de Revisão geral criada em cada planta nova. */
 function RevisaoAutomatica() {
   const queryClient = useQueryClient();
   const toast = useToast();
@@ -43,8 +43,8 @@ function RevisaoAutomatica() {
   return (
     <section className="card mt-4 p-4">
       <Field
-        label="Revisão automática"
-        hint="Ao concluir uma tarefa sem agendar próximos passos, cria uma Revisão geral para não esquecer da planta."
+        label="Revisão geral das plantas novas"
+        hint="Cada planta nova ganha uma rotina de Revisão geral com este intervalo, remarcada a cada cuidado. Para mudar numa planta, use a seção Rotinas dela."
       >
         <select
           className="input"

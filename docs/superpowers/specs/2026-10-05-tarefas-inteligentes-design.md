@@ -90,6 +90,10 @@ Funções puras em `server/src/modules/agenda/dominio/`, testadas isoladamente.
 
 > **Fase 1 (implementada):** candidatas e "última vez" são calculadas no cliente a partir de `GET /api/agendas` (já traz o histórico completo, em cache via `useAgendas`) — `web/src/lib/cuidados.ts`. `GET /agendas/candidatas` e `/ultimas` só se o volume justificar.
 
+> **Fase 2 (implementada):** `POST /rotinas` aceita `atividadeIds[]` (uma rotina por planta+atividade, numa transação); sugestão de intervalo (mediana) calculada no cliente; "Repetir" em próximo passo com rotina já existente e com pendente (ou pausada, ou encerrada antes da data) cria a tarefa avulsa; "Pausar" fica no painel da rotina (RotinaSheet). O Agendar com Repetir usa `POST /rotinas` (o `/lote` não aceita `repetir`); trocar a atividade ao concluir uma tarefa de rotina desvincula a tarefa e a rotina segue a partir de hoje; editar a rotina ancora na última conclusão ou na pendente atual (o que for mais recente).
+
+> **Fase 3 (implementada):** estações por datas fixas (hemisfério sul, em UTC) em `server/src/modules/agenda/dominio/estacoes.ts`; Revisão geral = rotina `revisao=true` remarcada por qualquer cuidado (`remarcarRevisoes`); plantas novas recebem a rotina no `CreatePlantaUseCase`; a migração `revisao_como_rotina` cria as das plantas existentes e vincula a revisão pendente mais próxima, sem criar pendentes novas.
+
 `GET /api/agendas` e `GET /api/agendas/:id` passam a incluir `rotina` (intervalo, pausada) para o ícone ↻.
 
 ## Interface (web/)

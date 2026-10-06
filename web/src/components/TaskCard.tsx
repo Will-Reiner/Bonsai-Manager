@@ -1,7 +1,8 @@
 import { useNavigate } from 'react-router';
-import { Check, StickyNote } from 'lucide-react';
+import { Check, Repeat, StickyNote } from 'lucide-react';
 import { PlantThumb } from './ui';
 import { useCare } from '@/context/CareContext';
+import { textoIntervalo } from '@/lib/cuidados';
 import { dataRelativa, diasAte } from '@/lib/format';
 import type { Agenda } from '@/types';
 
@@ -16,7 +17,12 @@ export function TaskCard({ agenda, showPlanta = true }: { agenda: Agenda; showPl
       <button onClick={() => abrirTarefa(agenda)} className="flex min-w-0 flex-1 items-center gap-3 text-left">
         {showPlanta && <PlantThumb url={agenda.planta?.fotoCapaUrl} className="size-12 shrink-0 rounded-xl" />}
         <div className="min-w-0">
-          <p className="truncate font-semibold">{agenda.atividade?.nome ?? 'Cuidado'}</p>
+          <p className="flex items-center gap-1 truncate font-semibold">
+            <span className="truncate">{agenda.atividade?.nome ?? 'Cuidado'}</span>
+            {agenda.rotina && (
+              <Repeat size={14} className="shrink-0 text-muted" aria-label={textoIntervalo(agenda.rotina.intervaloDias)} />
+            )}
+          </p>
           <p className="truncate text-sm text-muted">
             {showPlanta && <>{agenda.planta?.nome || agenda.planta?.especie?.nomeComum || 'Planta'} · </>}
             <span className={atrasada ? 'font-medium text-danger' : ''}>{dataRelativa(agenda.dataAgendada)}</span>

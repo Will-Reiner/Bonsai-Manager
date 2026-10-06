@@ -1,5 +1,7 @@
 import { AgendaStatus } from '@prisma/client';
 import { PendenteReconciliavel } from './dominio/reconciliar';
+import { Estacao } from './dominio/estacoes';
+import { RevisaoEstado, RotinaEstado } from './dominio/rotina';
 
 export interface CreateAgendaDTO {
   plantaId: string;
@@ -50,24 +52,57 @@ export interface AgendaRepository {
 export const ATIVIDADE_REVISAO = 'Revisão geral';
 export const PREF_REVISAO_DIAS = 'revisao_automatica_dias';
 
+/** Próximo passo; com `repetir`, vira (ou usa) a rotina da planta+atividade. */
+export interface Proximo {
+  atividadeId: string;
+  dataAgendada: string;
+  repetir?: { intervaloDias: number; dataFim?: string; estacoes?: Estacao[] };
+}
+
+export interface NovaRotinaDePasso {
+  plantaId: string;
+  atividadeId: string;
+  intervaloDias: number;
+  dataFim: Date | null;
+  estacoes: Estacao[];
+  dataAgendada: Date;
+}
+
 export interface ConcluirAgendasDTO {
   dataConcluida: string;
   atividadeId?: string;
   detalhes?: string;
   observacaoFutura?: string;
   extras?: string[];
-  proximos?: { atividadeId: string; dataAgendada: string }[];
+  proximos?: Proximo[];
   itens: { agendaId: string; detalhes?: string; observacaoFutura?: string; fotos?: string[] }[];
+}
+
+/** Pendente a criar; com `rotinaId` quando é a próxima de uma rotina. */
+export interface NovaPendente {
+  plantaId: string;
+  atividadeId: string;
+  dataAgendada: Date;
+  rotinaId?: string;
 }
 
 export interface PlanoConclusao {
   usuarioId: string;
   dataConcluida: Date;
-  atualizacoes: { agendaId: string; atividadeId?: string; detalhes?: string; observacaoFutura?: string }[];
+  atualizacoes: {
+    agendaId: string;
+    atividadeId?: string;
+    detalhes?: string;
+    observacaoFutura?: string;
+    /** Tarefa de rotina concluída como outra atividade: deixa de pertencer à rotina. */
+    desvincularRotina?: boolean;
+  }[];
   fotos: { agendaId: string; plantaId: string; caminhoArquivo: string }[];
   criarConcluidas: { plantaId: string; atividadeId: string; data: Date; detalhes?: string }[];
-  criarPendentes: { plantaId: string; atividadeId: string; dataAgendada: Date }[];
-  revisoes: { plantaId: string; dataAgendada: Date }[];
+  criarPendentes: NovaPendente[];
+  criarRotinas: NovaRotinaDePasso[];
+  /** Pendentes (Revisão geral) remarcadas para uma nova data. */
+  moverPendentes: { agendaId: string; dataAgendada: Date }[];
 }
 
 export interface RegistrarCuidadosDTO {
@@ -79,7 +114,7 @@ export interface RegistrarCuidadosDTO {
     observacaoFutura?: string;
     fotos?: { caminhoArquivo: string; dataCaptura?: string }[];
   }[];
-  proximos?: { atividadeId: string; dataAgendada: string }[];
+  proximos?: Proximo[];
   /** Pendentes que este registro conclui (escolhidas na tela). */
   concluirAgendaIds?: string[];
 }
@@ -99,26 +134,30 @@ export interface PlanoRegistro {
   absorver: { agendaId: string; plantaId: string; atividadeId: string }[];
   /** Pendentes repetidas do mesmo cuidado: canceladas. */
   cancelar: string[];
-  criarPendentes: { plantaId: string; atividadeId: string; dataAgendada: Date }[];
-  revisoes: { plantaId: string; dataAgendada: Date }[];
+  criarPendentes: NovaPendente[];
+  criarRotinas: NovaRotinaDePasso[];
+  /** Pendentes (Revisão geral) remarcadas para uma nova data. */
+  moverPendentes: { agendaId: string; dataAgendada: Date }[];
 }
 
 export interface ResultadoConclusao {
   concluidas: any[];
   criadas: any[];
-  revisoes: any[];
 }
 
 export interface ConclusaoRepository {
   /** Agendas PENDENTE do usuário dentre os ids informados. */
-  findPendentesDoUsuario(ids: string[], usuarioId: string): Promise<{ id: string; plantaId: string }[]>;
+  findPendentesDoUsuario(
+    ids: string[],
+    usuarioId: string,
+  ): Promise<{ id: string; plantaId: string; atividadeId: string; rotinaId: string | null }[]>;
   /** Agendas PENDENTE do usuário dentre os ids, com planta, atividade e data. */
   findPendentesParaReconciliar(ids: string[], usuarioId: string): Promise<PendenteReconciliavel[]>;
   atividadesExistem(ids: string[]): Promise<boolean>;
-  /** Valor normalizado da preferência (padrão 30, 0 = desligado). */
-  getRevisaoDias(usuarioId: string): Promise<number>;
-  /** Por planta, a data da próxima PENDENTE com dataAgendada >= aPartirDe, ignorando `excluir` (sem pendente = fora do Map). */
-  proximasPendentes(plantaIds: string[], aPartirDe: Date, excluir: string[]): Promise<Map<string, Date>>;
+  /** Rotinas de Revisão geral das plantas, com a pendente atual (ignorando `excluirAgendaIds`). */
+  revisoesDasPlantas(plantaIds: string[], excluirAgendaIds: string[]): Promise<RevisaoEstado[]>;
+  /** Estado das rotinas; `temPendente` ignora as agendas em `excluirAgendaIds` (as que estão sendo concluídas). */
+  estadoRotinas(rotinaIds: string[], excluirAgendaIds: string[]): Promise<RotinaEstado[]>;
   executar(plano: PlanoConclusao): Promise<ResultadoConclusao>;
   /** Quantas das plantas informadas são do usuário. */
   contarPlantasDoUsuario(plantaIds: string[], usuarioId: string): Promise<number>;

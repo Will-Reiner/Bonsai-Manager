@@ -5,10 +5,13 @@ import type {
   AgendaStatus,
   Atividade,
   Especie,
+  Estacao,
   Foto,
+  GuiaSazonal,
   ModoAquisicao,
   Planta,
   Preferencias,
+  Rotina,
   TipoRecurso,
   Usuario,
 } from '@/types';
@@ -52,13 +55,26 @@ export interface AgendaUpdate {
   observacaoFutura?: string;
 }
 
+export interface Repetir {
+  intervaloDias: number;
+  dataFim?: string;
+  estacoes?: Estacao[];
+}
+
+export interface ProximoInput {
+  atividadeId: string;
+  dataAgendada: string;
+  /** Com repetição, vira (ou usa) a rotina da planta+atividade. */
+  repetir?: Repetir;
+}
+
 export interface ConcluirInput {
   dataConcluida: string;
   atividadeId?: string;
   detalhes?: string;
   observacaoFutura?: string;
   extras?: string[];
-  proximos?: { atividadeId: string; dataAgendada: string }[];
+  proximos?: ProximoInput[];
   itens: { agendaId: string; detalhes?: string; observacaoFutura?: string; fotos?: string[] }[];
 }
 
@@ -71,7 +87,7 @@ export interface RegistrarInput {
     observacaoFutura?: string;
     fotos?: { caminhoArquivo: string; dataCaptura?: string }[];
   }[];
-  proximos?: { atividadeId: string; dataAgendada: string }[];
+  proximos?: ProximoInput[];
   /** Pendentes que este registro conclui (escolhidas na tela). */
   concluirAgendaIds?: string[];
 }
@@ -79,7 +95,6 @@ export interface RegistrarInput {
 export interface ConcluirResultado {
   concluidas: Agenda[];
   criadas: Agenda[];
-  revisoes: Agenda[];
 }
 
 export const agendasApi = {
@@ -93,8 +108,35 @@ export const agendasApi = {
   remove: (id: string) => api.delete(`/agendas/${id}`),
   /** Registra um cuidado já feito (fotos + plantas + próximos passos) numa chamada. */
   registrar: (body: RegistrarInput) => data<ConcluirResultado>(api.post('/agendas/registrar', body)),
-  /** Conclui uma ou várias tarefas (com extras, próximos passos e revisão automática). */
+  /** Conclui uma ou várias tarefas (com extras e próximos passos); remarca a rotina de Revisão geral de cada planta. */
   concluir: (body: ConcluirInput) => data<ConcluirResultado>(api.post('/agendas/concluir', body)),
+  /** "Pular esta vez" (só tarefa de rotina): a próxima conta a partir de hoje. */
+  /** "Pular esta vez"; `proxima` diz se a rotina ganhou a próxima tarefa. */
+  pular: (id: string) => data<{ proxima: boolean }>(api.post(`/agendas/${id}/pular`)),
+};
+
+export const guiasSazonaisApi = {
+  porEspecie: (especieId: string) => data<GuiaSazonal[]>(api.get(`/guias-sazonais/especie/${especieId}`)),
+};
+
+export const rotinasApi = {
+  list: () => data<Rotina[]>(api.get('/rotinas')),
+  /** Uma rotina por planta+atividade; as que já existiam voltam em `conflitos` (mantidas). */
+  create: (body: {
+    plantaIds: string[];
+    atividadeIds: string[];
+    intervaloDias: number;
+    dataFim?: string;
+    estacoes?: Estacao[];
+    primeiraData?: string;
+    detalhes?: string;
+  }) => data<{ criadas: Rotina[]; conflitos: { plantaId: string; atividadeId: string }[] }>(api.post('/rotinas', body)),
+  update: (id: string, body: { intervaloDias?: number; dataFim?: string | null; estacoes?: Estacao[] }) =>
+    data<Rotina>(api.put(`/rotinas/${id}`, body)),
+  remove: (id: string) => api.delete(`/rotinas/${id}`),
+  pausar: (id: string) => data<Rotina>(api.post(`/rotinas/${id}/pausar`)),
+  /** Retoma a rotina; sem pendente, agenda a próxima a partir de hoje. */
+  retomar: (id: string) => data<Rotina>(api.post(`/rotinas/${id}/retomar`)),
 };
 
 export const fotosApi = {

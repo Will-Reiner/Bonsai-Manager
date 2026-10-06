@@ -24,6 +24,7 @@ export class PrismaAgendaRepository implements AgendaRepository {
         atividade: { select: { id: true, nome: true } },
         recursosUtilizados: { include: { recurso: { include: { tipoRecurso: true } } } },
         fotos: { select: { id: true, caminhoArquivo: true } },
+        rotina: { select: { id: true, intervaloDias: true, pausada: true } },
       },
       orderBy: { dataAgendada: 'asc' },
     });
@@ -37,6 +38,7 @@ export class PrismaAgendaRepository implements AgendaRepository {
         atividade: { select: { id: true, nome: true } },
         recursosUtilizados: { include: { recurso: { include: { tipoRecurso: true } } } },
         fotos: { select: { id: true, caminhoArquivo: true } },
+        rotina: { select: { id: true, intervaloDias: true, pausada: true } },
       },
     });
   }
