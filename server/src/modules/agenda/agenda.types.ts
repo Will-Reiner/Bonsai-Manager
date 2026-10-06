@@ -82,6 +82,8 @@ export interface ConcluirAgendasDTO {
   extras?: string[];
   proximos?: Proximo[];
   itens: { agendaId: string; detalhes?: string; observacaoFutura?: string; fotos?: string[] }[];
+  /** Tarefas concluídas como Transplante levam a planta para Recém transplantada. */
+  moverRecemTransplantada?: boolean;
 }
 
 /** Pendente a criar; com `rotinaId` quando é a próxima de uma rotina. */
@@ -109,6 +111,8 @@ export interface PlanoConclusao {
   criarRotinas: NovaRotinaDePasso[];
   /** Pendentes (Revisão geral) remarcadas para uma nova data. */
   moverPendentes: { agendaId: string; dataAgendada: Date }[];
+  /** Mudanças de grupo (Transplante → Recém transplantada). */
+  atualizarGrupos: AtualizacaoGrupo[];
 }
 
 export interface RegistrarCuidadosDTO {

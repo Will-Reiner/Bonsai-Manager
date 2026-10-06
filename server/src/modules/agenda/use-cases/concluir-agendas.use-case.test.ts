@@ -182,4 +182,49 @@ describe('ConcluirAgendasUseCase', () => {
       expect(repo.estadoRotinas).not.toHaveBeenCalled();
     });
   });
+
+  describe('mover para Recém transplantada', () => {
+    const estado = { plantaId: 'pl-1', grupo: 'PRE_TRANSPLANTE' as const, grupoAnterior: 'REFINAMENTO' as const, grupoExpiraEm: null };
+
+    beforeEach(() => {
+      repo.transplanteDasPlantas.mockResolvedValue({ atividadeId: 'at-transplante', dias: 15, plantas: [estado] });
+    });
+
+    const esperado = [
+      { plantaId: 'pl-1', grupo: 'RECEM_TRANSPLANTADA', grupoAnterior: 'REFINAMENTO', grupoExpiraEm: emDias(15) },
+    ];
+
+    it('tarefa de Transplante concluída com a opção move a planta', async () => {
+      repo.findPendentesDoUsuario.mockResolvedValue([{ id: 'ag-1', plantaId: 'pl-1', atividadeId: 'at-transplante', rotinaId: null }]);
+
+      await useCase.execute({ ...base, moverRecemTransplantada: true }, 'user-1');
+
+      expect(repo.transplanteDasPlantas).toHaveBeenCalledWith(['pl-1'], 'user-1');
+      expect(plano().atualizarGrupos).toEqual(esperado);
+    });
+
+    it('vale quando a tarefa é concluída como Transplante ou com Transplante nos extras', async () => {
+      await useCase.execute({ ...base, atividadeId: 'at-transplante', moverRecemTransplantada: true }, 'user-1');
+      expect(plano().atualizarGrupos).toEqual(esperado);
+
+      repo.executar.mockClear();
+      await useCase.execute({ ...base, extras: ['at-transplante'], moverRecemTransplantada: true }, 'user-1');
+      expect(plano().atualizarGrupos).toEqual(esperado);
+    });
+
+    it('outra atividade não move', async () => {
+      await useCase.execute({ ...base, moverRecemTransplantada: true }, 'user-1');
+
+      expect(plano().atualizarGrupos).toEqual([]);
+    });
+
+    it('sem a opção, não consulta nem move', async () => {
+      repo.findPendentesDoUsuario.mockResolvedValue([{ id: 'ag-1', plantaId: 'pl-1', atividadeId: 'at-transplante', rotinaId: null }]);
+
+      await useCase.execute(base, 'user-1');
+
+      expect(repo.transplanteDasPlantas).not.toHaveBeenCalled();
+      expect(plano().atualizarGrupos).toEqual([]);
+    });
+  });
 });

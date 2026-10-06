@@ -1,5 +1,6 @@
 import { ConclusaoRepository, ConcluirAgendasDTO, PlanoConclusao } from '../agenda.types';
 import { remarcarRevisoes } from '../dominio/rotina';
+import { planejarGruposDoTransplante } from './planejar-grupos-transplante';
 import { planejarRotinas } from './planejar-rotinas';
 import { planejarSeguimento } from './planejar-seguimento';
 
@@ -40,6 +41,21 @@ export class ConcluirAgendasUseCase {
     const seguimento = planejarSeguimento(plantas, proximos);
     // Qualquer cuidado na planta remarca a Revisão geral dela
     const revisoes = remarcarRevisoes(await this.repo.revisoesDasPlantas(plantas, ids), dataConcluida);
+    // Atividade efetiva de cada tarefa (a escolhida na tela ou a original) + extras
+    const atualizarGrupos = dto.moverRecemTransplantada
+      ? await planejarGruposDoTransplante(
+          this.repo,
+          plantas.map((plantaId) => ({
+            plantaId,
+            atividadeIds: [
+              ...pendentes.filter((p) => p.plantaId === plantaId).map((p) => dto.atividadeId ?? p.atividadeId),
+              ...extras,
+            ],
+          })),
+          usuarioId,
+          dataConcluida,
+        )
+      : [];
     const plano: PlanoConclusao = {
       usuarioId,
       dataConcluida,
@@ -63,6 +79,7 @@ export class ConcluirAgendasUseCase {
       ...seguimento,
       criarPendentes: [...seguimento.criarPendentes, ...rotinas, ...revisoes.criar],
       moverPendentes: revisoes.mover,
+      atualizarGrupos,
     };
 
     return this.repo.executar(plano);

@@ -3,6 +3,7 @@ import { Prisma } from '@prisma/client';
 import { ehRevisao } from '../dominio/rotina';
 import { diasDeTransplante } from '../../planta/dominio/grupo';
 import {
+  AtualizacaoGrupo,
   ConclusaoRepository,
   ATIVIDADE_REVISAO,
   ATIVIDADE_TRANSPLANTE,
@@ -81,6 +82,16 @@ export class PrismaConclusaoRepository implements ConclusaoRepository {
   private async moverPendentes(tx: Prisma.TransactionClient, itens: { agendaId: string; dataAgendada: Date }[]) {
     for (const m of itens) {
       await tx.agenda.updateMany({ where: { id: m.agendaId, status: 'PENDENTE' }, data: { dataAgendada: m.dataAgendada } });
+    }
+  }
+
+  /** Aplica mudanças de grupo (Transplante → Recém transplantada). */
+  private async atualizarGrupos(tx: Prisma.TransactionClient, itens: AtualizacaoGrupo[]) {
+    for (const g of itens) {
+      await tx.planta.update({
+        where: { id: g.plantaId },
+        data: { grupo: g.grupo, grupoAnterior: g.grupoAnterior, grupoExpiraEm: g.grupoExpiraEm },
+      });
     }
   }
 
@@ -229,12 +240,7 @@ export class PrismaConclusaoRepository implements ConclusaoRepository {
           ...(await this.criarComRotinas(tx, plano.criarRotinas)),
         ];
         await this.moverPendentes(tx, plano.moverPendentes);
-        for (const g of plano.atualizarGrupos) {
-          await tx.planta.update({
-            where: { id: g.plantaId },
-            data: { grupo: g.grupo, grupoAnterior: g.grupoAnterior, grupoExpiraEm: g.grupoExpiraEm },
-          });
-        }
+        await this.atualizarGrupos(tx, plano.atualizarGrupos);
         return { concluidas, criadas };
       },
       { timeout: 20_000 },
@@ -301,6 +307,7 @@ export class PrismaConclusaoRepository implements ConclusaoRepository {
         criadas.push(...(await this.criarComRotinas(tx, plano.criarRotinas)));
 
         await this.moverPendentes(tx, plano.moverPendentes);
+        await this.atualizarGrupos(tx, plano.atualizarGrupos);
         return { concluidas, criadas };
       },
       { timeout: 20_000 },

@@ -1,7 +1,7 @@
-import { aplicarTransplante } from '../../planta/dominio/grupo';
-import { AtualizacaoGrupo, ConclusaoRepository, RegistrarCuidadosDTO } from '../agenda.types';
+import { ConclusaoRepository, RegistrarCuidadosDTO } from '../agenda.types';
 import { reconciliar } from '../dominio/reconciliar';
 import { remarcarRevisoes } from '../dominio/rotina';
+import { planejarGruposDoTransplante } from './planejar-grupos-transplante';
 import { planejarRotinas } from './planejar-rotinas';
 import { planejarSeguimento } from './planejar-seguimento';
 
@@ -48,7 +48,7 @@ export class RegistrarCuidadosUseCase {
     const seguimento = planejarSeguimento(plantas, proximos);
     const revisoes = remarcarRevisoes(await this.repo.revisoesDasPlantas(plantas, concluirIds), data);
 
-    const atualizarGrupos = dto.moverRecemTransplantada ? await this.gruposDoTransplante(cuidados, usuarioId, data) : [];
+    const atualizarGrupos = dto.moverRecemTransplantada ? await planejarGruposDoTransplante(this.repo, cuidados, usuarioId, data) : [];
 
     return this.repo.registrar({
       usuarioId,
@@ -61,22 +61,5 @@ export class RegistrarCuidadosUseCase {
       moverPendentes: revisoes.mover,
       atualizarGrupos,
     });
-  }
-
-  /** Plantas com Transplante neste registro vão para Recém transplantada. */
-  private async gruposDoTransplante(
-    cuidados: { plantaId: string; atividadeIds: string[] }[],
-    usuarioId: string,
-    data: Date,
-  ): Promise<AtualizacaoGrupo[]> {
-    const { atividadeId, dias, plantas } = await this.repo.transplanteDasPlantas(
-      cuidados.map((c) => c.plantaId),
-      usuarioId,
-    );
-    if (!atividadeId) return [];
-    const transplantadas = new Set(cuidados.filter((c) => c.atividadeIds.includes(atividadeId)).map((c) => c.plantaId));
-    return plantas
-      .filter((p) => transplantadas.has(p.plantaId))
-      .map((p) => ({ plantaId: p.plantaId, ...aplicarTransplante(p, data, dias) }));
   }
 }

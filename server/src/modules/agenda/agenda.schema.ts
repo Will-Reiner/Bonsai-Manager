@@ -87,6 +87,7 @@ export const concluirAgendasSchema = z.object({
     detalhes: z.string().optional(),
     observacaoFutura: z.string().optional(),
     extras: z.array(z.string().uuid()).optional(),
+    moverRecemTransplantada: z.boolean().optional(),
     proximos: z
       .array(proximoSchema)
       .optional(),
