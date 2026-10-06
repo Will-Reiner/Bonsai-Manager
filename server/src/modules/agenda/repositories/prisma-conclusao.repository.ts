@@ -1,7 +1,9 @@
 import { prisma } from '../../../lib/prisma';
 import { Prisma } from '@prisma/client';
+import { ehRevisao } from '../dominio/rotina';
 import {
   ConclusaoRepository,
+  ATIVIDADE_REVISAO,
   NovaRotinaDePasso,
   PlanoConclusao,
   PlanoRegistro,
@@ -59,13 +61,17 @@ export class PrismaConclusaoRepository implements ConclusaoRepository {
         estacoes: true,
         agendas: {
           where: { status: 'PENDENTE', id: { notIn: excluirAgendaIds } },
-          select: { id: true },
+          select: { id: true, dataAgendada: true },
           orderBy: { dataAgendada: 'asc' },
           take: 1,
         },
       },
     });
-    return rotinas.map(({ agendas, ...r }) => ({ ...r, pendenteId: agendas[0]?.id ?? null }));
+    return rotinas.map(({ agendas, ...r }) => ({
+      ...r,
+      pendenteId: agendas[0]?.id ?? null,
+      pendenteData: agendas[0]?.dataAgendada ?? null,
+    }));
   }
 
   /** Remarca pendentes (Revisão geral); revalida PENDENTE para não mexer em tarefa já resolvida. */
@@ -77,7 +83,10 @@ export class PrismaConclusaoRepository implements ConclusaoRepository {
 
   /** Próximo passo com repetição: cria a rotina (ou usa a existente) e a pendente, mantendo 1 pendente por rotina. */
   private async criarComRotinas(tx: Prisma.TransactionClient, itens: NovaRotinaDePasso[]) {
+    if (!itens.length) return [];
     const criadas = [];
+    const idRevisao =
+      (await tx.atividade.findUnique({ where: { nome: ATIVIDADE_REVISAO }, select: { id: true } }))?.id ?? null;
     for (const r of itens) {
       const existente = await tx.rotina.findUnique({
         where: { plantaId_atividadeId: { plantaId: r.plantaId, atividadeId: r.atividadeId } },
@@ -96,7 +105,14 @@ export class PrismaConclusaoRepository implements ConclusaoRepository {
           : existente.id
         : (
             await tx.rotina.create({
-              data: { plantaId: r.plantaId, atividadeId: r.atividadeId, intervaloDias: r.intervaloDias, dataFim: r.dataFim, estacoes: r.estacoes },
+              data: {
+                plantaId: r.plantaId,
+                atividadeId: r.atividadeId,
+                intervaloDias: r.intervaloDias,
+                dataFim: r.dataFim,
+                estacoes: r.estacoes,
+                revisao: ehRevisao(r.atividadeId, idRevisao),
+              },
             })
           ).id;
       criadas.push(

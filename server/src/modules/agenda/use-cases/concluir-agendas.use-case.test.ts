@@ -91,7 +91,7 @@ describe('ConcluirAgendasUseCase', () => {
     const rev = { id: 'rev1', plantaId: 'pl-1', atividadeId: 'at-rev', intervaloDias: 30, dataFim: null, pausada: false };
 
     it('qualquer cuidado remarca a revisão pendente da planta para data feita + intervalo', async () => {
-      repo.revisoesDasPlantas.mockResolvedValue([{ ...rev, pendenteId: 'ag-rev' }]);
+      repo.revisoesDasPlantas.mockResolvedValue([{ ...rev, pendenteId: 'ag-rev', pendenteData: emDias(3) }]);
 
       await useCase.execute(base, 'user-1');
 
@@ -101,7 +101,7 @@ describe('ConcluirAgendasUseCase', () => {
     });
 
     it('concluir a própria revisão cria a próxima', async () => {
-      repo.revisoesDasPlantas.mockResolvedValue([{ ...rev, pendenteId: null }]);
+      repo.revisoesDasPlantas.mockResolvedValue([{ ...rev, pendenteId: null, pendenteData: null }]);
 
       await useCase.execute(base, 'user-1');
 

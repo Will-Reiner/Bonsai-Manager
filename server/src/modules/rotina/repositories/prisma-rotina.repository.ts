@@ -1,7 +1,8 @@
 import { Prisma } from '@prisma/client';
 import { prisma } from '../../../lib/prisma';
 import { Estacao } from '../../agenda/dominio/estacoes';
-import { ProximaDeRotina } from '../../agenda/dominio/rotina';
+import { ATIVIDADE_REVISAO } from '../../agenda/agenda.types';
+import { ehRevisao, ProximaDeRotina } from '../../agenda/dominio/rotina';
 import { AjustePendente, NovaRotina, RotinaRepository } from '../rotina.types';
 
 const INCLUDE_LISTA = {
@@ -35,9 +36,18 @@ export class PrismaRotinaRepository implements RotinaRepository {
     return prisma.$transaction(
       async (tx: Prisma.TransactionClient) => {
         const criadas = [];
+        const idRevisao =
+          (await tx.atividade.findUnique({ where: { nome: ATIVIDADE_REVISAO }, select: { id: true } }))?.id ?? null;
         for (const n of itens) {
           const rotina = await tx.rotina.create({
-            data: { plantaId: n.plantaId, atividadeId: n.atividadeId, intervaloDias: n.intervaloDias, dataFim: n.dataFim, estacoes: n.estacoes },
+            data: {
+              plantaId: n.plantaId,
+              atividadeId: n.atividadeId,
+              intervaloDias: n.intervaloDias,
+              dataFim: n.dataFim,
+              estacoes: n.estacoes,
+              revisao: ehRevisao(n.atividadeId, idRevisao),
+            },
           });
           await tx.agenda.create({
             data: {

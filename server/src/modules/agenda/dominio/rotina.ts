@@ -58,9 +58,15 @@ export function planejarProximas(
   });
 }
 
+/** A rotina é a Revisão geral da planta (remarcada por qualquer cuidado). */
+export function ehRevisao(atividadeId: string, idRevisao: string | null): boolean {
+  return idRevisao !== null && atividadeId === idRevisao;
+}
+
 export interface RevisaoEstado extends RotinaBase {
   /** Pendente atual (fora as concluídas agora). */
   pendenteId: string | null;
+  pendenteData: Date | null;
 }
 
 export interface Remarcacao {
@@ -68,15 +74,19 @@ export interface Remarcacao {
   criar: ProximaDeRotina[];
 }
 
-/** Qualquer cuidado na planta remarca a Revisão geral para `data + intervalo` (respeitando estações, pausa e fim). */
+/**
+ * Qualquer cuidado na planta remarca a Revisão geral para `data + intervalo` (respeitando estações, pausa e fim).
+ * Só empurra para frente: um registro retroativo não puxa a pendente para trás.
+ */
 export function remarcarRevisoes(revisoes: RevisaoEstado[], data: Date): Remarcacao {
   const r: Remarcacao = { mover: [], criar: [] };
   for (const rev of revisoes) {
     if (rev.pausada) continue;
     const dataAgendada = proximaDataRotina(rev, data);
     if (!dataAgendada) continue;
-    if (rev.pendenteId) r.mover.push({ agendaId: rev.pendenteId, dataAgendada });
-    else r.criar.push({ rotinaId: rev.id, plantaId: rev.plantaId, atividadeId: rev.atividadeId, dataAgendada });
+    if (rev.pendenteId) {
+      if (!rev.pendenteData || dataAgendada > rev.pendenteData) r.mover.push({ agendaId: rev.pendenteId, dataAgendada });
+    } else r.criar.push({ rotinaId: rev.id, plantaId: rev.plantaId, atividadeId: rev.atividadeId, dataAgendada });
   }
   return r;
 }
