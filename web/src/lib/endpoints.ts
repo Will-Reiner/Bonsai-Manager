@@ -9,6 +9,7 @@ import type {
   ModoAquisicao,
   Planta,
   Preferencias,
+  Rotina,
   TipoRecurso,
   Usuario,
 } from '@/types';
@@ -52,13 +53,25 @@ export interface AgendaUpdate {
   observacaoFutura?: string;
 }
 
+export interface Repetir {
+  intervaloDias: number;
+  dataFim?: string;
+}
+
+export interface ProximoInput {
+  atividadeId: string;
+  dataAgendada: string;
+  /** Com repetição, vira (ou usa) a rotina da planta+atividade. */
+  repetir?: Repetir;
+}
+
 export interface ConcluirInput {
   dataConcluida: string;
   atividadeId?: string;
   detalhes?: string;
   observacaoFutura?: string;
   extras?: string[];
-  proximos?: { atividadeId: string; dataAgendada: string }[];
+  proximos?: ProximoInput[];
   itens: { agendaId: string; detalhes?: string; observacaoFutura?: string; fotos?: string[] }[];
 }
 
@@ -71,7 +84,7 @@ export interface RegistrarInput {
     observacaoFutura?: string;
     fotos?: { caminhoArquivo: string; dataCaptura?: string }[];
   }[];
-  proximos?: { atividadeId: string; dataAgendada: string }[];
+  proximos?: ProximoInput[];
   /** Pendentes que este registro conclui (escolhidas na tela). */
   concluirAgendaIds?: string[];
 }
@@ -95,6 +108,27 @@ export const agendasApi = {
   registrar: (body: RegistrarInput) => data<ConcluirResultado>(api.post('/agendas/registrar', body)),
   /** Conclui uma ou várias tarefas (com extras, próximos passos e revisão automática). */
   concluir: (body: ConcluirInput) => data<ConcluirResultado>(api.post('/agendas/concluir', body)),
+  /** "Pular esta vez" (só tarefa de rotina): a próxima conta a partir de hoje. */
+  pular: (id: string) => api.post(`/agendas/${id}/pular`),
+};
+
+export const rotinasApi = {
+  list: () => data<Rotina[]>(api.get('/rotinas')),
+  /** Uma rotina por planta+atividade; as que já existiam voltam em `conflitos` (mantidas). */
+  create: (body: {
+    plantaIds: string[];
+    atividadeIds: string[];
+    intervaloDias: number;
+    dataFim?: string;
+    primeiraData?: string;
+    detalhes?: string;
+  }) => data<{ criadas: Rotina[]; conflitos: { plantaId: string; atividadeId: string }[] }>(api.post('/rotinas', body)),
+  update: (id: string, body: { intervaloDias?: number; dataFim?: string | null }) =>
+    data<Rotina>(api.put(`/rotinas/${id}`, body)),
+  remove: (id: string) => api.delete(`/rotinas/${id}`),
+  pausar: (id: string) => data<Rotina>(api.post(`/rotinas/${id}/pausar`)),
+  /** Retoma a rotina; sem pendente, agenda a próxima a partir de hoje. */
+  retomar: (id: string) => data<Rotina>(api.post(`/rotinas/${id}/retomar`)),
 };
 
 export const fotosApi = {

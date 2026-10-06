@@ -95,6 +95,19 @@ export interface TipoRecurso {
   nome: string;
 }
 
+export interface Rotina {
+  id: string;
+  intervaloDias: number;
+  pausada: boolean;
+  dataFim?: string | null;
+  plantaId: string;
+  atividadeId: string;
+  atividade?: Pick<Atividade, 'id' | 'nome'>;
+  planta?: Pick<Planta, 'id' | 'nome' | 'identificador'>;
+  /** Pendente atual da rotina (null = pausada, encerrada ou sem próxima). */
+  proxima?: { id: string; dataAgendada: string } | null;
+}
+
 export interface Agenda {
   id: string;
   dataAgendada: string;
@@ -104,6 +117,9 @@ export interface Agenda {
   observacaoFutura?: string | null;
   plantaId: string;
   atividadeId: string;
+  rotinaId?: string | null;
+  rotina?: Pick<Rotina, 'id' | 'intervaloDias' | 'pausada'> | null;
+  pulada?: boolean;
   planta?: Pick<Planta, 'id' | 'nome' | 'identificador' | 'fotoCapaUrl'> & { especie?: Partial<Especie> };
   atividade?: Pick<Atividade, 'id' | 'nome'>;
   fotos?: { id: string; caminhoArquivo: string }[];

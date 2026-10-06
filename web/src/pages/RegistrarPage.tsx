@@ -7,7 +7,8 @@ import { FilePreview, Miniaturas } from '@/components/FilePreview';
 import { TriagemFotos } from '@/components/TriagemFotos';
 import { AtividadeChips } from '@/components/care/AtividadeChips';
 import { PlantasPicker } from '@/components/care/PlantasPicker';
-import { ProximosPassos, type Proximo } from '@/components/care/ProximosPassos';
+import { ProximosPassos, proximosParaApi, type Proximo } from '@/components/care/ProximosPassos';
+import { repetirValido } from '@/components/care/RepetirCampo';
 import { useToast } from '@/context/ToastContext';
 import { errorMessage } from '@/lib/api';
 import { agendasApi } from '@/lib/endpoints';
@@ -110,7 +111,7 @@ export function RegistrarPage() {
         ? 'Escolha o que foi feito em cada planta.'
         : !data || data > toDateInput()
           ? 'A data não pode ser no futuro.'
-          : proximos.some((p) => !p.atividadeId || !p.data)
+          : proximos.some((p) => !p.atividadeId || !p.data || !repetirValido(p.repetir))
             ? 'Complete os próximos passos.'
             : null;
     if (erro) toast(erro, 'error');
@@ -153,12 +154,11 @@ export function RegistrarPage() {
               .filter(({ item }) => item.url)
               .map(({ item }) => ({ caminhoArquivo: item.url!, dataCaptura: item.dataCaptura })),
           })),
-          proximos: proximos.length
-            ? proximos.map((p) => ({ atividadeId: p.atividadeId, dataAgendada: fromDateInput(p.data) }))
-            : undefined,
+          proximos: proximosParaApi(proximos),
           concluirAgendaIds: concluirAgendaIds.length ? concluirAgendaIds : undefined,
         });
         queryClient.invalidateQueries({ queryKey: keys.agendas });
+        queryClient.invalidateQueries({ queryKey: keys.rotinas });
         queryClient.invalidateQueries({ queryKey: ['fotos'] });
         queryClient.invalidateQueries({ queryKey: keys.plantas });
         const n = resultado.revisoes.length;

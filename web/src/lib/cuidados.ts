@@ -54,3 +54,22 @@ export function candidatasReconciliacao(
     )
     .sort((a, b) => a.dataAgendada.localeCompare(b.dataAgendada));
 }
+
+/** Mediana (em dias) dos intervalos entre execuções do cuidado na planta; null com menos de 2 execuções. */
+export function medianaIntervaloDias(agendas: Agenda[], plantaId: string, atividadeId: string): number | null {
+  const datas = agendas
+    .filter((a) => a.status === 'CONCLUIDO' && a.plantaId === plantaId && a.atividadeId === atividadeId)
+    .map((a) => new Date(a.dataConcluida ?? a.dataAgendada).getTime())
+    .sort((x, y) => x - y);
+  const intervalos = datas
+    .slice(1)
+    .map((d, i) => Math.round((d - datas[i]) / 86_400_000))
+    .filter((d) => d > 0)
+    .sort((x, y) => x - y);
+  if (!intervalos.length) return null;
+  const meio = Math.floor(intervalos.length / 2);
+  return intervalos.length % 2 ? intervalos[meio] : Math.round((intervalos[meio - 1] + intervalos[meio]) / 2);
+}
+
+/** "todo dia", "a cada 14 dias". */
+export const textoIntervalo = (dias: number) => (dias === 1 ? 'todo dia' : `a cada ${dias} dias`);

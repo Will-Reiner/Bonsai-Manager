@@ -1,11 +1,13 @@
 import { Plus, X } from 'lucide-react';
 import { Button } from '@/components/ui';
-import { daquiADias, toDateInput } from '@/lib/format';
+import { daquiADias, fromDateInput, toDateInput } from '@/lib/format';
 import { useAtividadesOrdenadas, useRevisaoDias } from '@/lib/queries';
+import { RepetirCampo, repetirParaApi, type RepetirValor } from './RepetirCampo';
 
 export interface Proximo {
   atividadeId: string;
   data: string; // AAAA-MM-DD
+  repetir?: RepetirValor | null;
 }
 
 const ATALHOS = [
@@ -13,6 +15,16 @@ const ATALHOS = [
   { label: '+2 sem', dias: 14 },
   { label: '+1 mês', dias: 30 },
 ];
+
+/** Próximos passos no formato da API (undefined quando vazio). */
+export const proximosParaApi = (proximos: Proximo[]) =>
+  proximos.length
+    ? proximos.map((p) => ({
+        atividadeId: p.atividadeId,
+        dataAgendada: fromDateInput(p.data),
+        ...(p.repetir ? { repetir: repetirParaApi(p.repetir) } : {}),
+      }))
+    : undefined;
 
 /** Próximos passos a agendar após um cuidado; vazio => Revisão geral automática. */
 export function ProximosPassos({ value, onChange }: { value: Proximo[]; onChange: (v: Proximo[]) => void }) {
@@ -70,6 +82,10 @@ export function ProximosPassos({ value, onChange }: { value: Proximo[]; onChange
                 </button>
               ))}
             </div>
+            <RepetirCampo
+              value={p.repetir ?? null}
+              onChange={(repetir) => onChange(value.map((x, j) => (j === i ? { ...x, repetir } : x)))}
+            />
           </div>
         ))}
         <Button
