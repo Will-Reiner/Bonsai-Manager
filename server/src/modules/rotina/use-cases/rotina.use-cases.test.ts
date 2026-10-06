@@ -13,6 +13,7 @@ const info = (over: Partial<RotinaInfo> = {}): RotinaInfo => ({
   dataFim: null,
   pausada: false,
   pendenteId: 'ag-1',
+  pendenteData: emDias(14),
   ultimaConclusao: null,
   ...over,
 });
@@ -100,13 +101,19 @@ describe('use cases de rotina', () => {
     const useCase = () => new AtualizarRotinaUseCase(repo);
 
     it('move a pendente para a última conclusão + novo intervalo', async () => {
-      repo.findDoUsuario.mockResolvedValue(info({ ultimaConclusao: emDias(-2) }));
+      repo.findDoUsuario.mockResolvedValue(info({ ultimaConclusao: emDias(-2), pendenteData: emDias(12) }));
       await useCase().execute('r1', { intervaloDias: 10 }, 'u');
       expect(repo.atualizar).toHaveBeenCalledWith('r1', { intervaloDias: 10, dataFim: null }, { tipo: 'mover', agendaId: 'ag-1', data: emDias(8) });
     });
 
+    it('conclusão antiga (rotina retomada) ancora na pendente atual', async () => {
+      repo.findDoUsuario.mockResolvedValue(info({ ultimaConclusao: emDias(-90), pendenteData: emDias(14) }));
+      await useCase().execute('r1', { intervaloDias: 21 }, 'u');
+      expect(repo.atualizar).toHaveBeenCalledWith('r1', { intervaloDias: 21, dataFim: null }, { tipo: 'mover', agendaId: 'ag-1', data: emDias(21) });
+    });
+
     it('sem conclusão, conta a partir de hoje; sem pendente, cria', async () => {
-      repo.findDoUsuario.mockResolvedValue(info({ pendenteId: null }));
+      repo.findDoUsuario.mockResolvedValue(info({ pendenteId: null, pendenteData: null }));
       await useCase().execute('r1', {}, 'u');
       expect(repo.atualizar).toHaveBeenCalledWith('r1', { intervaloDias: 14, dataFim: null }, { tipo: 'criar', data: emDias(14) });
     });
@@ -117,7 +124,7 @@ describe('use cases de rotina', () => {
     });
 
     it('rotina pausada só muda a regra', async () => {
-      repo.findDoUsuario.mockResolvedValue(info({ pausada: true, pendenteId: null }));
+      repo.findDoUsuario.mockResolvedValue(info({ pausada: true, pendenteId: null, pendenteData: null }));
       await useCase().execute('r1', { intervaloDias: 30, dataFim: null }, 'u');
       expect(repo.atualizar).toHaveBeenCalledWith('r1', { intervaloDias: 30, dataFim: null }, { tipo: 'manter' });
     });
@@ -137,7 +144,7 @@ describe('use cases de rotina', () => {
     });
 
     it('retomar gera a próxima a partir de hoje', async () => {
-      repo.findDoUsuario.mockResolvedValue(info({ pausada: true, pendenteId: null, ultimaConclusao: emDias(-40) }));
+      repo.findDoUsuario.mockResolvedValue(info({ pausada: true, pendenteId: null, pendenteData: null, ultimaConclusao: emDias(-40) }));
       await useCase().execute('r1', false, 'u');
       expect(repo.atualizar).toHaveBeenCalledWith('r1', { pausada: false }, { tipo: 'criar', data: emDias(14) });
     });
@@ -148,7 +155,7 @@ describe('use cases de rotina', () => {
     });
 
     it('retomar depois da data final não gera tarefa', async () => {
-      repo.findDoUsuario.mockResolvedValue(info({ pausada: true, pendenteId: null, dataFim: emDias(3) }));
+      repo.findDoUsuario.mockResolvedValue(info({ pausada: true, pendenteId: null, pendenteData: null, dataFim: emDias(3) }));
       await useCase().execute('r1', false, 'u');
       expect(repo.atualizar).toHaveBeenCalledWith('r1', { pausada: false }, { tipo: 'manter' });
     });

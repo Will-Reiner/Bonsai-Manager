@@ -16,7 +16,7 @@ export class PrismaConclusaoRepository implements ConclusaoRepository {
   async findPendentesDoUsuario(ids: string[], usuarioId: string) {
     return prisma.agenda.findMany({
       where: { id: { in: ids }, status: 'PENDENTE', planta: { usuarioId } },
-      select: { id: true, plantaId: true, rotinaId: true },
+      select: { id: true, plantaId: true, atividadeId: true, rotinaId: true },
     });
   }
 
@@ -80,11 +80,17 @@ export class PrismaConclusaoRepository implements ConclusaoRepository {
     for (const r of itens) {
       const existente = await tx.rotina.findUnique({
         where: { plantaId_atividadeId: { plantaId: r.plantaId, atividadeId: r.atividadeId } },
-        select: { id: true, _count: { select: { agendas: { where: { status: 'PENDENTE' } } } } },
+        select: {
+          id: true,
+          pausada: true,
+          dataFim: true,
+          _count: { select: { agendas: { where: { status: 'PENDENTE' } } } },
+        },
       });
-      // Rotina existente com pendente: a nova tarefa fica avulsa (a rotina já tem a sua)
+      // Rotina existente com pendente, pausada ou encerrada antes da data: a nova tarefa fica avulsa
+      // (não reativa a rotina nem cria tarefa depois da data final dela)
       const rotinaId = existente
-        ? existente._count.agendas
+        ? existente._count.agendas || existente.pausada || (existente.dataFim && existente.dataFim < r.dataAgendada)
           ? undefined
           : existente.id
         : (
@@ -216,6 +222,7 @@ export class PrismaConclusaoRepository implements ConclusaoRepository {
               status: 'CONCLUIDO',
               dataConcluida: plano.dataConcluida,
               ...(a.atividadeId ? { atividadeId: a.atividadeId } : {}),
+              ...(a.desvincularRotina ? { rotinaId: null } : {}),
               ...(a.detalhes !== undefined ? { detalhes: a.detalhes } : {}),
               ...(a.observacaoFutura !== undefined ? { observacaoFutura: a.observacaoFutura } : {}),
             },

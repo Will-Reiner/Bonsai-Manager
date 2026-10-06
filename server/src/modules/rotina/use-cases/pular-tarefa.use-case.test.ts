@@ -17,8 +17,9 @@ describe('PularTarefaUseCase', () => {
   afterEach(() => jest.useRealTimers());
 
   it('marca como pulada e agenda a próxima a partir de hoje', async () => {
-    await new PularTarefaUseCase(repo).execute('ag-1', 'u');
+    const r = await new PularTarefaUseCase(repo).execute('ag-1', 'u');
 
+    expect(r).toEqual({ proxima: true });
     expect(repo.findPendenteComRotina).toHaveBeenCalledWith('ag-1', 'u');
     expect(repo.pular).toHaveBeenCalledWith('ag-1', {
       rotinaId: 'r1',
@@ -30,7 +31,8 @@ describe('PularTarefaUseCase', () => {
 
   it('depois da data final, só pula', async () => {
     repo.findPendenteComRotina.mockResolvedValue({ id: 'ag-1', rotina: { ...rotina, dataFim: new Date('2026-10-06T00:00:00.000Z') } });
-    await new PularTarefaUseCase(repo).execute('ag-1', 'u');
+    const r = await new PularTarefaUseCase(repo).execute('ag-1', 'u');
+    expect(r).toEqual({ proxima: false });
     expect(repo.pular).toHaveBeenCalledWith('ag-1', null);
   });
 

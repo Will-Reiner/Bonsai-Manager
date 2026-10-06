@@ -76,6 +76,7 @@ export class PrismaRotinaRepository implements RotinaRepository {
     });
     if (!r) return null;
     const { agendas, ...rotina } = r;
+    const pendente = agendas.find((a) => a.status === 'PENDENTE');
     const conclusoes = agendas
       .filter((a) => a.status === 'CONCLUIDO')
       .map((a) => (a.dataConcluida ?? a.dataAgendada).getTime());
@@ -86,7 +87,8 @@ export class PrismaRotinaRepository implements RotinaRepository {
       intervaloDias: rotina.intervaloDias,
       dataFim: rotina.dataFim,
       pausada: rotina.pausada,
-      pendenteId: agendas.find((a) => a.status === 'PENDENTE')?.id ?? null,
+      pendenteId: pendente?.id ?? null,
+      pendenteData: pendente?.dataAgendada ?? null,
       ultimaConclusao: conclusoes.length ? new Date(Math.max(...conclusoes)) : null,
     };
   }

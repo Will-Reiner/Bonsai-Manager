@@ -17,6 +17,8 @@ export interface AtualizarRotinaDTO {
 
 export interface RotinaInfo extends RotinaBase {
   pendenteId: string | null;
+  /** Data da pendente atual (null se não há). */
+  pendenteData: Date | null;
   ultimaConclusao: Date | null;
 }
 

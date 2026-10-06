@@ -17,7 +17,7 @@ describe('ConcluirAgendasUseCase', () => {
   beforeEach(() => {
     jest.useFakeTimers().setSystemTime(AGORA);
     repo = {
-      findPendentesDoUsuario: jest.fn().mockResolvedValue([{ id: 'ag-1', plantaId: 'pl-1', rotinaId: null }]),
+      findPendentesDoUsuario: jest.fn().mockResolvedValue([{ id: 'ag-1', plantaId: 'pl-1', atividadeId: 'at-1', rotinaId: null }]),
       findPendentesParaReconciliar: jest.fn(),
       atividadesExistem: jest.fn().mockResolvedValue(true),
       getRevisaoDias: jest.fn().mockResolvedValue(30),
@@ -47,8 +47,8 @@ describe('ConcluirAgendasUseCase', () => {
 
   it('ajuste por planta sobrescreve os campos comuns e vincula fotos', async () => {
     repo.findPendentesDoUsuario.mockResolvedValue([
-      { id: 'ag-1', plantaId: 'pl-1', rotinaId: null },
-      { id: 'ag-2', plantaId: 'pl-2', rotinaId: null },
+      { id: 'ag-1', plantaId: 'pl-1', atividadeId: 'at-1', rotinaId: null },
+      { id: 'ag-2', plantaId: 'pl-2', atividadeId: 'at-1', rotinaId: null },
     ]);
     await useCase.execute(
       {
@@ -119,8 +119,8 @@ describe('ConcluirAgendasUseCase', () => {
 
   it('avalia a revisão uma vez por planta distinta', async () => {
     repo.findPendentesDoUsuario.mockResolvedValue([
-      { id: 'ag-1', plantaId: 'pl-1', rotinaId: null },
-      { id: 'ag-2', plantaId: 'pl-1', rotinaId: null },
+      { id: 'ag-1', plantaId: 'pl-1', atividadeId: 'at-1', rotinaId: null },
+      { id: 'ag-2', plantaId: 'pl-1', atividadeId: 'at-1', rotinaId: null },
     ]);
     await useCase.execute({ ...base, itens: [{ agendaId: 'ag-1' }, { agendaId: 'ag-2' }] }, 'user-1');
     expect(repo.proximasPendentes).toHaveBeenCalledTimes(1);
@@ -142,7 +142,7 @@ describe('ConcluirAgendasUseCase', () => {
 
   describe('rotinas', () => {
     it('concluir tarefa de rotina agenda a próxima a partir da data feita e dispensa a revisão', async () => {
-      repo.findPendentesDoUsuario.mockResolvedValue([{ id: 'ag-1', plantaId: 'pl-1', rotinaId: 'r1' }]);
+      repo.findPendentesDoUsuario.mockResolvedValue([{ id: 'ag-1', plantaId: 'pl-1', atividadeId: 'at-1', rotinaId: 'r1' }]);
       repo.estadoRotinas.mockResolvedValue([
         { id: 'r1', plantaId: 'pl-1', atividadeId: 'at-1', intervaloDias: 14, dataFim: null, pausada: false, temPendente: false },
       ]);
@@ -154,6 +154,33 @@ describe('ConcluirAgendasUseCase', () => {
         { rotinaId: 'r1', plantaId: 'pl-1', atividadeId: 'at-1', dataAgendada: emDias(14) },
       ]);
       expect(plano().revisoes).toEqual([]);
+    });
+
+    const rotinaR1 = { id: 'r1', plantaId: 'pl-1', atividadeId: 'at-1', intervaloDias: 14, dataFim: null, pausada: false, temPendente: false };
+    const feitaHa3Dias = { ...base, dataConcluida: emDias(-3).toISOString() };
+
+    it('trocar a atividade de tarefa de rotina desvincula a tarefa e a rotina segue a partir de hoje', async () => {
+      repo.findPendentesDoUsuario.mockResolvedValue([{ id: 'ag-1', plantaId: 'pl-1', atividadeId: 'at-1', rotinaId: 'r1' }]);
+      repo.estadoRotinas.mockResolvedValue([rotinaR1]);
+
+      await useCase.execute({ ...feitaHa3Dias, atividadeId: 'at-x' }, 'user-1');
+
+      expect(plano().atualizacoes[0].desvincularRotina).toBe(true);
+      expect(plano().criarPendentes).toEqual([
+        { rotinaId: 'r1', plantaId: 'pl-1', atividadeId: 'at-1', dataAgendada: emDias(14) },
+      ]);
+    });
+
+    it('mesma atividade mantém o vínculo e a próxima conta da data feita', async () => {
+      repo.findPendentesDoUsuario.mockResolvedValue([{ id: 'ag-1', plantaId: 'pl-1', atividadeId: 'at-1', rotinaId: 'r1' }]);
+      repo.estadoRotinas.mockResolvedValue([rotinaR1]);
+
+      await useCase.execute({ ...feitaHa3Dias, atividadeId: 'at-1' }, 'user-1');
+
+      expect(plano().atualizacoes[0].desvincularRotina).toBeUndefined();
+      expect(plano().criarPendentes).toEqual([
+        { rotinaId: 'r1', plantaId: 'pl-1', atividadeId: 'at-1', dataAgendada: emDias(11) },
+      ]);
     });
 
     it('tarefa avulsa não consulta rotinas', async () => {

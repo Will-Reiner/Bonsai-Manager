@@ -97,8 +97,7 @@ export const rotinaController = {
   pular: async (req: Request, res: Response) => {
     try {
       const { params } = agendaIdSchema.parse({ params: req.params });
-      await pular.execute(params.id, req.user!.userId);
-      res.status(204).send();
+      res.json(await pular.execute(params.id, req.user!.userId));
     } catch (error) {
       responderErroRotina(res, error, 'pular tarefa');
     }

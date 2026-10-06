@@ -87,7 +87,14 @@ export interface NovaPendente {
 export interface PlanoConclusao {
   usuarioId: string;
   dataConcluida: Date;
-  atualizacoes: { agendaId: string; atividadeId?: string; detalhes?: string; observacaoFutura?: string }[];
+  atualizacoes: {
+    agendaId: string;
+    atividadeId?: string;
+    detalhes?: string;
+    observacaoFutura?: string;
+    /** Tarefa de rotina concluída como outra atividade: deixa de pertencer à rotina. */
+    desvincularRotina?: boolean;
+  }[];
   fotos: { agendaId: string; plantaId: string; caminhoArquivo: string }[];
   criarConcluidas: { plantaId: string; atividadeId: string; data: Date; detalhes?: string }[];
   criarPendentes: NovaPendente[];
@@ -137,7 +144,10 @@ export interface ResultadoConclusao {
 
 export interface ConclusaoRepository {
   /** Agendas PENDENTE do usuário dentre os ids informados. */
-  findPendentesDoUsuario(ids: string[], usuarioId: string): Promise<{ id: string; plantaId: string; rotinaId: string | null }[]>;
+  findPendentesDoUsuario(
+    ids: string[],
+    usuarioId: string,
+  ): Promise<{ id: string; plantaId: string; atividadeId: string; rotinaId: string | null }[]>;
   /** Agendas PENDENTE do usuário dentre os ids, com planta, atividade e data. */
   findPendentesParaReconciliar(ids: string[], usuarioId: string): Promise<PendenteReconciliavel[]>;
   atividadesExistem(ids: string[]): Promise<boolean>;
