@@ -42,6 +42,7 @@ export async function planejarSeguimento(
               atividadeId: p.atividadeId,
               intervaloDias: p.repetir.intervaloDias,
               dataFim: p.repetir.dataFim ? new Date(p.repetir.dataFim) : null,
+              estacoes: p.repetir.estacoes ?? [],
               dataAgendada: new Date(p.dataAgendada),
             },
           ]

@@ -1,5 +1,6 @@
 import { AgendaStatus } from '@prisma/client';
 import { PendenteReconciliavel } from './dominio/reconciliar';
+import { Estacao } from './dominio/estacoes';
 import { RotinaEstado } from './dominio/rotina';
 
 export interface CreateAgendaDTO {
@@ -55,7 +56,7 @@ export const PREF_REVISAO_DIAS = 'revisao_automatica_dias';
 export interface Proximo {
   atividadeId: string;
   dataAgendada: string;
-  repetir?: { intervaloDias: number; dataFim?: string };
+  repetir?: { intervaloDias: number; dataFim?: string; estacoes?: Estacao[] };
 }
 
 export interface NovaRotinaDePasso {
@@ -63,6 +64,7 @@ export interface NovaRotinaDePasso {
   atividadeId: string;
   intervaloDias: number;
   dataFim: Date | null;
+  estacoes: Estacao[];
   dataAgendada: Date;
 }
 

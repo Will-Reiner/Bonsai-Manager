@@ -25,10 +25,12 @@ export class CriarRotinasUseCase {
     const ocupado = new Set(conflitos.map((c) => `${c.plantaId}|${c.atividadeId}`));
     const detalhes = dto.detalhes?.trim() || undefined;
 
+    const estacoes = [...new Set(dto.estacoes ?? [])];
+
     const novas = plantaIds.flatMap((plantaId) =>
       atividadeIds
         .filter((atividadeId) => !ocupado.has(`${plantaId}|${atividadeId}`))
-        .map((atividadeId) => ({ plantaId, atividadeId, intervaloDias: dto.intervaloDias, dataFim, primeiraData, detalhes })),
+        .map((atividadeId) => ({ plantaId, atividadeId, intervaloDias: dto.intervaloDias, dataFim, estacoes, primeiraData, detalhes })),
     );
     const criadas = novas.length ? await this.repo.criar(novas) : [];
     return { criadas, conflitos };

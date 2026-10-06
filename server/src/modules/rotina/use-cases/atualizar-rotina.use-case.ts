@@ -12,6 +12,7 @@ export class AtualizarRotinaUseCase {
     const regra = {
       intervaloDias: dto.intervaloDias ?? rotina.intervaloDias,
       dataFim: dto.dataFim === undefined ? rotina.dataFim : dto.dataFim ? new Date(dto.dataFim) : null,
+      estacoes: dto.estacoes ? [...new Set(dto.estacoes)] : (rotina.estacoes ?? []),
     };
 
     let ajuste: AjustePendente = { tipo: 'manter' };

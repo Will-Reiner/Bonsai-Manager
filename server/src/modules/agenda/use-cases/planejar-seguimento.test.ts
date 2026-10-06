@@ -64,7 +64,7 @@ describe('planejarSeguimento', () => {
       usuarioId: 'u',
       plantas: ['p1'],
       proximos: [
-        { atividadeId: 'at', dataAgendada: '2026-11-01T12:00:00.000Z', repetir: { intervaloDias: 14, dataFim: '2027-03-01T12:00:00.000Z' } },
+        { atividadeId: 'at', dataAgendada: '2026-11-01T12:00:00.000Z', repetir: { intervaloDias: 14, dataFim: '2027-03-01T12:00:00.000Z', estacoes: ['PRIMAVERA'] } },
         { atividadeId: 'at2', dataAgendada: '2026-11-02T12:00:00.000Z', repetir: { intervaloDias: 7 } },
       ],
       excluir: [],
@@ -72,8 +72,8 @@ describe('planejarSeguimento', () => {
 
     expect(r.criarPendentes).toEqual([]);
     expect(r.criarRotinas).toEqual([
-      { plantaId: 'p1', atividadeId: 'at', intervaloDias: 14, dataFim: new Date('2027-03-01T12:00:00.000Z'), dataAgendada: new Date('2026-11-01T12:00:00.000Z') },
-      { plantaId: 'p1', atividadeId: 'at2', intervaloDias: 7, dataFim: null, dataAgendada: new Date('2026-11-02T12:00:00.000Z') },
+      { plantaId: 'p1', atividadeId: 'at', intervaloDias: 14, dataFim: new Date('2027-03-01T12:00:00.000Z'), estacoes: ['PRIMAVERA'], dataAgendada: new Date('2026-11-01T12:00:00.000Z') },
+      { plantaId: 'p1', atividadeId: 'at2', intervaloDias: 7, dataFim: null, estacoes: [], dataAgendada: new Date('2026-11-02T12:00:00.000Z') },
     ]);
     expect(r.revisoes).toEqual([]);
   });

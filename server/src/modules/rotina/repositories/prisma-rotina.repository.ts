@@ -1,5 +1,6 @@
 import { Prisma } from '@prisma/client';
 import { prisma } from '../../../lib/prisma';
+import { Estacao } from '../../agenda/dominio/estacoes';
 import { ProximaDeRotina } from '../../agenda/dominio/rotina';
 import { AjustePendente, NovaRotina, RotinaRepository } from '../rotina.types';
 
@@ -36,7 +37,7 @@ export class PrismaRotinaRepository implements RotinaRepository {
         const criadas = [];
         for (const n of itens) {
           const rotina = await tx.rotina.create({
-            data: { plantaId: n.plantaId, atividadeId: n.atividadeId, intervaloDias: n.intervaloDias, dataFim: n.dataFim },
+            data: { plantaId: n.plantaId, atividadeId: n.atividadeId, intervaloDias: n.intervaloDias, dataFim: n.dataFim, estacoes: n.estacoes },
           });
           await tx.agenda.create({
             data: {
@@ -86,6 +87,7 @@ export class PrismaRotinaRepository implements RotinaRepository {
       atividadeId: rotina.atividadeId,
       intervaloDias: rotina.intervaloDias,
       dataFim: rotina.dataFim,
+      estacoes: rotina.estacoes,
       pausada: rotina.pausada,
       pendenteId: pendente?.id ?? null,
       pendenteData: pendente?.dataAgendada ?? null,
@@ -95,7 +97,7 @@ export class PrismaRotinaRepository implements RotinaRepository {
 
   async atualizar(
     id: string,
-    dados: { intervaloDias?: number; dataFim?: Date | null; pausada?: boolean },
+    dados: { intervaloDias?: number; dataFim?: Date | null; estacoes?: Estacao[]; pausada?: boolean },
     ajuste: AjustePendente,
   ) {
     return prisma.$transaction(async (tx: Prisma.TransactionClient) => {
@@ -126,7 +128,7 @@ export class PrismaRotinaRepository implements RotinaRepository {
       where: { id: agendaId, status: 'PENDENTE', planta: { usuarioId } },
       select: {
         id: true,
-        rotina: { select: { id: true, plantaId: true, atividadeId: true, intervaloDias: true, dataFim: true, pausada: true } },
+        rotina: { select: { id: true, plantaId: true, atividadeId: true, intervaloDias: true, dataFim: true, pausada: true, estacoes: true } },
       },
     });
   }

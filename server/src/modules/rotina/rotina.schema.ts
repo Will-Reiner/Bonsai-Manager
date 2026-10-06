@@ -7,12 +7,17 @@ export const intervaloDiasSchema = z
   .min(1, { message: 'O intervalo mínimo é 1 dia.' })
   .max(3650, { message: 'O intervalo máximo é 3650 dias.' });
 
+export const estacoesSchema = z
+  .array(z.enum(['PRIMAVERA', 'VERAO', 'OUTONO', 'INVERNO'], { message: 'Estação inválida.' }))
+  .max(4);
+
 export const criarRotinasSchema = z.object({
   body: z.object({
     plantaIds: z.array(uuid('ID de planta inválido.')).min(1, { message: 'Informe ao menos uma planta.' }).max(200),
     atividadeIds: z.array(uuid('ID de atividade inválido.')).min(1, { message: 'Informe ao menos um cuidado.' }).max(20),
     intervaloDias: intervaloDiasSchema,
     dataFim: z.string().datetime().optional(),
+    estacoes: estacoesSchema.optional(),
     primeiraData: z.string().datetime().optional(),
     detalhes: z.string().max(2000, { message: 'Observação muito longa.' }).optional(),
   }),
@@ -25,6 +30,7 @@ export const atualizarRotinaSchema = z.object({
   body: z.object({
     intervaloDias: intervaloDiasSchema.optional(),
     dataFim: z.string().datetime().nullable().optional(),
+    estacoes: estacoesSchema.optional(),
   }),
 });
 

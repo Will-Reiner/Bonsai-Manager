@@ -52,7 +52,7 @@ describe('use cases de rotina', () => {
       expect(repo.contarPlantasDoUsuario).toHaveBeenCalledWith(['p1', 'p2'], 'u');
       expect(repo.existentes).toHaveBeenCalledWith(['p1', 'p2'], ['adubo']);
       expect(repo.criar).toHaveBeenCalledWith([
-        { plantaId: 'p1', atividadeId: 'adubo', intervaloDias: 14, dataFim: null, primeiraData: emDias(14), detalhes: 'bioplant' },
+        { plantaId: 'p1', atividadeId: 'adubo', intervaloDias: 14, dataFim: null, estacoes: [], primeiraData: emDias(14), detalhes: 'bioplant' },
       ]);
       expect(r.conflitos).toEqual([{ plantaId: 'p2', atividadeId: 'adubo' }]);
     });
@@ -60,11 +60,11 @@ describe('use cases de rotina', () => {
     it('usa a primeira data e a data final informadas', async () => {
       repo.contarPlantasDoUsuario.mockResolvedValue(1);
       await useCase().execute(
-        { plantaIds: ['p1'], atividadeIds: ['adubo'], intervaloDias: 7, primeiraData: emDias(2).toISOString(), dataFim: emDias(60).toISOString() },
+        { plantaIds: ['p1'], atividadeIds: ['adubo'], intervaloDias: 7, primeiraData: emDias(2).toISOString(), dataFim: emDias(60).toISOString(), estacoes: ['PRIMAVERA', 'VERAO', 'VERAO'] },
         'u',
       );
       expect(repo.criar).toHaveBeenCalledWith([
-        { plantaId: 'p1', atividadeId: 'adubo', intervaloDias: 7, dataFim: emDias(60), primeiraData: emDias(2), detalhes: undefined },
+        { plantaId: 'p1', atividadeId: 'adubo', intervaloDias: 7, dataFim: emDias(60), estacoes: ['PRIMAVERA', 'VERAO'], primeiraData: emDias(2), detalhes: undefined },
       ]);
     });
 
@@ -103,30 +103,40 @@ describe('use cases de rotina', () => {
     it('move a pendente para a última conclusão + novo intervalo', async () => {
       repo.findDoUsuario.mockResolvedValue(info({ ultimaConclusao: emDias(-2), pendenteData: emDias(12) }));
       await useCase().execute('r1', { intervaloDias: 10 }, 'u');
-      expect(repo.atualizar).toHaveBeenCalledWith('r1', { intervaloDias: 10, dataFim: null }, { tipo: 'mover', agendaId: 'ag-1', data: emDias(8) });
+      expect(repo.atualizar).toHaveBeenCalledWith('r1', { intervaloDias: 10, dataFim: null, estacoes: [] }, { tipo: 'mover', agendaId: 'ag-1', data: emDias(8) });
     });
 
     it('conclusão antiga (rotina retomada) ancora na pendente atual', async () => {
       repo.findDoUsuario.mockResolvedValue(info({ ultimaConclusao: emDias(-90), pendenteData: emDias(14) }));
       await useCase().execute('r1', { intervaloDias: 21 }, 'u');
-      expect(repo.atualizar).toHaveBeenCalledWith('r1', { intervaloDias: 21, dataFim: null }, { tipo: 'mover', agendaId: 'ag-1', data: emDias(21) });
+      expect(repo.atualizar).toHaveBeenCalledWith('r1', { intervaloDias: 21, dataFim: null, estacoes: [] }, { tipo: 'mover', agendaId: 'ag-1', data: emDias(21) });
     });
 
     it('sem conclusão, conta a partir de hoje; sem pendente, cria', async () => {
       repo.findDoUsuario.mockResolvedValue(info({ pendenteId: null, pendenteData: null }));
       await useCase().execute('r1', {}, 'u');
-      expect(repo.atualizar).toHaveBeenCalledWith('r1', { intervaloDias: 14, dataFim: null }, { tipo: 'criar', data: emDias(14) });
+      expect(repo.atualizar).toHaveBeenCalledWith('r1', { intervaloDias: 14, dataFim: null, estacoes: [] }, { tipo: 'criar', data: emDias(14) });
     });
 
     it('data final antes da próxima cancela a pendente', async () => {
       await useCase().execute('r1', { dataFim: emDias(5).toISOString() }, 'u');
-      expect(repo.atualizar).toHaveBeenCalledWith('r1', { intervaloDias: 14, dataFim: emDias(5) }, { tipo: 'cancelar', agendaId: 'ag-1' });
+      expect(repo.atualizar).toHaveBeenCalledWith('r1', { intervaloDias: 14, dataFim: emDias(5), estacoes: [] }, { tipo: 'cancelar', agendaId: 'ag-1' });
     });
 
     it('rotina pausada só muda a regra', async () => {
       repo.findDoUsuario.mockResolvedValue(info({ pausada: true, pendenteId: null, pendenteData: null }));
       await useCase().execute('r1', { intervaloDias: 30, dataFim: null }, 'u');
-      expect(repo.atualizar).toHaveBeenCalledWith('r1', { intervaloDias: 30, dataFim: null }, { tipo: 'manter' });
+      expect(repo.atualizar).toHaveBeenCalledWith('r1', { intervaloDias: 30, dataFim: null, estacoes: [] }, { tipo: 'manter' });
+    });
+
+    it('mudar as estações recalcula a próxima', async () => {
+      // base = pendente − intervalo = 2026-10-05; +14 = 19/10 (primavera); só verão → 21/12
+      await useCase().execute('r1', { estacoes: ['VERAO'] }, 'u');
+      expect(repo.atualizar).toHaveBeenCalledWith(
+        'r1',
+        { intervaloDias: 14, dataFim: null, estacoes: ['VERAO'] },
+        { tipo: 'mover', agendaId: 'ag-1', data: new Date('2026-12-21T15:00:00.000Z') },
+      );
     });
 
     it('rotina de outro usuário ou inexistente', async () => {

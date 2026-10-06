@@ -37,6 +37,8 @@ export class PrismaConclusaoRepository implements ConclusaoRepository {
         intervaloDias: true,
         dataFim: true,
         pausada: true,
+        estacoes: true,
+        revisao: true,
         _count: { select: { agendas: { where: { status: 'PENDENTE', id: { notIn: excluirAgendaIds } } } } },
       },
     });
@@ -95,7 +97,7 @@ export class PrismaConclusaoRepository implements ConclusaoRepository {
           : existente.id
         : (
             await tx.rotina.create({
-              data: { plantaId: r.plantaId, atividadeId: r.atividadeId, intervaloDias: r.intervaloDias, dataFim: r.dataFim },
+              data: { plantaId: r.plantaId, atividadeId: r.atividadeId, intervaloDias: r.intervaloDias, dataFim: r.dataFim, estacoes: r.estacoes },
             })
           ).id;
       criadas.push(

@@ -1,3 +1,4 @@
+import { Estacao } from '../agenda/dominio/estacoes';
 import { ProximaDeRotina, RotinaBase } from '../agenda/dominio/rotina';
 
 export interface CriarRotinasDTO {
@@ -5,6 +6,7 @@ export interface CriarRotinasDTO {
   atividadeIds: string[];
   intervaloDias: number;
   dataFim?: string;
+  estacoes?: Estacao[];
   /** Data da 1ª tarefa; padrão = hoje + intervalo. */
   primeiraData?: string;
   detalhes?: string;
@@ -13,6 +15,7 @@ export interface CriarRotinasDTO {
 export interface AtualizarRotinaDTO {
   intervaloDias?: number;
   dataFim?: string | null;
+  estacoes?: Estacao[];
 }
 
 export interface RotinaInfo extends RotinaBase {
@@ -27,6 +30,7 @@ export interface NovaRotina {
   atividadeId: string;
   intervaloDias: number;
   dataFim: Date | null;
+  estacoes: Estacao[];
   primeiraData: Date;
   detalhes?: string;
 }
@@ -50,7 +54,7 @@ export interface RotinaRepository {
   /** Atualiza a rotina e ajusta a pendente numa transação. */
   atualizar(
     id: string,
-    dados: { intervaloDias?: number; dataFim?: Date | null; pausada?: boolean },
+    dados: { intervaloDias?: number; dataFim?: Date | null; estacoes?: Estacao[]; pausada?: boolean },
     ajuste: AjustePendente,
   ): Promise<any>;
   /** Cancela a pendente e apaga a rotina (o histórico fica, sem vínculo). */

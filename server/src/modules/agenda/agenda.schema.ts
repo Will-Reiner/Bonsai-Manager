@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { estacoesSchema } from '../rotina/rotina.schema';
 
 // O Enum do Prisma é replicado aqui para validação
 const AgendaStatus = z.enum(['PENDENTE', 'CONCLUIDO', 'CANCELADO']);
@@ -74,6 +75,7 @@ const proximoSchema = z.object({
         .min(1, { message: 'O intervalo mínimo é 1 dia.' })
         .max(3650, { message: 'O intervalo máximo é 3650 dias.' }),
       dataFim: z.string().datetime().optional(),
+      estacoes: estacoesSchema.optional(),
     })
     .optional(),
 });
