@@ -1,10 +1,11 @@
 import { ConclusaoRepository, RegistrarCuidadosDTO } from '../agenda.types';
+import { reconciliar } from '../dominio/reconciliar';
 import { planejarSeguimento } from './planejar-seguimento';
 
 /** Folga para o fuso do aparelho: registra o que já foi feito, não o futuro. */
 const FOLGA_FUTURO_MS = 86_400_000;
 
-/** Registra cuidados já feitos (com fotos) em várias plantas e agenda o que vem depois. */
+/** Registra cuidados já feitos (com fotos) em várias plantas, conclui as pendentes escolhidas e agenda o que vem depois. */
 export class RegistrarCuidadosUseCase {
   constructor(private repo: ConclusaoRepository) {}
 
@@ -23,22 +24,25 @@ export class RegistrarCuidadosUseCase {
     if (!(await this.repo.atividadesExistem(atividadeIds))) throw new Error('Atividade não encontrada.');
 
     const data = new Date(dto.data);
-    const seguimento = await planejarSeguimento(this.repo, { usuarioId, plantas, proximos, excluir: [] });
-
-    return this.repo.registrar({
-      usuarioId,
-      data,
-      cuidados: dto.plantas.map((p) => ({
-        plantaId: p.plantaId,
-        atividadeIds: [...new Set(p.atividadeIds)],
-        detalhes: p.detalhes,
-        observacaoFutura: p.observacaoFutura,
-        fotos: (p.fotos ?? []).map((f) => ({
-          caminhoArquivo: f.caminhoArquivo,
-          dataCaptura: f.dataCaptura ? new Date(f.dataCaptura) : data,
-        })),
+    const cuidados = dto.plantas.map((p) => ({
+      plantaId: p.plantaId,
+      atividadeIds: [...new Set(p.atividadeIds)],
+      detalhes: p.detalhes,
+      observacaoFutura: p.observacaoFutura,
+      fotos: (p.fotos ?? []).map((f) => ({
+        caminhoArquivo: f.caminhoArquivo,
+        dataCaptura: f.dataCaptura ? new Date(f.dataCaptura) : data,
       })),
-      ...seguimento,
-    });
+    }));
+
+    const concluirIds = [...new Set(dto.concluirAgendaIds ?? [])];
+    const pendentes = concluirIds.length ? await this.repo.findPendentesParaReconciliar(concluirIds, usuarioId) : [];
+    if (pendentes.length !== concluirIds.length) throw new Error('Acesso negado ou agendamento não encontrado.');
+    const { absorver, cancelar } = reconciliar(cuidados, pendentes);
+
+    // As pendentes concluídas aqui não podem "segurar" a Revisão geral
+    const seguimento = await planejarSeguimento(this.repo, { usuarioId, plantas, proximos, excluir: concluirIds });
+
+    return this.repo.registrar({ usuarioId, data, cuidados, absorver, cancelar, ...seguimento });
   }
 }

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation, useNavigate, useSearchParams } from 'react-router';
 import { useQueryClient } from '@tanstack/react-query';
 import { Camera, ChevronDown, ImagePlus } from 'lucide-react';
@@ -11,9 +11,10 @@ import { ProximosPassos, type Proximo } from '@/components/care/ProximosPassos';
 import { useToast } from '@/context/ToastContext';
 import { errorMessage } from '@/lib/api';
 import { agendasApi } from '@/lib/endpoints';
-import { fromDateInput, plantaTitulo, toDateInput } from '@/lib/format';
+import { diasAte, fromDateInput, plantaRotulo, plantaTitulo, toDateInput } from '@/lib/format';
 import { ehNova, useLoteFotos } from '@/lib/loteFotos';
-import { keys, usePlantas } from '@/lib/queries';
+import { keys, useAgendas, usePlantas } from '@/lib/queries';
+import { candidatasReconciliacao, rotuloUltima, textoPrazo, ultimasPorPlanta } from '@/lib/cuidados';
 
 interface Ajuste {
   /** undefined = segue os tipos gerais */
@@ -35,6 +36,7 @@ export function RegistrarPage() {
   const toast = useToast();
   const plantas = usePlantas();
   const lote = useLoteFotos(plantas.data);
+  const agendas = useAgendas();
 
   const [fase, setFase] = useState<Fase>('inicio');
   const [triagem, setTriagem] = useState({ inicio: 0, voltarDireto: false });
@@ -47,6 +49,9 @@ export function RegistrarPage() {
   const [ajustes, setAjustes] = useState<Record<string, Ajuste>>({});
   const [aberta, setAberta] = useState<string | null>(null);
   const [proximos, setProximos] = useState<Proximo[]>([]);
+  /** Candidatas que o usuário desmarcou (as demais são concluídas pelo registro). */
+  const [desmarcadas, setDesmarcadas] = useState<string[]>([]);
+  const ultimas = useMemo(() => ultimasPorPlanta(agendas.data ?? []), [agendas.data]);
   const cameraRef = useRef<HTMLInputElement>(null);
   const galeriaRef = useRef<HTMLInputElement>(null);
   const montadoRef = useRef(true);
@@ -69,6 +74,15 @@ export function RegistrarPage() {
   const ajuste = (pid: string) => ajustes[pid] ?? AJUSTE_VAZIO;
   const setAjuste = (pid: string, patch: Partial<Ajuste>) => setAjustes((a) => ({ ...a, [pid]: { ...ajuste(pid), ...patch } }));
   const tiposDe = (pid: string) => ajuste(pid).atividadeIds ?? atividadeIds;
+  // Plantas novas (criadas só ao salvar) não têm histórico nem tarefas
+  const reais = tocadas.filter((pid) => !ehNova(pid));
+  const dicaPara = (pids: string[]) =>
+    agendas.data && pids.length ? (aid: string) => rotuloUltima(pids.map((p) => ultimas.get(p)?.get(aid))) : undefined;
+  const candidatas = candidatasReconciliacao(
+    agendas.data ?? [],
+    reais.map((pid) => ({ plantaId: pid, atividadeIds: tiposDe(pid) })),
+  );
+  const concluirAgendaIds = candidatas.filter((a) => !desmarcadas.includes(a.id)).map((a) => a.id);
 
   function escolherArquivos(files: FileList | null) {
     const lista = [...(files ?? [])].filter((f) => f.type.startsWith('image/'));
@@ -142,19 +156,23 @@ export function RegistrarPage() {
           proximos: proximos.length
             ? proximos.map((p) => ({ atividadeId: p.atividadeId, dataAgendada: fromDateInput(p.data) }))
             : undefined,
+          concluirAgendaIds: concluirAgendaIds.length ? concluirAgendaIds : undefined,
         });
         queryClient.invalidateQueries({ queryKey: keys.agendas });
         queryClient.invalidateQueries({ queryKey: ['fotos'] });
         queryClient.invalidateQueries({ queryKey: keys.plantas });
         const n = resultado.revisoes.length;
-        toast(
-          `Cuidado registrado 🌿${tocadas.length > 1 ? ` em ${tocadas.length} plantas` : ''}${
-            n ? ` · ${n === 1 ? 'Revisão geral agendada' : `${n} revisões agendadas`}` : ''
-          }`,
-        );
+        const k = concluirAgendaIds.length;
+        const extras = [
+          n ? (n === 1 ? 'Revisão geral agendada' : `${n} revisões agendadas`) : '',
+          k ? (k === 1 ? '1 tarefa concluída' : `${k} tarefas concluídas`) : '',
+        ].filter(Boolean);
+        toast(`Cuidado registrado 🌿${tocadas.length > 1 ? ` em ${tocadas.length} plantas` : ''}${extras.map((e) => ` · ${e}`).join('')}`);
         if (montadoRef.current) voltar();
       } catch (error) {
         toast(errorMessage(error), 'error');
+        // Candidata obsoleta (tarefa concluída/apagada em outro lugar): atualiza a lista para a nova tentativa
+        queryClient.invalidateQueries({ queryKey: keys.agendas });
         setFase('detalhes');
       } finally {
         enviandoRef.current = false;
@@ -237,7 +255,7 @@ export function RegistrarPage() {
     <div className="min-h-dvh pb-32">
       <PageHeader title="O que foi feito" back />
       <div className="mx-auto max-w-2xl space-y-6 px-4 pt-4">
-        <AtividadeChips value={atividadeIds} onChange={setAtividadeIds} label={tocadas.length > 1 ? 'Em todas as plantas' : 'Tipos de cuidado'} />
+        <AtividadeChips value={atividadeIds} onChange={setAtividadeIds} label={tocadas.length > 1 ? 'Em todas as plantas' : 'Tipos de cuidado'} dica={dicaPara(reais)} />
 
         <Field label="Quando">
           <input type="date" className="input" value={data} max={toDateInput()} onChange={(e) => setData(e.target.value)} />
@@ -280,7 +298,7 @@ export function RegistrarPage() {
                   </button>
                   {aberta === pid && (
                     <div className="space-y-3 border-t border-line p-3">
-                      <AtividadeChips value={tiposDe(pid)} onChange={(ids) => setAjuste(pid, { atividadeIds: ids })} label="O que foi feito nesta" />
+                      <AtividadeChips value={tiposDe(pid)} onChange={(ids) => setAjuste(pid, { atividadeIds: ids })} label="O que foi feito nesta" dica={dicaPara(ehNova(pid) ? [] : [pid])} />
                       {aj.atividadeIds && (
                         <button type="button" className="text-xs font-medium text-primary" onClick={() => setAjuste(pid, { atividadeIds: undefined })}>
                           Usar os cuidados gerais
@@ -311,6 +329,36 @@ export function RegistrarPage() {
             <p className="mt-2 text-xs text-muted">{lote.items.filter((i) => i.plantaId === null).length} foto(s) puladas não serão salvas.</p>
           )}
         </section>
+
+        {candidatas.length > 0 && (
+          <section>
+            <span className="label">Tarefas que serão concluídas</span>
+            <div className="space-y-2">
+              {candidatas.map((a) => {
+                const marcada = !desmarcadas.includes(a.id);
+                return (
+                  <label key={a.id} className="card flex cursor-pointer items-center gap-3 p-3">
+                    <input
+                      type="checkbox"
+                      className="size-5 shrink-0 accent-primary"
+                      checked={marcada}
+                      onChange={() => setDesmarcadas((d) => (marcada ? [...d, a.id] : d.filter((x) => x !== a.id)))}
+                    />
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate font-semibold">
+                        {a.atividade?.nome ?? 'Cuidado'} · {plantaRotulo(a.planta)}
+                      </span>
+                      <span className={`block text-xs ${diasAte(a.dataAgendada) < 0 ? 'font-semibold text-danger' : 'text-muted'}`}>
+                        {textoPrazo(a.dataAgendada)}
+                      </span>
+                    </span>
+                  </label>
+                );
+              })}
+            </div>
+            <p className="mt-2 text-xs text-muted">Desmarque se a tarefa ainda precisa ser feita.</p>
+          </section>
+        )}
 
         <ProximosPassos value={proximos} onChange={setProximos} />
       </div>

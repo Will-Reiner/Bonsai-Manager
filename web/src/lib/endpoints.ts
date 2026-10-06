@@ -72,6 +72,8 @@ export interface RegistrarInput {
     fotos?: { caminhoArquivo: string; dataCaptura?: string }[];
   }[];
   proximos?: { atividadeId: string; dataAgendada: string }[];
+  /** Pendentes que este registro conclui (escolhidas na tela). */
+  concluirAgendaIds?: string[];
 }
 
 export interface ConcluirResultado {

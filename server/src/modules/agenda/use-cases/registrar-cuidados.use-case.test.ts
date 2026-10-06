@@ -17,6 +17,7 @@ describe('RegistrarCuidadosUseCase', () => {
     jest.useFakeTimers().setSystemTime(AGORA);
     repo = {
       findPendentesDoUsuario: jest.fn(),
+      findPendentesParaReconciliar: jest.fn().mockResolvedValue([]),
       atividadesExistem: jest.fn().mockResolvedValue(true),
       getRevisaoDias: jest.fn().mockResolvedValue(30),
       proximasPendentes: jest.fn().mockResolvedValue(new Map()),
@@ -125,5 +126,46 @@ describe('RegistrarCuidadosUseCase', () => {
 
     await expect(useCase.execute(base, 'user-1')).rejects.toThrow('Atividade não encontrada.');
     expect(repo.registrar).not.toHaveBeenCalled();
+  });
+
+  describe('concluir tarefas pendentes pelo registro', () => {
+    const pendente = { id: 'ag-1', plantaId: 'p1', atividadeId: 'at-1', dataAgendada: new Date('2026-10-20T12:00:00.000Z') };
+
+    it('sem tarefas escolhidas, não busca pendentes', async () => {
+      await useCase.execute(base, 'user-1');
+
+      expect(repo.findPendentesParaReconciliar).not.toHaveBeenCalled();
+      expect(plano().absorver).toEqual([]);
+      expect(plano().cancelar).toEqual([]);
+    });
+
+    it('a tarefa escolhida é absorvida pelo registro e não conta como próxima pendente', async () => {
+      repo.findPendentesParaReconciliar.mockResolvedValue([pendente]);
+
+      await useCase.execute({ ...base, concluirAgendaIds: ['ag-1', 'ag-1'] }, 'user-1');
+
+      expect(repo.findPendentesParaReconciliar).toHaveBeenCalledWith(['ag-1'], 'user-1');
+      expect(plano().absorver).toEqual([{ agendaId: 'ag-1', plantaId: 'p1', atividadeId: 'at-1' }]);
+      expect(plano().cancelar).toEqual([]);
+      expect(repo.proximasPendentes).toHaveBeenCalledWith(['p1'], AGORA, ['ag-1']);
+    });
+
+    it('lança erro quando a tarefa não é do usuário ou não está mais pendente', async () => {
+      repo.findPendentesParaReconciliar.mockResolvedValue([]);
+
+      await expect(useCase.execute({ ...base, concluirAgendaIds: ['ag-1'] }, 'user-1')).rejects.toThrow(
+        'Acesso negado ou agendamento não encontrado.',
+      );
+      expect(repo.registrar).not.toHaveBeenCalled();
+    });
+
+    it('lança erro quando a tarefa é de outro cuidado', async () => {
+      repo.findPendentesParaReconciliar.mockResolvedValue([{ ...pendente, atividadeId: 'at-2' }]);
+
+      await expect(useCase.execute({ ...base, concluirAgendaIds: ['ag-1'] }, 'user-1')).rejects.toThrow(
+        'Tarefa não corresponde ao cuidado registrado.',
+      );
+      expect(repo.registrar).not.toHaveBeenCalled();
+    });
   });
 });

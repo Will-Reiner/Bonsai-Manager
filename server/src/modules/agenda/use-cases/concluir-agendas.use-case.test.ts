@@ -18,6 +18,7 @@ describe('ConcluirAgendasUseCase', () => {
     jest.useFakeTimers().setSystemTime(AGORA);
     repo = {
       findPendentesDoUsuario: jest.fn().mockResolvedValue([{ id: 'ag-1', plantaId: 'pl-1' }]),
+      findPendentesParaReconciliar: jest.fn(),
       atividadesExistem: jest.fn().mockResolvedValue(true),
       getRevisaoDias: jest.fn().mockResolvedValue(30),
       proximasPendentes: jest.fn().mockResolvedValue(new Map()),
