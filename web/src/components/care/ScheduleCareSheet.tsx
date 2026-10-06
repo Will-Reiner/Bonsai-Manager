@@ -35,7 +35,7 @@ export function ScheduleCareSheet({
   const atalhos = useMemo(() => atalhosDeData(), []);
   const agendas = useAgendas();
   const ultimas = useMemo(() => ultimasPorPlanta(agendas.data ?? []), [agendas.data]);
-  const dica = plantaIds.length
+  const dica = agendas.data && plantaIds.length
     ? (atividadeId: string) => rotuloUltima(plantaIds.map((p) => ultimas.get(p)?.get(atividadeId)))
     : undefined;
 

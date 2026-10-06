@@ -77,7 +77,7 @@ export function RegistrarPage() {
   // Plantas novas (criadas só ao salvar) não têm histórico nem tarefas
   const reais = tocadas.filter((pid) => !ehNova(pid));
   const dicaPara = (pids: string[]) =>
-    pids.length ? (aid: string) => rotuloUltima(pids.map((p) => ultimas.get(p)?.get(aid))) : undefined;
+    agendas.data && pids.length ? (aid: string) => rotuloUltima(pids.map((p) => ultimas.get(p)?.get(aid))) : undefined;
   const candidatas = candidatasReconciliacao(
     agendas.data ?? [],
     reais.map((pid) => ({ plantaId: pid, atividadeIds: tiposDe(pid) })),
@@ -171,6 +171,8 @@ export function RegistrarPage() {
         if (montadoRef.current) voltar();
       } catch (error) {
         toast(errorMessage(error), 'error');
+        // Candidata obsoleta (tarefa concluída/apagada em outro lugar): atualiza a lista para a nova tentativa
+        queryClient.invalidateQueries({ queryKey: keys.agendas });
         setFase('detalhes');
       } finally {
         enviandoRef.current = false;
