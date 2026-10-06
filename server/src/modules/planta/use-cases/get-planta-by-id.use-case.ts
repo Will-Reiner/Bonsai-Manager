@@ -4,6 +4,7 @@ export class GetPlantaByIdUseCase {
   constructor(private plantaRepository: PlantaRepository) {}
 
   async execute(id: string, usuarioId: string): Promise<PlantaWithEspecie> {
+    await this.plantaRepository.resolverGruposVencidos(usuarioId, new Date());
     const planta = await this.plantaRepository.findByIdAndUser(id, usuarioId);
     
     if (!planta) {

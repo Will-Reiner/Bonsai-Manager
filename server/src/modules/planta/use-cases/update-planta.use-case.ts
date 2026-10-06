@@ -1,4 +1,5 @@
 import { UpdatePlantaRequestDTO, UpdatePlantaDTO, PlantaWithEspecie, PlantaRepository, EspecieRepository } from '../types/planta.types';
+import { trocaManual } from '../dominio/grupo';
 import { LimpezaDeMidia } from '../../midia/midia.types';
 
 export class UpdatePlantaUseCase {
@@ -24,9 +25,12 @@ export class UpdatePlantaUseCase {
     }
 
     // Transformar dataAquisicao de string para Date se fornecida
+    const { grupo, ...resto } = data;
     const updateData: UpdatePlantaDTO = {
-      ...data,
+      ...resto,
       dataAquisicao: data.dataAquisicao ? new Date(data.dataAquisicao) : undefined,
+      // Grupo escolhido à mão cancela o retorno automático do transplante
+      ...(grupo !== undefined ? trocaManual(grupo) : {}),
     };
 
     // Capa atual, para remover do storage se for substituída

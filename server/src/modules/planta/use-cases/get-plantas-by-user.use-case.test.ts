@@ -15,12 +15,24 @@ describe('GetPlantasByUserUseCase', () => {
       delete: jest.fn(),
       existsByIdAndUser: jest.fn(),
       findUrlsDeMidia: jest.fn(),
+      resolverGruposVencidos: jest.fn().mockResolvedValue(undefined),
     };
 
     getPlantasByUserUseCase = new GetPlantasByUserUseCase(mockPlantaRepository);
   });
 
   describe('execute', () => {
+    it('devolve ao grupo anterior as plantas com prazo vencido antes de listar', async () => {
+      mockPlantaRepository.findManyByUser.mockResolvedValue([]);
+
+      await getPlantasByUserUseCase.execute('user-123');
+
+      expect(mockPlantaRepository.resolverGruposVencidos).toHaveBeenCalledWith('user-123', expect.any(Date));
+      expect(mockPlantaRepository.resolverGruposVencidos.mock.invocationCallOrder[0]).toBeLessThan(
+        mockPlantaRepository.findManyByUser.mock.invocationCallOrder[0],
+      );
+    });
+
     const usuarioId = 'user-123';
 
     const mockPlantas: PlantaWithEspecie[] = [

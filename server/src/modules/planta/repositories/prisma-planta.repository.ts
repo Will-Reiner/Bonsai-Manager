@@ -1,6 +1,26 @@
 import { PrismaClient } from '@prisma/client';
 import { PlantaRepository, CreatePlantaDTO, UpdatePlantaDTO, PlantaWithEspecie } from '../types/planta.types';
 
+const SELECT_PLANTA = {
+  id: true,
+  especieId: true,
+  usuarioId: true,
+  nome: true,
+  identificador: true,
+  dataAquisicao: true,
+  modoAquisicao: true,
+  observacoes: true,
+  fotoCapaUrl: true,
+  plantaPublica: true,
+  historicoPublico: true,
+  grupo: true,
+  grupoAnterior: true,
+  grupoExpiraEm: true,
+  createdAt: true,
+  updatedAt: true,
+  especie: { select: { nomeCientifico: true, nomeComum: true } },
+} as const;
+
 export class PrismaPlantaRepository implements PlantaRepository {
   constructor(private prisma: PrismaClient) {}
 
@@ -18,29 +38,9 @@ export class PrismaPlantaRepository implements PlantaRepository {
         fotoCapaUrl: data.fotoCapaUrl,
         plantaPublica: data.plantaPublica ?? false,
         historicoPublico: data.historicoPublico ?? false,
+        grupo: data.grupo,
       },
-      select: {
-        id: true,
-        especieId: true,
-        usuarioId: true,
-        nome: true,
-        identificador: true,
-        dataAquisicao: true,
-        modoAquisicao: true,
-
-        observacoes: true,
-        fotoCapaUrl: true,
-        plantaPublica: true,
-        historicoPublico: true,
-        createdAt: true,
-        updatedAt: true,
-        especie: {
-          select: {
-            nomeCientifico: true,
-            nomeComum: true,
-          },
-        },
-      },
+      select: SELECT_PLANTA,
     });
   }
 
@@ -49,28 +49,7 @@ export class PrismaPlantaRepository implements PlantaRepository {
       where: {
         usuarioId,
       },
-      select: {
-        id: true,
-        especieId: true,
-        usuarioId: true,
-        nome: true,
-        identificador: true,
-        dataAquisicao: true,
-        modoAquisicao: true,
-
-        observacoes: true,
-        fotoCapaUrl: true,
-        plantaPublica: true,
-        historicoPublico: true,
-        createdAt: true,
-        updatedAt: true,
-        especie: {
-          select: {
-            nomeCientifico: true,
-            nomeComum: true,
-          },
-        },
-      },
+      select: SELECT_PLANTA,
       orderBy: {
         createdAt: 'desc',
       },
@@ -83,28 +62,7 @@ export class PrismaPlantaRepository implements PlantaRepository {
         id,
         usuarioId,
       },
-      select: {
-        id: true,
-        especieId: true,
-        usuarioId: true,
-        nome: true,
-        identificador: true,
-        dataAquisicao: true,
-        modoAquisicao: true,
-
-        observacoes: true,
-        fotoCapaUrl: true,
-        plantaPublica: true,
-        historicoPublico: true,
-        createdAt: true,
-        updatedAt: true,
-        especie: {
-          select: {
-            nomeCientifico: true,
-            nomeComum: true,
-          },
-        },
-      },
+      select: SELECT_PLANTA,
     });
   }
 
@@ -125,29 +83,11 @@ export class PrismaPlantaRepository implements PlantaRepository {
         fotoCapaUrl: data.fotoCapaUrl,
         plantaPublica: data.plantaPublica,
         historicoPublico: data.historicoPublico,
+        grupo: data.grupo,
+        grupoAnterior: data.grupoAnterior,
+        grupoExpiraEm: data.grupoExpiraEm,
       },
-      select: {
-        id: true,
-        especieId: true,
-        usuarioId: true,
-        nome: true,
-        identificador: true,
-        dataAquisicao: true,
-        modoAquisicao: true,
-
-        observacoes: true,
-        fotoCapaUrl: true,
-        plantaPublica: true,
-        historicoPublico: true,
-        createdAt: true,
-        updatedAt: true,
-        especie: {
-          select: {
-            nomeCientifico: true,
-            nomeComum: true,
-          },
-        },
-      },
+      select: SELECT_PLANTA,
     });
   }
 
@@ -179,5 +119,13 @@ export class PrismaPlantaRepository implements PlantaRepository {
       },
     });
     return count > 0;
+  }
+
+  async resolverGruposVencidos(usuarioId: string, agora: Date): Promise<void> {
+    // Copia coluna→coluna (o Prisma não faz isso em updateMany)
+    await this.prisma.$executeRaw`
+      UPDATE "Planta"
+      SET "grupo" = "grupoAnterior", "grupoAnterior" = NULL, "grupoExpiraEm" = NULL, "updatedAt" = NOW()
+      WHERE "usuarioId" = ${usuarioId} AND "grupoExpiraEm" <= ${agora}`;
   }
 }

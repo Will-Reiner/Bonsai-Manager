@@ -17,6 +17,7 @@ describe('CreatePlantaUseCase', () => {
       delete: jest.fn(),
       existsByIdAndUser: jest.fn(),
       findUrlsDeMidia: jest.fn(),
+      resolverGruposVencidos: jest.fn().mockResolvedValue(undefined),
     };
 
     mockEspecieRepository = {

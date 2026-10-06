@@ -2,6 +2,7 @@ import { z } from 'zod';
 
 // Criamos um Zod Enum que corresponde ao Enum do Prisma
 const ModoAquisicaoEnum = z.enum(['SEMENTE', 'ESTACA', 'ALPORQUIA', 'YAMADORI', 'COMPRA']);
+const GrupoPlantaEnum = z.enum(['RECEM_TRANSPLANTADA', 'DEBILITADA', 'EM_CRESCIMENTO', 'REFINAMENTO']);
 
 // Schema para criar uma nova planta com os campos atualizados
 export const createPlantaSchema = z.object({
@@ -15,6 +16,7 @@ export const createPlantaSchema = z.object({
     fotoCapaUrl: z.string().url().optional().nullable(),
     plantaPublica: z.boolean().optional(),
     historicoPublico: z.boolean().optional(),
+    grupo: GrupoPlantaEnum.optional().nullable(),
   }),
 });
 
@@ -30,6 +32,7 @@ export const updatePlantaSchema = z.object({
     fotoCapaUrl: z.string().url().optional().nullable(),
     plantaPublica: z.boolean().optional(),
     historicoPublico: z.boolean().optional(),
+    grupo: GrupoPlantaEnum.optional().nullable(),
   }),
   params: z.object({
     id: z.string().uuid({ message: 'ID da planta inválido.' }),

@@ -1,4 +1,4 @@
-import { ModoAquisicao } from '@prisma/client';
+import { GrupoPlanta, ModoAquisicao } from '@prisma/client';
 
 // DTOs para entrada do controller (com string para data)
 export interface CreatePlantaRequestDTO {
@@ -12,6 +12,7 @@ export interface CreatePlantaRequestDTO {
   fotoCapaUrl?: string | null;
   plantaPublica?: boolean;
   historicoPublico?: boolean;
+  grupo?: GrupoPlanta | null;
 }
 
 export interface UpdatePlantaRequestDTO {
@@ -24,6 +25,7 @@ export interface UpdatePlantaRequestDTO {
   fotoCapaUrl?: string | null;
   plantaPublica?: boolean;
   historicoPublico?: boolean;
+  grupo?: GrupoPlanta | null;
 }
 
 // DTOs para o repositório (com Date)
@@ -38,6 +40,7 @@ export interface CreatePlantaDTO {
   fotoCapaUrl?: string | null;
   plantaPublica?: boolean;
   historicoPublico?: boolean;
+  grupo?: GrupoPlanta | null;
 }
 
 export interface UpdatePlantaDTO {
@@ -50,6 +53,9 @@ export interface UpdatePlantaDTO {
   fotoCapaUrl?: string | null;
   plantaPublica?: boolean;
   historicoPublico?: boolean;
+  grupo?: GrupoPlanta | null;
+  grupoAnterior?: GrupoPlanta | null;
+  grupoExpiraEm?: Date | null;
 }
 
 export interface PlantaWithEspecie {
@@ -64,6 +70,9 @@ export interface PlantaWithEspecie {
   fotoCapaUrl: string | null;
   plantaPublica: boolean;
   historicoPublico: boolean;
+  grupo?: GrupoPlanta | null;
+  grupoAnterior?: GrupoPlanta | null;
+  grupoExpiraEm?: Date | null;
   createdAt: Date;
   updatedAt: Date;
   especie: {
@@ -81,6 +90,8 @@ export interface PlantaRepository {
   existsByIdAndUser(id: string, usuarioId: string): Promise<boolean>;
   /** URLs de mídia da planta: capa + arquivos e thumbnails da galeria. */
   findUrlsDeMidia(id: string): Promise<string[]>;
+  /** Plantas do usuário com `grupoExpiraEm <= agora` voltam ao grupo anterior. */
+  resolverGruposVencidos(usuarioId: string, agora: Date): Promise<void>;
 }
 
 export interface EspecieRepository {
