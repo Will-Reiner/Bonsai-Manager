@@ -109,7 +109,8 @@ export const agendasApi = {
   /** Conclui uma ou várias tarefas (com extras, próximos passos e revisão automática). */
   concluir: (body: ConcluirInput) => data<ConcluirResultado>(api.post('/agendas/concluir', body)),
   /** "Pular esta vez" (só tarefa de rotina): a próxima conta a partir de hoje. */
-  pular: (id: string) => api.post(`/agendas/${id}/pular`),
+  /** "Pular esta vez"; `proxima` diz se a rotina ganhou a próxima tarefa. */
+  pular: (id: string) => data<{ proxima: boolean }>(api.post(`/agendas/${id}/pular`)),
 };
 
 export const rotinasApi = {

@@ -36,7 +36,10 @@ export function TarefaPage() {
       if (tipo === 'cancelar') await agendasApi.update(agenda.id, { status: 'CANCELADO' });
       else await agendasApi.remove(agenda.id);
       queryClient.invalidateQueries({ queryKey: keys.agendas });
-      toast(tipo === 'cancelar' ? 'Tarefa cancelada' : 'Tarefa excluída');
+      queryClient.invalidateQueries({ queryKey: keys.rotinas });
+      toast(
+        tipo === 'excluir' ? 'Tarefa excluída' : agenda.rotinaId ? 'Tarefa cancelada · rotina sem próxima' : 'Tarefa cancelada',
+      );
       if (window.history.state?.idx > 0) navigate(-1);
       else navigate('/', { replace: true });
     } catch (error) {
@@ -49,10 +52,10 @@ export function TarefaPage() {
     if (!agenda) return;
     setSalvando('pular');
     try {
-      await agendasApi.pular(agenda.id);
+      const { proxima } = await agendasApi.pular(agenda.id);
       queryClient.invalidateQueries({ queryKey: keys.agendas });
       queryClient.invalidateQueries({ queryKey: keys.rotinas });
-      toast('Pulada · próxima agendada');
+      toast(proxima ? 'Pulada · próxima agendada' : 'Pulada · a rotina não tem próxima');
       if (window.history.state?.idx > 0) navigate(-1);
       else navigate('/', { replace: true });
     } catch (error) {
@@ -174,7 +177,10 @@ export function TarefaPage() {
         onConfirm={() => acao('excluir')}
         loading={salvando === 'excluir'}
         title="Excluir tarefa?"
-        text="A tarefa some do histórico. Para manter o registro, use “Cancelar”."
+        text={
+          'A tarefa some do histórico. Para manter o registro, use “Cancelar”.' +
+          (agenda.rotinaId ? ' A rotina fica sem próxima tarefa — para só adiar, use “Pular esta vez”.' : '')
+        }
       />
     </div>
   );

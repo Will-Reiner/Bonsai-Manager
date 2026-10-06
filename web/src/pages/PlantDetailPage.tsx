@@ -172,7 +172,7 @@ export function PlantDetailPage() {
               ))}
             </div>
           )}
-          <button onClick={() => agendarCuidado(p.id)} className="text-sm font-semibold text-primary">
+          <button onClick={() => agendarCuidado(p.id, { repetir: true })} className="text-sm font-semibold text-primary">
             + Nova rotina
           </button>
         </Secao>

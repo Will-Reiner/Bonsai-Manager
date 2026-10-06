@@ -57,7 +57,7 @@ export function RepetirCampo({
           </label>
           {!!sugestao && sugestao !== value.intervaloDias && (
             <button type="button" className="text-xs font-medium text-primary" onClick={() => onChange({ ...value, intervaloDias: sugestao })}>
-              Você costuma fazer a cada ~{sugestao} dias — usar
+              Você costuma fazer {sugestao === 1 ? 'todo dia' : `a cada ~${sugestao} dias`} — usar
             </button>
           )}
           <label className="flex items-center gap-2 text-sm">

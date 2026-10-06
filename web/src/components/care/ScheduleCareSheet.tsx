@@ -20,11 +20,14 @@ export function ScheduleCareSheet({
   onClose,
   plantaId: plantaInicial,
   agenda,
+  repetirInicial,
 }: {
   open: boolean;
   onClose: () => void;
   plantaId?: string;
   agenda?: Agenda;
+  /** Começa com "Repetir" marcado (+ Nova rotina). */
+  repetirInicial?: boolean;
 }) {
   const queryClient = useQueryClient();
   const toast = useToast();
@@ -40,7 +43,9 @@ export function ScheduleCareSheet({
     ? (atividadeId: string) => rotuloUltima(plantaIds.map((p) => ultimas.get(p)?.get(atividadeId)))
     : undefined;
   const rotinas = useRotinas();
-  const [repetir, setRepetir] = useState<RepetirValor | null>(null);
+  const [repetir, setRepetir] = useState<RepetirValor | null>(
+    repetirInicial ? { intervaloDias: 14, dataFim: '' } : null,
+  );
   const sugestao =
     plantaIds.length === 1 && atividadeIds.length === 1
       ? medianaIntervaloDias(agendas.data ?? [], plantaIds[0], atividadeIds[0])
@@ -111,7 +116,7 @@ export function ScheduleCareSheet({
             <AtividadeChips value={atividadeIds} onChange={setAtividadeIds} dica={dica} />
             <RepetirCampo value={repetir} onChange={setRepetir} sugestao={sugestao} />
             {repetir && jaTem.length > 0 && (
-              <p className="text-xs text-danger">
+              <p className="text-xs text-muted">
                 {jaTem.length === 1
                   ? `Já existe rotina de ${jaTem[0].atividade?.nome ?? 'cuidado'} (${textoIntervalo(jaTem[0].intervaloDias)}) — ela será mantida.`
                   : `${jaTem.length} rotinas já existem e serão mantidas.`}

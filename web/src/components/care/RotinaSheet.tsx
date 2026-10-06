@@ -28,13 +28,14 @@ function RotinaForm({ rotina, onClose }: { rotina: Rotina; onClose: () => void }
   const [salvando, setSalvando] = useState<'salvar' | 'pausa' | 'proxima' | 'apagar' | null>(null);
   const [confirmar, setConfirmar] = useState(false);
 
-  async function executar(tipo: NonNullable<typeof salvando>, fn: () => Promise<unknown>, mensagem: string) {
+  /** `fn` devolve a rotina atualizada quando houver: se ficou ativa e sem próxima, avisa (data final atingida). */
+  async function executar(tipo: NonNullable<typeof salvando>, fn: () => Promise<Rotina | void>, mensagem: string) {
     setSalvando(tipo);
     try {
-      await fn();
+      const r = await fn();
       queryClient.invalidateQueries({ queryKey: keys.rotinas });
       queryClient.invalidateQueries({ queryKey: keys.agendas });
-      toast(mensagem);
+      toast(r && !r.pausada && !r.proxima ? 'Rotina sem próxima tarefa (data final atingida)' : mensagem);
       onClose();
     } catch (error) {
       toast(errorMessage(error), 'error');
@@ -99,7 +100,15 @@ function RotinaForm({ rotina, onClose }: { rotina: Rotina; onClose: () => void }
       <ConfirmSheet
         open={confirmar}
         onClose={() => setConfirmar(false)}
-        onConfirm={() => executar('apagar', () => rotinasApi.remove(rotina.id), 'Rotina apagada')}
+        onConfirm={() =>
+          executar(
+            'apagar',
+            async () => {
+              await rotinasApi.remove(rotina.id);
+            },
+            'Rotina apagada',
+          )
+        }
         loading={salvando === 'apagar'}
         title="Apagar rotina?"
         text="A próxima tarefa é cancelada. O histórico continua."
