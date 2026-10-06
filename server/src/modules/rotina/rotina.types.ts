@@ -1,4 +1,4 @@
-import { RotinaBase } from '../agenda/dominio/rotina';
+import { ProximaDeRotina, RotinaBase } from '../agenda/dominio/rotina';
 
 export interface CriarRotinasDTO {
   plantaIds: string[];
@@ -53,4 +53,8 @@ export interface RotinaRepository {
   ): Promise<any>;
   /** Cancela a pendente e apaga a rotina (o histórico fica, sem vínculo). */
   apagar(id: string): Promise<void>;
+  /** Pendente do usuário e sua rotina (null se não existe, é de outro usuário ou não está pendente). */
+  findPendenteComRotina(agendaId: string, usuarioId: string): Promise<{ id: string; rotina: RotinaBase | null } | null>;
+  /** Marca a pendente como pulada (cancelada) e cria a próxima, se houver. */
+  pular(agendaId: string, proxima: ProximaDeRotina | null): Promise<void>;
 }

@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { ZodError } from 'zod';
+import { agendaIdSchema } from '../agenda/agenda.schema';
 import { PrismaRotinaRepository } from './repositories/prisma-rotina.repository';
 import { atualizarRotinaSchema, criarRotinasSchema, listarRotinasSchema, rotinaIdSchema } from './rotina.schema';
 import {
@@ -8,6 +9,7 @@ import {
   AtualizarRotinaUseCase,
   CriarRotinasUseCase,
   ListarRotinasUseCase,
+  PularTarefaUseCase,
 } from './use-cases';
 
 const repo = new PrismaRotinaRepository();
@@ -16,6 +18,7 @@ const listar = new ListarRotinasUseCase(repo);
 const atualizar = new AtualizarRotinaUseCase(repo);
 const alternarPausa = new AlternarPausaRotinaUseCase(repo);
 const apagar = new ApagarRotinaUseCase(repo);
+const pular = new PularTarefaUseCase(repo);
 
 const MENSAGENS_400 = ['Atividade não encontrada.', 'Máximo de 200 rotinas por vez.', 'A data final é antes da primeira tarefa.'];
 
@@ -88,6 +91,16 @@ export const rotinaController = {
       res.status(204).send();
     } catch (error) {
       responderErroRotina(res, error, 'apagar rotina');
+    }
+  },
+
+  pular: async (req: Request, res: Response) => {
+    try {
+      const { params } = agendaIdSchema.parse({ params: req.params });
+      await pular.execute(params.id, req.user!.userId);
+      res.status(204).send();
+    } catch (error) {
+      responderErroRotina(res, error, 'pular tarefa');
     }
   },
 };

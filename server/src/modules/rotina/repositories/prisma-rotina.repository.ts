@@ -1,5 +1,6 @@
 import { Prisma } from '@prisma/client';
 import { prisma } from '../../../lib/prisma';
+import { ProximaDeRotina } from '../../agenda/dominio/rotina';
 import { AjustePendente, NovaRotina, RotinaRepository } from '../rotina.types';
 
 const INCLUDE_LISTA = {
@@ -116,5 +117,27 @@ export class PrismaRotinaRepository implements RotinaRepository {
       prisma.agenda.updateMany({ where: { rotinaId: id, status: 'PENDENTE' }, data: { status: 'CANCELADO' } }),
       prisma.rotina.delete({ where: { id } }),
     ]);
+  }
+
+  async findPendenteComRotina(agendaId: string, usuarioId: string) {
+    return prisma.agenda.findFirst({
+      where: { id: agendaId, status: 'PENDENTE', planta: { usuarioId } },
+      select: {
+        id: true,
+        rotina: { select: { id: true, plantaId: true, atividadeId: true, intervaloDias: true, dataFim: true, pausada: true } },
+      },
+    });
+  }
+
+  async pular(agendaId: string, proxima: ProximaDeRotina | null) {
+    await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+      // Revalida PENDENTE: dois toques em "pular" não geram duas próximas
+      const { count } = await tx.agenda.updateMany({
+        where: { id: agendaId, status: 'PENDENTE' },
+        data: { status: 'CANCELADO', pulada: true },
+      });
+      if (count === 0) throw new Error('Acesso negado ou agendamento não encontrado.');
+      if (proxima) await tx.agenda.create({ data: proxima });
+    });
   }
 }

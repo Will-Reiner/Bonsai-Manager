@@ -31,6 +31,8 @@ describe('use cases de rotina', () => {
       findDoUsuario: jest.fn().mockResolvedValue(info()),
       atualizar: jest.fn().mockResolvedValue({}),
       apagar: jest.fn().mockResolvedValue(undefined),
+      findPendenteComRotina: jest.fn(),
+      pular: jest.fn(),
     };
   });
   afterEach(() => jest.useRealTimers());
