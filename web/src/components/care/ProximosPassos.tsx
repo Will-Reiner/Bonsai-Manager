@@ -1,7 +1,7 @@
 import { Plus, X } from 'lucide-react';
 import { Button } from '@/components/ui';
 import { daquiADias, fromDateInput, toDateInput } from '@/lib/format';
-import { useAtividadesOrdenadas, useRevisaoDias } from '@/lib/queries';
+import { useAtividadesOrdenadas } from '@/lib/queries';
 import { RepetirCampo, repetirParaApi, type RepetirValor } from './RepetirCampo';
 
 export interface Proximo {
@@ -26,10 +26,9 @@ export const proximosParaApi = (proximos: Proximo[]) =>
       }))
     : undefined;
 
-/** Próximos passos a agendar após um cuidado; vazio => Revisão geral automática. */
+/** Próximos passos a agendar após um cuidado (a Revisão geral é rotina da planta e se remarca sozinha). */
 export function ProximosPassos({ value, onChange }: { value: Proximo[]; onChange: (v: Proximo[]) => void }) {
   const atividades = useAtividadesOrdenadas();
-  const revisaoDias = useRevisaoDias();
 
   return (
     <section>
@@ -96,8 +95,8 @@ export function ProximosPassos({ value, onChange }: { value: Proximo[]; onChange
         >
           <Plus size={16} /> Agendar próximo passo
         </Button>
-        {value.length === 0 && revisaoDias > 0 && (
-          <p className="text-xs text-muted">A Revisão geral da planta é remarcada automaticamente a cada cuidado.</p>
+        {value.length === 0 && (
+          <p className="text-xs text-muted">Se a planta tiver Revisão geral, ela é remarcada automaticamente a cada cuidado.</p>
         )}
       </div>
     </section>

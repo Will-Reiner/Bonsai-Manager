@@ -73,6 +73,10 @@ export function ScheduleCareSheet({
         await agendasApi.update(agenda.id, { dataAgendada: fromDateInput(data) });
         mensagem = 'Tarefa reagendada';
       } else if (repetir) {
+        if (!repetir.estacoes.length) {
+          setSalvando(false);
+          return toast('Escolha ao menos uma estação.', 'error');
+        }
         if (!repetirValido(repetir)) {
           setSalvando(false);
           return toast('Informe o intervalo em dias (1 a 3650).', 'error');
