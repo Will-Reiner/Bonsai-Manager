@@ -1,13 +1,15 @@
 import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
 import { useQueryClient } from '@tanstack/react-query';
-import { Ban, CalendarClock, Check, StickyNote, Trash2 } from 'lucide-react';
+import { Ban, CalendarClock, Check, Repeat, Settings2, SkipForward, StickyNote, Trash2 } from 'lucide-react';
 import { ConfirmSheet } from '@/components/Sheet';
+import { RotinaSheet } from '@/components/care/RotinaSheet';
 import { HistoricoPlanta } from '@/components/HistoricoPlanta';
 import { Button, EmptyState, ErrorState, PageHeader, PlantThumb, Spinner } from '@/components/ui';
 import { useCare } from '@/context/CareContext';
 import { useToast } from '@/context/ToastContext';
 import { errorMessage } from '@/lib/api';
+import { textoIntervalo } from '@/lib/cuidados';
 import { agendasApi } from '@/lib/endpoints';
 import { dataLonga, dataRelativa, diasAte, plantaRotulo } from '@/lib/format';
 import { keys, useAgendas } from '@/lib/queries';
@@ -20,7 +22,8 @@ export function TarefaPage() {
   const toast = useToast();
   const { reagendar } = useCare();
   const agendas = useAgendas();
-  const [salvando, setSalvando] = useState<'cancelar' | 'excluir' | null>(null);
+  const [salvando, setSalvando] = useState<'cancelar' | 'excluir' | 'pular' | null>(null);
+  const [rotinaAberta, setRotinaAberta] = useState<string | null>(null);
   const [confirmarExclusao, setConfirmarExclusao] = useState(false);
 
   const agenda = agendas.data?.find((a) => a.id === id);
@@ -34,6 +37,22 @@ export function TarefaPage() {
       else await agendasApi.remove(agenda.id);
       queryClient.invalidateQueries({ queryKey: keys.agendas });
       toast(tipo === 'cancelar' ? 'Tarefa cancelada' : 'Tarefa excluída');
+      if (window.history.state?.idx > 0) navigate(-1);
+      else navigate('/', { replace: true });
+    } catch (error) {
+      toast(errorMessage(error), 'error');
+      setSalvando(null);
+    }
+  }
+
+  async function pular() {
+    if (!agenda) return;
+    setSalvando('pular');
+    try {
+      await agendasApi.pular(agenda.id);
+      queryClient.invalidateQueries({ queryKey: keys.agendas });
+      queryClient.invalidateQueries({ queryKey: keys.rotinas });
+      toast('Pulada · próxima agendada');
       if (window.history.state?.idx > 0) navigate(-1);
       else navigate('/', { replace: true });
     } catch (error) {
@@ -81,6 +100,13 @@ export function TarefaPage() {
         <p className={`mt-4 text-sm ${atrasada ? 'font-medium text-danger' : 'text-muted'}`}>
           {rotuloStatus} · {dataRelativa(dataStatus)} ({dataLonga(dataStatus)})
         </p>
+        {agenda.rotina && (
+          <p className="mt-1 flex items-center gap-1.5 text-sm text-muted">
+            <Repeat size={14} /> Rotina {textoIntervalo(agenda.rotina.intervaloDias)}
+            {agenda.rotina.pausada && ' · pausada'}
+          </p>
+        )}
+        {agenda.pulada && <p className="mt-1 text-sm text-muted">Pulada</p>}
 
         {pendente && agenda.detalhes && (
           <div className="mt-4 flex gap-2.5 rounded-2xl bg-primary-light p-3 text-sm text-primary-dark">
@@ -127,10 +153,21 @@ export function TarefaPage() {
                 <Trash2 size={16} /> Excluir
               </Button>
             </div>
+            {agenda.rotinaId && (
+              <div className="grid grid-cols-2 gap-2">
+                <Button variant="secondary" size="sm" onClick={pular} loading={salvando === 'pular'}>
+                  <SkipForward size={16} /> Pular esta vez
+                </Button>
+                <Button variant="secondary" size="sm" onClick={() => setRotinaAberta(agenda.rotinaId!)}>
+                  <Settings2 size={16} /> Editar rotina
+                </Button>
+              </div>
+            )}
           </div>
         )}
       </div>
 
+      <RotinaSheet rotinaId={rotinaAberta} onClose={() => setRotinaAberta(null)} />
       <ConfirmSheet
         open={confirmarExclusao}
         onClose={() => setConfirmarExclusao(false)}

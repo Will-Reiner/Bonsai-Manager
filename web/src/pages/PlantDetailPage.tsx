@@ -1,16 +1,17 @@
 import { useMemo, useState, type ReactNode } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
-import { CalendarCheck, CalendarClock, CalendarPlus, Camera, Check, ChevronRight, Clock, ImagePlus, Pencil, Plus, ShoppingBag } from 'lucide-react';
+import { CalendarCheck, CalendarClock, CalendarPlus, Camera, Check, ChevronRight, Clock, ImagePlus, Pencil, Plus, Repeat, ShoppingBag } from 'lucide-react';
 import { EmptyState, ErrorState, PageHeader, PlantThumb, SectionTitle, Spinner } from '@/components/ui';
 import { Sheet } from '@/components/Sheet';
+import { RotinaSheet } from '@/components/care/RotinaSheet';
 import { Roda } from '@/components/Roda';
 import { EnviosProgresso, useEnviarFotos } from '@/components/FotoUpload';
 import { useCare } from '@/context/CareContext';
 import { errorMessage } from '@/lib/api';
 import { dataCurta, dataRelativa, especieNome, modoAquisicaoLabel, plantaTitulo, tempoDesde } from '@/lib/format';
-import { rotuloUltima, ultimasPorPlanta } from '@/lib/cuidados';
+import { rotuloUltima, textoIntervalo, ultimasPorPlanta } from '@/lib/cuidados';
 import { chaveItem, dataDaFoto, fotosOrdenadas, linhaDoTempo, type ItemLinha } from '@/lib/linhaDoTempo';
-import { useAgendas, useFotos, usePlanta } from '@/lib/queries';
+import { useAgendas, useFotos, usePlanta, useRotinas } from '@/lib/queries';
 import type { Foto } from '@/types';
 
 export function PlantDetailPage() {
@@ -22,6 +23,9 @@ export function PlantDetailPage() {
   const { registrarCuidado, agendarCuidado } = useCare();
   const upload = useEnviarFotos(id);
   const [acoes, setAcoes] = useState(false);
+  const rotinas = useRotinas();
+  const [rotinaAberta, setRotinaAberta] = useState<string | null>(null);
+  const daPlantaRotinas = useMemo(() => (rotinas.data ?? []).filter((r) => r.plantaId === id), [rotinas.data, id]);
 
   const daPlanta = useMemo(() => (agendas.data ?? []).filter((a) => a.plantaId === id), [agendas.data, id]);
   const imagens = useMemo(() => fotosOrdenadas(fotos.data), [fotos.data]);
@@ -151,6 +155,28 @@ export function PlantDetailPage() {
           </Secao>
         )}
 
+        <Secao titulo="Rotinas">
+          {daPlantaRotinas.length > 0 && (
+            <div className="card mb-2 divide-y divide-line">
+              {daPlantaRotinas.map((r) => (
+                <button key={r.id} onClick={() => setRotinaAberta(r.id)} className="flex w-full items-center justify-between gap-3 px-4 py-2.5 text-left text-sm">
+                  <span className="flex min-w-0 items-center gap-1.5 font-medium">
+                    <Repeat size={14} className="shrink-0 text-primary" />
+                    <span className="truncate">{r.atividade?.nome ?? 'Cuidado'}</span>
+                  </span>
+                  <span className="shrink-0 text-muted">
+                    {textoIntervalo(r.intervaloDias)} ·{' '}
+                    {r.pausada ? 'pausada' : r.proxima ? dataRelativa(r.proxima.dataAgendada).toLowerCase() : 'sem próxima'}
+                  </span>
+                </button>
+              ))}
+            </div>
+          )}
+          <button onClick={() => agendarCuidado(p.id)} className="text-sm font-semibold text-primary">
+            + Nova rotina
+          </button>
+        </Secao>
+
         {p.observacoes && (
           <>
             <SectionTitle>Observações</SectionTitle>
@@ -167,6 +193,7 @@ export function PlantDetailPage() {
         <Plus size={28} />
       </button>
 
+      <RotinaSheet rotinaId={rotinaAberta} onClose={() => setRotinaAberta(null)} />
       <Sheet open={acoes} onClose={() => setAcoes(false)} title={plantaTitulo(p)}>
         <div className="grid gap-2.5 pb-safe">
           <AcaoItem icon={<CalendarCheck size={22} />} title="Registrar cuidado" text="Reguei, adubei, podei… agora" onClick={acao(() => registrarCuidado(p.id))} />
