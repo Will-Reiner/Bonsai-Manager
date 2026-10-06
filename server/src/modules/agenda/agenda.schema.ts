@@ -63,6 +63,21 @@ export const agendaIdSchema = z.object({
   }),
 });
 
+const proximoSchema = z.object({
+  atividadeId: z.string().uuid(),
+  dataAgendada: z.string().datetime(),
+  repetir: z
+    .object({
+      intervaloDias: z
+        .number()
+        .int({ message: 'O intervalo deve ser em dias inteiros.' })
+        .min(1, { message: 'O intervalo mínimo é 1 dia.' })
+        .max(3650, { message: 'O intervalo máximo é 3650 dias.' }),
+      dataFim: z.string().datetime().optional(),
+    })
+    .optional(),
+});
+
 export const concluirAgendasSchema = z.object({
   body: z.object({
     dataConcluida: z.string().datetime({ message: 'Data de conclusão inválida.' }),
@@ -71,7 +86,7 @@ export const concluirAgendasSchema = z.object({
     observacaoFutura: z.string().optional(),
     extras: z.array(z.string().uuid()).optional(),
     proximos: z
-      .array(z.object({ atividadeId: z.string().uuid(), dataAgendada: z.string().datetime() }))
+      .array(proximoSchema)
       .optional(),
     itens: z
       .array(
@@ -112,7 +127,7 @@ export const registrarCuidadosSchema = z.object({
       .min(1, { message: 'Informe ao menos uma planta.' })
       .max(200, { message: 'Máximo de 200 plantas por vez.' }),
     proximos: z
-      .array(z.object({ atividadeId: z.string().uuid(), dataAgendada: z.string().datetime() }))
+      .array(proximoSchema)
       .max(10)
       .optional(),
     concluirAgendaIds: z

@@ -1,4 +1,4 @@
-import { ConclusaoRepository, NovaPendente } from '../agenda.types';
+import { ConclusaoRepository, NovaPendente, NovaRotinaDePasso, Proximo } from '../agenda.types';
 
 const DIA = 86_400_000;
 /** Folga além do intervalo da revisão: uma pendente até N + 30 dias já "cuida" da planta. */
@@ -6,6 +6,7 @@ const MARGEM_REVISAO_DIAS = 30;
 
 export interface Seguimento {
   criarPendentes: NovaPendente[];
+  criarRotinas: NovaRotinaDePasso[];
   revisoes: { plantaId: string; dataAgendada: Date }[];
 }
 
@@ -21,14 +22,31 @@ export async function planejarSeguimento(
   }: {
     usuarioId: string;
     plantas: string[];
-    proximos: { atividadeId: string; dataAgendada: string }[];
+    proximos: Proximo[];
     excluir: string[];
     /** Pendentes que serão criadas junto (ex.: próxima da rotina): contam como próxima tarefa. */
     jaAgendadas?: { plantaId: string; dataAgendada: Date }[];
   },
 ): Promise<Seguimento> {
   const criarPendentes = plantas.flatMap((plantaId) =>
-    proximos.map((p) => ({ plantaId, atividadeId: p.atividadeId, dataAgendada: new Date(p.dataAgendada) })),
+    proximos
+      .filter((p) => !p.repetir)
+      .map((p) => ({ plantaId, atividadeId: p.atividadeId, dataAgendada: new Date(p.dataAgendada) })),
+  );
+  const criarRotinas = plantas.flatMap((plantaId) =>
+    proximos.flatMap((p) =>
+      p.repetir
+        ? [
+            {
+              plantaId,
+              atividadeId: p.atividadeId,
+              intervaloDias: p.repetir.intervaloDias,
+              dataFim: p.repetir.dataFim ? new Date(p.repetir.dataFim) : null,
+              dataAgendada: new Date(p.dataAgendada),
+            },
+          ]
+        : [],
+    ),
   );
   const revisoes: Seguimento['revisoes'] = [];
 
@@ -51,5 +69,5 @@ export async function planejarSeguimento(
     }
   }
 
-  return { criarPendentes, revisoes };
+  return { criarPendentes, criarRotinas, revisoes };
 }

@@ -51,13 +51,28 @@ export interface AgendaRepository {
 export const ATIVIDADE_REVISAO = 'Revisão geral';
 export const PREF_REVISAO_DIAS = 'revisao_automatica_dias';
 
+/** Próximo passo; com `repetir`, vira (ou usa) a rotina da planta+atividade. */
+export interface Proximo {
+  atividadeId: string;
+  dataAgendada: string;
+  repetir?: { intervaloDias: number; dataFim?: string };
+}
+
+export interface NovaRotinaDePasso {
+  plantaId: string;
+  atividadeId: string;
+  intervaloDias: number;
+  dataFim: Date | null;
+  dataAgendada: Date;
+}
+
 export interface ConcluirAgendasDTO {
   dataConcluida: string;
   atividadeId?: string;
   detalhes?: string;
   observacaoFutura?: string;
   extras?: string[];
-  proximos?: { atividadeId: string; dataAgendada: string }[];
+  proximos?: Proximo[];
   itens: { agendaId: string; detalhes?: string; observacaoFutura?: string; fotos?: string[] }[];
 }
 
@@ -76,6 +91,7 @@ export interface PlanoConclusao {
   fotos: { agendaId: string; plantaId: string; caminhoArquivo: string }[];
   criarConcluidas: { plantaId: string; atividadeId: string; data: Date; detalhes?: string }[];
   criarPendentes: NovaPendente[];
+  criarRotinas: NovaRotinaDePasso[];
   revisoes: { plantaId: string; dataAgendada: Date }[];
 }
 
@@ -88,7 +104,7 @@ export interface RegistrarCuidadosDTO {
     observacaoFutura?: string;
     fotos?: { caminhoArquivo: string; dataCaptura?: string }[];
   }[];
-  proximos?: { atividadeId: string; dataAgendada: string }[];
+  proximos?: Proximo[];
   /** Pendentes que este registro conclui (escolhidas na tela). */
   concluirAgendaIds?: string[];
 }
@@ -109,6 +125,7 @@ export interface PlanoRegistro {
   /** Pendentes repetidas do mesmo cuidado: canceladas. */
   cancelar: string[];
   criarPendentes: NovaPendente[];
+  criarRotinas: NovaRotinaDePasso[];
   revisoes: { plantaId: string; dataAgendada: Date }[];
 }
 

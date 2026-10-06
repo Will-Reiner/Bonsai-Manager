@@ -3,6 +3,7 @@ import { Prisma } from '@prisma/client';
 import {
   ATIVIDADE_REVISAO,
   ConclusaoRepository,
+  NovaRotinaDePasso,
   PlanoConclusao,
   PlanoRegistro,
   PREF_REVISAO_DIAS,
@@ -71,6 +72,33 @@ export class PrismaConclusaoRepository implements ConclusaoRepository {
     const proximas = new Map<string, Date>();
     for (const g of grupos) if (g._min.dataAgendada) proximas.set(g.plantaId, g._min.dataAgendada);
     return proximas;
+  }
+
+  /** Próximo passo com repetição: cria a rotina (ou usa a existente) e a pendente, mantendo 1 pendente por rotina. */
+  private async criarComRotinas(tx: Prisma.TransactionClient, itens: NovaRotinaDePasso[]) {
+    const criadas = [];
+    for (const r of itens) {
+      const existente = await tx.rotina.findUnique({
+        where: { plantaId_atividadeId: { plantaId: r.plantaId, atividadeId: r.atividadeId } },
+        select: { id: true, _count: { select: { agendas: { where: { status: 'PENDENTE' } } } } },
+      });
+      // Rotina existente com pendente: a nova tarefa fica avulsa (a rotina já tem a sua)
+      const rotinaId = existente
+        ? existente._count.agendas
+          ? undefined
+          : existente.id
+        : (
+            await tx.rotina.create({
+              data: { plantaId: r.plantaId, atividadeId: r.atividadeId, intervaloDias: r.intervaloDias, dataFim: r.dataFim },
+            })
+          ).id;
+      criadas.push(
+        await tx.agenda.create({
+          data: { plantaId: r.plantaId, atividadeId: r.atividadeId, dataAgendada: r.dataAgendada, rotinaId },
+        }),
+      );
+    }
+    return criadas;
   }
 
   private async criarRevisoes(tx: Prisma.TransactionClient, revisoes: { plantaId: string; dataAgendada: Date }[]) {
@@ -165,9 +193,10 @@ export class PrismaConclusaoRepository implements ConclusaoRepository {
           });
         }
 
-        const criadas = plano.criarPendentes.length
-          ? await tx.agenda.createManyAndReturn({ data: plano.criarPendentes })
-          : [];
+        const criadas = [
+          ...(plano.criarPendentes.length ? await tx.agenda.createManyAndReturn({ data: plano.criarPendentes }) : []),
+          ...(await this.criarComRotinas(tx, plano.criarRotinas)),
+        ];
         const revisoes = await this.criarRevisoes(tx, plano.revisoes);
         return { concluidas, criadas, revisoes };
       },
@@ -231,6 +260,7 @@ export class PrismaConclusaoRepository implements ConclusaoRepository {
         for (const p of plano.criarPendentes) {
           criadas.push(await tx.agenda.create({ data: p }));
         }
+        criadas.push(...(await this.criarComRotinas(tx, plano.criarRotinas)));
 
         const revisoes = await this.criarRevisoes(tx, plano.revisoes);
 

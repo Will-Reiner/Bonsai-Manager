@@ -44,7 +44,7 @@ describe('planejarSeguimento', () => {
 
     const r = await planejarSeguimento(repo, { usuarioId: 'u', plantas: ['p1'], proximos: [], excluir: [] });
 
-    expect(r).toEqual({ criarPendentes: [], revisoes: [] });
+    expect(r).toEqual({ criarPendentes: [], criarRotinas: [], revisoes: [] });
   });
 
   it('uma pendente recém-planejada (rotina) dentro da margem evita a revisão', async () => {
@@ -57,5 +57,24 @@ describe('planejarSeguimento', () => {
     });
 
     expect(r.revisoes).toEqual([{ plantaId: 'p2', dataAgendada: new Date(AGORA.getTime() + 30 * DIA) }]);
+  });
+
+  it('próximo com repetir vira rotina (e não pendente avulsa)', async () => {
+    const r = await planejarSeguimento(repo, {
+      usuarioId: 'u',
+      plantas: ['p1'],
+      proximos: [
+        { atividadeId: 'at', dataAgendada: '2026-11-01T12:00:00.000Z', repetir: { intervaloDias: 14, dataFim: '2027-03-01T12:00:00.000Z' } },
+        { atividadeId: 'at2', dataAgendada: '2026-11-02T12:00:00.000Z', repetir: { intervaloDias: 7 } },
+      ],
+      excluir: [],
+    });
+
+    expect(r.criarPendentes).toEqual([]);
+    expect(r.criarRotinas).toEqual([
+      { plantaId: 'p1', atividadeId: 'at', intervaloDias: 14, dataFim: new Date('2027-03-01T12:00:00.000Z'), dataAgendada: new Date('2026-11-01T12:00:00.000Z') },
+      { plantaId: 'p1', atividadeId: 'at2', intervaloDias: 7, dataFim: null, dataAgendada: new Date('2026-11-02T12:00:00.000Z') },
+    ]);
+    expect(r.revisoes).toEqual([]);
   });
 });
