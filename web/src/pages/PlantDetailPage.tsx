@@ -1,6 +1,6 @@
 import { useMemo, useState, type ReactNode } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
-import { CalendarCheck, CalendarClock, CalendarPlus, Camera, Check, ChevronRight, Clock, ImagePlus, Pencil, Plus, Repeat, ShoppingBag } from 'lucide-react';
+import { CalendarCheck, CalendarClock, CalendarPlus, Camera, Check, ChevronRight, Clock, ImagePlus, Layers, Pencil, Plus, Repeat, ShoppingBag } from 'lucide-react';
 import { EmptyState, ErrorState, PageHeader, PlantThumb, SectionTitle, Spinner } from '@/components/ui';
 import { Sheet } from '@/components/Sheet';
 import { RotinaSheet } from '@/components/care/RotinaSheet';
@@ -8,7 +8,7 @@ import { Roda } from '@/components/Roda';
 import { EnviosProgresso, useEnviarFotos } from '@/components/FotoUpload';
 import { useCare } from '@/context/CareContext';
 import { errorMessage } from '@/lib/api';
-import { dataCurta, dataRelativa, especieNome, modoAquisicaoLabel, plantaTitulo, tempoDesde } from '@/lib/format';
+import { dataCurta, dataRelativa, especieNome, grupoLabel, modoAquisicaoLabel, plantaTitulo, tempoDesde } from '@/lib/format';
 import { rotuloUltima, textoEstacoes, textoIntervalo, ultimasPorPlanta } from '@/lib/cuidados';
 import { chaveItem, dataDaFoto, fotosOrdenadas, linhaDoTempo, type ItemLinha } from '@/lib/linhaDoTempo';
 import { useAgendas, useFotos, usePlanta, useRotinas } from '@/lib/queries';
@@ -93,8 +93,14 @@ export function PlantDetailPage() {
           </Link>
         )}
 
-        {(idade || aquisicao) && (
+        {(idade || aquisicao || p.grupo) && (
           <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1.5 text-sm text-muted">
+            {p.grupo && (
+              <span className="flex items-center gap-1.5">
+                <Layers size={16} className="text-primary" /> {grupoLabel(p.grupo)}
+                {p.grupoExpiraEm && ` · volta para ${grupoLabel(p.grupoAnterior)} em ${dataCurta(p.grupoExpiraEm)}`}
+              </span>
+            )}
             {idade && (
               <span className="flex items-center gap-1.5">
                 <Clock size={16} className="text-primary" /> Na coleção há {idade}

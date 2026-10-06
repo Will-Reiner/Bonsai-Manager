@@ -7,6 +7,7 @@ import type {
   Especie,
   Estacao,
   Foto,
+  GrupoPlanta,
   GuiaSazonal,
   ModoAquisicao,
   Planta,
@@ -30,6 +31,7 @@ export const authApi = {
 };
 
 export interface PlantaInput {
+  grupo?: GrupoPlanta | null;
   especieId?: string;
   nome?: string;
   identificador?: string | null;
@@ -90,6 +92,8 @@ export interface RegistrarInput {
   proximos?: ProximoInput[];
   /** Pendentes que este registro conclui (escolhidas na tela). */
   concluirAgendaIds?: string[];
+  /** Plantas com Transplante vão para Recém transplantada. */
+  moverRecemTransplantada?: boolean;
 }
 
 export interface ConcluirResultado {

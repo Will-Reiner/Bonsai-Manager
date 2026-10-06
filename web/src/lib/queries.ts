@@ -48,6 +48,13 @@ export function useRevisaoDias() {
   return Number.isNaN(dias) ? 30 : Math.max(0, dias);
 }
 
+/** Dias em Recém transplantada após um Transplante (padrão 15, 1–365) — mesma regra do backend. */
+export function useTransplanteDias() {
+  const prefs = usePreferencias();
+  const dias = parseInt(prefs.data?.transplante_dias ?? '15', 10);
+  return Number.isNaN(dias) ? 15 : Math.min(365, Math.max(1, dias));
+}
+
 /** Atividades ordenadas: as rastreadas nas preferências do usuário primeiro. */
 export function useAtividadesOrdenadas() {
   const atividades = useAtividades();

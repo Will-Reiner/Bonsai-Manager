@@ -4,6 +4,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { Camera, Check, CheckCircle2, ImagePlus, X } from 'lucide-react';
 import { Button, Field, PageHeader } from '@/components/ui';
 import { PhotoInput } from '@/components/PhotoInput';
+import { GrupoChips } from '@/components/GrupoChips';
 import { SpeciesPicker } from '@/components/SpeciesPicker';
 import { useToast } from '@/context/ToastContext';
 import { errorMessage } from '@/lib/api';
@@ -11,7 +12,7 @@ import { fotosApi, plantasApi } from '@/lib/endpoints';
 import { especieNome, fromDateInput, plantaTitulo, toDateInput } from '@/lib/format';
 import { keys, useEspecies } from '@/lib/queries';
 import { dataCapturaDe, MAX_FOTOS_POR_VEZ, uploadImage } from '@/lib/upload';
-import { MODOS_AQUISICAO, type ModoAquisicao, type Planta } from '@/types';
+import { MODOS_AQUISICAO, type GrupoPlanta, type ModoAquisicao, type Planta } from '@/types';
 
 const PASSOS = ['Espécie', 'Identidade', 'Aquisição', 'Fotos', 'Capa'];
 const MAX_FOTOS = MAX_FOTOS_POR_VEZ;
@@ -44,6 +45,7 @@ export function AddPlantPage() {
   const [identificador, setIdentificador] = useState('');
   const [dataAquisicao, setDataAquisicao] = useState('');
   const [modo, setModo] = useState<ModoAquisicao | ''>('');
+  const [grupo, setGrupo] = useState<GrupoPlanta | null>(null);
   /** Fotos da galeria — a capa é escolhida entre elas no passo seguinte. */
   const [fotos, setFotos] = useState<File[]>([]);
   const [capaIndice, setCapaIndice] = useState(0);
@@ -59,6 +61,7 @@ export function AddPlantPage() {
 
   function resetar() {
     setPasso(0);
+    setGrupo(null);
     setEspecieId('');
     setNome('');
     setIdentificador('');
@@ -92,6 +95,7 @@ export function AddPlantPage() {
         identificador: identificador.trim() || undefined,
         dataAquisicao: dataAquisicao ? fromDateInput(dataAquisicao) : null,
         modoAquisicao: modo || null,
+        grupo,
         fotoCapaUrl,
       });
       if (galeria.length) {
@@ -205,6 +209,7 @@ export function AddPlantPage() {
                 ))}
               </div>
             </div>
+            <GrupoChips value={grupo} onChange={setGrupo} />
           </section>
         )}
 
