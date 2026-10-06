@@ -87,7 +87,7 @@ export function ConcluirPage() {
       const hoje = data === toDateInput();
       const principalId = atividadeId || atividadeAtual?.id;
       const extrasFinais = extras.filter((e) => e !== principalId);
-      const resultado = await agendasApi.concluir({
+      await agendasApi.concluir({
         dataConcluida: hoje ? new Date().toISOString() : fromDateInput(data),
         atividadeId: atividadeId || undefined,
         detalhes: detalhes.trim() || undefined,
@@ -99,12 +99,7 @@ export function ConcluirPage() {
       queryClient.invalidateQueries({ queryKey: keys.agendas });
       queryClient.invalidateQueries({ queryKey: keys.rotinas });
       queryClient.invalidateQueries({ queryKey: ['fotos'] });
-      const n = resultado.revisoes.length;
-      toast(
-        n
-          ? `Concluído 🌿 · ${n === 1 ? 'Revisão geral agendada' : `${n} revisões gerais agendadas`}`
-          : `${marcadas.length > 1 ? `${marcadas.length} tarefas concluídas` : 'Tarefa concluída'} 🌿`,
-      );
+      toast(`${marcadas.length > 1 ? `${marcadas.length} tarefas concluídas` : 'Tarefa concluída'} 🌿`);
       navigate('/', { replace: true });
     } catch (error) {
       toast(errorMessage(error), 'error');

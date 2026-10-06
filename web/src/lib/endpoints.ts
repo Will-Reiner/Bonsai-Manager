@@ -92,7 +92,6 @@ export interface RegistrarInput {
 export interface ConcluirResultado {
   concluidas: Agenda[];
   criadas: Agenda[];
-  revisoes: Agenda[];
 }
 
 export const agendasApi = {

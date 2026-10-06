@@ -1,16 +1,12 @@
 import { prisma } from '../../../lib/prisma';
 import { Prisma } from '@prisma/client';
 import {
-  ATIVIDADE_REVISAO,
   ConclusaoRepository,
   NovaRotinaDePasso,
   PlanoConclusao,
   PlanoRegistro,
-  PREF_REVISAO_DIAS,
   ResultadoConclusao,
 } from '../agenda.types';
-
-const REVISAO_PADRAO_DIAS = 30;
 
 export class PrismaConclusaoRepository implements ConclusaoRepository {
   async findPendentesDoUsuario(ids: string[], usuarioId: string) {
@@ -50,30 +46,33 @@ export class PrismaConclusaoRepository implements ConclusaoRepository {
     return total === ids.length;
   }
 
-  async getRevisaoDias(usuarioId: string) {
-    const pref = await prisma.preferenciaUsuario.findUnique({
-      where: { usuarioId_chave: { usuarioId, chave: PREF_REVISAO_DIAS } },
+  async revisoesDasPlantas(plantaIds: string[], excluirAgendaIds: string[]) {
+    const rotinas = await prisma.rotina.findMany({
+      where: { plantaId: { in: plantaIds }, revisao: true },
+      select: {
+        id: true,
+        plantaId: true,
+        atividadeId: true,
+        intervaloDias: true,
+        dataFim: true,
+        pausada: true,
+        estacoes: true,
+        agendas: {
+          where: { status: 'PENDENTE', id: { notIn: excluirAgendaIds } },
+          select: { id: true },
+          orderBy: { dataAgendada: 'asc' },
+          take: 1,
+        },
+      },
     });
-    const dias = pref ? parseInt(pref.valor, 10) : REVISAO_PADRAO_DIAS;
-    if (Number.isNaN(dias)) return REVISAO_PADRAO_DIAS;
-    return Math.max(0, dias);
+    return rotinas.map(({ agendas, ...r }) => ({ ...r, pendenteId: agendas[0]?.id ?? null }));
   }
 
-  async proximasPendentes(plantaIds: string[], aPartirDe: Date, excluir: string[]) {
-    if (!plantaIds.length) return new Map<string, Date>();
-    const grupos = await prisma.agenda.groupBy({
-      by: ['plantaId'],
-      where: {
-        plantaId: { in: plantaIds },
-        status: 'PENDENTE',
-        dataAgendada: { gte: aPartirDe },
-        id: { notIn: excluir },
-      },
-      _min: { dataAgendada: true },
-    });
-    const proximas = new Map<string, Date>();
-    for (const g of grupos) if (g._min.dataAgendada) proximas.set(g.plantaId, g._min.dataAgendada);
-    return proximas;
+  /** Remarca pendentes (Revisão geral); revalida PENDENTE para não mexer em tarefa já resolvida. */
+  private async moverPendentes(tx: Prisma.TransactionClient, itens: { agendaId: string; dataAgendada: Date }[]) {
+    for (const m of itens) {
+      await tx.agenda.updateMany({ where: { id: m.agendaId, status: 'PENDENTE' }, data: { dataAgendada: m.dataAgendada } });
+    }
   }
 
   /** Próximo passo com repetição: cria a rotina (ou usa a existente) e a pendente, mantendo 1 pendente por rotina. */
@@ -107,19 +106,6 @@ export class PrismaConclusaoRepository implements ConclusaoRepository {
       );
     }
     return criadas;
-  }
-
-  private async criarRevisoes(tx: Prisma.TransactionClient, revisoes: { plantaId: string; dataAgendada: Date }[]) {
-    if (!revisoes.length) return [];
-    // Garante a atividade mesmo se o seed não tiver rodado no ambiente
-    const revisao = await tx.atividade.upsert({
-      where: { nome: ATIVIDADE_REVISAO },
-      update: {},
-      create: { nome: ATIVIDADE_REVISAO, descricao: 'Observar a planta como um todo e decidir os próximos cuidados.' },
-    });
-    return tx.agenda.createManyAndReturn({
-      data: revisoes.map((r) => ({ plantaId: r.plantaId, atividadeId: revisao.id, dataAgendada: r.dataAgendada })),
-    });
   }
 
   async contarPlantasDoUsuario(plantaIds: string[], usuarioId: string) {
@@ -205,8 +191,8 @@ export class PrismaConclusaoRepository implements ConclusaoRepository {
           ...(plano.criarPendentes.length ? await tx.agenda.createManyAndReturn({ data: plano.criarPendentes }) : []),
           ...(await this.criarComRotinas(tx, plano.criarRotinas)),
         ];
-        const revisoes = await this.criarRevisoes(tx, plano.revisoes);
-        return { concluidas, criadas, revisoes };
+        await this.moverPendentes(tx, plano.moverPendentes);
+        return { concluidas, criadas };
       },
       { timeout: 20_000 },
     );
@@ -271,9 +257,8 @@ export class PrismaConclusaoRepository implements ConclusaoRepository {
         }
         criadas.push(...(await this.criarComRotinas(tx, plano.criarRotinas)));
 
-        const revisoes = await this.criarRevisoes(tx, plano.revisoes);
-
-        return { concluidas, criadas, revisoes };
+        await this.moverPendentes(tx, plano.moverPendentes);
+        return { concluidas, criadas };
       },
       { timeout: 20_000 },
     );

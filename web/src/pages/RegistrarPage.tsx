@@ -143,7 +143,7 @@ export function RegistrarPage() {
         const mapa = await lote.criarPlantasNovas();
         const real = (pid: string) => mapa.get(pid) ?? pid;
         const hoje = data === toDateInput();
-        const resultado = await agendasApi.registrar({
+        await agendasApi.registrar({
           data: hoje ? new Date().toISOString() : fromDateInput(data),
           plantas: tocadas.map((pid) => ({
             plantaId: real(pid),
@@ -161,10 +161,8 @@ export function RegistrarPage() {
         queryClient.invalidateQueries({ queryKey: keys.rotinas });
         queryClient.invalidateQueries({ queryKey: ['fotos'] });
         queryClient.invalidateQueries({ queryKey: keys.plantas });
-        const n = resultado.revisoes.length;
         const k = concluirAgendaIds.length;
         const extras = [
-          n ? (n === 1 ? 'Revisão geral agendada' : `${n} revisões agendadas`) : '',
           k ? (k === 1 ? '1 tarefa concluída' : `${k} tarefas concluídas`) : '',
         ].filter(Boolean);
         toast(`Cuidado registrado 🌿${tocadas.length > 1 ? ` em ${tocadas.length} plantas` : ''}${extras.map((e) => ` · ${e}`).join('')}`);

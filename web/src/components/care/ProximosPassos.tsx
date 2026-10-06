@@ -97,10 +97,7 @@ export function ProximosPassos({ value, onChange }: { value: Proximo[]; onChange
           <Plus size={16} /> Agendar próximo passo
         </Button>
         {value.length === 0 && revisaoDias > 0 && (
-          <p className="text-xs text-muted">
-            Sem próximos passos, será criada uma Revisão geral em {revisaoDias} dias (se a planta não tiver outra
-            tarefa próxima).
-          </p>
+          <p className="text-xs text-muted">A Revisão geral da planta é remarcada automaticamente a cada cuidado.</p>
         )}
       </div>
     </section>

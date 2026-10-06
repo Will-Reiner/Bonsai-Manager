@@ -20,10 +20,9 @@ describe('ConcluirAgendasUseCase', () => {
       findPendentesDoUsuario: jest.fn().mockResolvedValue([{ id: 'ag-1', plantaId: 'pl-1', atividadeId: 'at-1', rotinaId: null }]),
       findPendentesParaReconciliar: jest.fn(),
       atividadesExistem: jest.fn().mockResolvedValue(true),
-      getRevisaoDias: jest.fn().mockResolvedValue(30),
-      proximasPendentes: jest.fn().mockResolvedValue(new Map()),
+      revisoesDasPlantas: jest.fn().mockResolvedValue([]),
       estadoRotinas: jest.fn().mockResolvedValue([]),
-      executar: jest.fn().mockResolvedValue({ concluidas: [], criadas: [], revisoes: [] }),
+      executar: jest.fn().mockResolvedValue({ concluidas: [], criadas: [] }),
       contarPlantasDoUsuario: jest.fn(),
       registrar: jest.fn(),
     };
@@ -81,51 +80,46 @@ describe('ConcluirAgendasUseCase', () => {
     ]);
   });
 
-  it('cria próximos passos por planta e não cria revisão', async () => {
+  it('cria próximos passos por planta', async () => {
     const quando = emDias(14).toISOString();
     await useCase.execute({ ...base, proximos: [{ atividadeId: 'at-p', dataAgendada: quando }] }, 'user-1');
 
     expect(plano().criarPendentes).toEqual([{ plantaId: 'pl-1', atividadeId: 'at-p', dataAgendada: emDias(14) }]);
-    expect(plano().revisoes).toEqual([]);
-    expect(repo.getRevisaoDias).not.toHaveBeenCalled();
   });
 
-  it('cria revisão em N dias quando a planta não tem pendente', async () => {
-    await useCase.execute(base, 'user-1');
+  describe('Revisão geral (rotina)', () => {
+    const rev = { id: 'rev1', plantaId: 'pl-1', atividadeId: 'at-rev', intervaloDias: 30, dataFim: null, pausada: false };
 
-    expect(repo.proximasPendentes).toHaveBeenCalledWith(['pl-1'], AGORA, ['ag-1']);
-    expect(plano().revisoes).toEqual([{ plantaId: 'pl-1', dataAgendada: emDias(30) }]);
-  });
+    it('qualquer cuidado remarca a revisão pendente da planta para data feita + intervalo', async () => {
+      repo.revisoesDasPlantas.mockResolvedValue([{ ...rev, pendenteId: 'ag-rev' }]);
 
-  it('não cria revisão se a próxima pendente está dentro de N + 30 dias', async () => {
-    repo.proximasPendentes.mockResolvedValue(new Map([['pl-1', emDias(60)]]));
-    await useCase.execute(base, 'user-1');
-    expect(plano().revisoes).toEqual([]);
-  });
+      await useCase.execute(base, 'user-1');
 
-  it('cria revisão se a próxima pendente está além de N + 30 dias', async () => {
-    repo.getRevisaoDias.mockResolvedValue(15);
-    repo.proximasPendentes.mockResolvedValue(new Map([['pl-1', emDias(46)]]));
-    await useCase.execute(base, 'user-1');
-    expect(plano().revisoes).toEqual([{ plantaId: 'pl-1', dataAgendada: emDias(15) }]);
-  });
+      expect(repo.revisoesDasPlantas).toHaveBeenCalledWith(['pl-1'], ['ag-1']);
+      expect(plano().moverPendentes).toEqual([{ agendaId: 'ag-rev', dataAgendada: emDias(30) }]);
+      expect(plano().criarPendentes).toEqual([]);
+    });
 
-  it('não cria revisão quando a preferência está desligada (0)', async () => {
-    repo.getRevisaoDias.mockResolvedValue(0);
-    await useCase.execute(base, 'user-1');
-    expect(repo.proximasPendentes).not.toHaveBeenCalled();
-    expect(plano().revisoes).toEqual([]);
-  });
+    it('concluir a própria revisão cria a próxima', async () => {
+      repo.revisoesDasPlantas.mockResolvedValue([{ ...rev, pendenteId: null }]);
 
-  it('avalia a revisão uma vez por planta distinta', async () => {
-    repo.findPendentesDoUsuario.mockResolvedValue([
-      { id: 'ag-1', plantaId: 'pl-1', atividadeId: 'at-1', rotinaId: null },
-      { id: 'ag-2', plantaId: 'pl-1', atividadeId: 'at-1', rotinaId: null },
-    ]);
-    await useCase.execute({ ...base, itens: [{ agendaId: 'ag-1' }, { agendaId: 'ag-2' }] }, 'user-1');
-    expect(repo.proximasPendentes).toHaveBeenCalledTimes(1);
-    expect(repo.proximasPendentes).toHaveBeenCalledWith(['pl-1'], AGORA, ['ag-1', 'ag-2']);
-    expect(plano().revisoes).toHaveLength(1);
+      await useCase.execute(base, 'user-1');
+
+      expect(plano().moverPendentes).toEqual([]);
+      expect(plano().criarPendentes).toEqual([
+        { rotinaId: 'rev1', plantaId: 'pl-1', atividadeId: 'at-rev', dataAgendada: emDias(30) },
+      ]);
+    });
+
+    it('consulta as revisões uma vez, com as plantas distintas', async () => {
+      repo.findPendentesDoUsuario.mockResolvedValue([
+        { id: 'ag-1', plantaId: 'pl-1', atividadeId: 'at-1', rotinaId: null },
+        { id: 'ag-2', plantaId: 'pl-1', atividadeId: 'at-1', rotinaId: null },
+      ]);
+      await useCase.execute({ ...base, itens: [{ agendaId: 'ag-1' }, { agendaId: 'ag-2' }] }, 'user-1');
+      expect(repo.revisoesDasPlantas).toHaveBeenCalledTimes(1);
+      expect(repo.revisoesDasPlantas).toHaveBeenCalledWith(['pl-1'], ['ag-1', 'ag-2']);
+    });
   });
 
   it('falha se alguma tarefa não é do usuário ou não está pendente', async () => {
@@ -141,7 +135,7 @@ describe('ConcluirAgendasUseCase', () => {
   });
 
   describe('rotinas', () => {
-    it('concluir tarefa de rotina agenda a próxima a partir da data feita e dispensa a revisão', async () => {
+    it('concluir tarefa de rotina agenda a próxima a partir da data feita', async () => {
       repo.findPendentesDoUsuario.mockResolvedValue([{ id: 'ag-1', plantaId: 'pl-1', atividadeId: 'at-1', rotinaId: 'r1' }]);
       repo.estadoRotinas.mockResolvedValue([
         { id: 'r1', plantaId: 'pl-1', atividadeId: 'at-1', intervaloDias: 14, dataFim: null, pausada: false, temPendente: false },
@@ -153,7 +147,6 @@ describe('ConcluirAgendasUseCase', () => {
       expect(plano().criarPendentes).toEqual([
         { rotinaId: 'r1', plantaId: 'pl-1', atividadeId: 'at-1', dataAgendada: emDias(14) },
       ]);
-      expect(plano().revisoes).toEqual([]);
     });
 
     const rotinaR1 = { id: 'r1', plantaId: 'pl-1', atividadeId: 'at-1', intervaloDias: 14, dataFim: null, pausada: false, temPendente: false };
