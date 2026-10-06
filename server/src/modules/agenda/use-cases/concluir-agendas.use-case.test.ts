@@ -25,6 +25,7 @@ describe('ConcluirAgendasUseCase', () => {
       executar: jest.fn().mockResolvedValue({ concluidas: [], criadas: [] }),
       contarPlantasDoUsuario: jest.fn(),
       registrar: jest.fn(),
+      transplanteDasPlantas: jest.fn().mockResolvedValue({ atividadeId: null, dias: 15, plantas: [] }),
     };
     useCase = new ConcluirAgendasUseCase(repo);
   });

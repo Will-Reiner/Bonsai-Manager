@@ -24,6 +24,7 @@ describe('RegistrarCuidadosUseCase', () => {
       executar: jest.fn(),
       contarPlantasDoUsuario: jest.fn().mockResolvedValue(1),
       registrar: jest.fn().mockResolvedValue({ concluidas: [], criadas: [] }),
+      transplanteDasPlantas: jest.fn().mockResolvedValue({ atividadeId: null, dias: 15, plantas: [] }),
     };
     useCase = new RegistrarCuidadosUseCase(repo);
   });
@@ -194,6 +195,58 @@ describe('RegistrarCuidadosUseCase', () => {
         'Tarefa não corresponde ao cuidado registrado.',
       );
       expect(repo.registrar).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('mover para Recém transplantada', () => {
+    beforeEach(() => {
+      repo.contarPlantasDoUsuario.mockResolvedValue(2);
+      repo.transplanteDasPlantas.mockResolvedValue({
+        atividadeId: 'at-transplante',
+        dias: 15,
+        plantas: [
+          { plantaId: 'p1', grupo: 'REFINAMENTO', grupoAnterior: null, grupoExpiraEm: null },
+          { plantaId: 'p2', grupo: null, grupoAnterior: null, grupoExpiraEm: null },
+        ],
+      });
+    });
+
+    const dto = (mover?: boolean): RegistrarCuidadosDTO => ({
+      data: AGORA.toISOString(),
+      plantas: [
+        { plantaId: 'p1', atividadeIds: ['at-transplante'] },
+        { plantaId: 'p2', atividadeIds: ['at-1'] },
+      ],
+      moverRecemTransplantada: mover,
+    });
+
+    it('com a opção marcada, move só as plantas transplantadas', async () => {
+      await useCase.execute(dto(true), 'user-1');
+
+      expect(repo.transplanteDasPlantas).toHaveBeenCalledWith(['p1', 'p2'], 'user-1');
+      expect(plano().atualizarGrupos).toEqual([
+        {
+          plantaId: 'p1',
+          grupo: 'RECEM_TRANSPLANTADA',
+          grupoAnterior: 'REFINAMENTO',
+          grupoExpiraEm: new Date(AGORA.getTime() + 15 * DIA),
+        },
+      ]);
+    });
+
+    it('sem a opção, não mexe em grupos', async () => {
+      await useCase.execute(dto(undefined), 'user-1');
+
+      expect(repo.transplanteDasPlantas).not.toHaveBeenCalled();
+      expect(plano().atualizarGrupos).toEqual([]);
+    });
+
+    it('sem a atividade Transplante no banco, não mexe em grupos', async () => {
+      repo.transplanteDasPlantas.mockResolvedValue({ atividadeId: null, dias: 15, plantas: [] });
+
+      await useCase.execute(dto(true), 'user-1');
+
+      expect(plano().atualizarGrupos).toEqual([]);
     });
   });
 });
