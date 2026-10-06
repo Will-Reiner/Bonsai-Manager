@@ -83,6 +83,13 @@ enum TipoMidia {
   VISAO_FUTURA
 }
 
+/// Grupos fixos de fase da planta (um por planta, opcional).
+enum GrupoPlanta {
+  RECEM_TRANSPLANTADA
+  DEBILITADA
+  EM_CRESCIMENTO
+  REFINAMENTO
+}
 
 // --- TABELAS PRINCIPAIS ---
 
@@ -154,6 +161,11 @@ model Planta {
   fotoCapaUrl      String?
   plantaPublica    Boolean       @default(false)
   historicoPublico Boolean       @default(false)
+  grupo            GrupoPlanta?
+  /// Grupo de retorno quando o período em RECEM_TRANSPLANTADA acabar.
+  grupoAnterior    GrupoPlanta?
+  /// Fim do período automático em RECEM_TRANSPLANTADA.
+  grupoExpiraEm    DateTime?
   createdAt        DateTime      @default(now())
   updatedAt        DateTime      @updatedAt
 
