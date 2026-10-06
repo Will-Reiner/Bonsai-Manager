@@ -6,5 +6,9 @@ export async function atualizarGruposAutomaticos(repo: PlantaRepository, usuario
   await repo.resolverGruposVencidos(usuarioId, agora);
   const { dias, plantas, pendentes } = await repo.estadoPreTransplante(usuarioId);
   const mudancas = planejarPreTransplante(plantas, pendentes, agora, dias);
-  if (mudancas.length) await repo.aplicarMudancasPre(mudancas);
+  if (mudancas.length) {
+    const grupoLidoPorPlanta = new Map(plantas.map((p) => [p.plantaId, p.grupo]));
+    const mudancasComGrupoLido = mudancas.map((m) => ({ ...m, grupoLido: grupoLidoPorPlanta.get(m.plantaId) ?? null }));
+    await repo.aplicarMudancasPre(mudancasComGrupoLido);
+  }
 }

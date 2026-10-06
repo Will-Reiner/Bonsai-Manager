@@ -96,7 +96,7 @@ export interface PlantaRepository {
   resolverGruposVencidos(usuarioId: string, agora: Date): Promise<void>;
   /** Dias da preferência, Transplantes pendentes e plantas candidatas (em Pré-transplante ou com Transplante pendente). */
   estadoPreTransplante(usuarioId: string): Promise<{ dias: number; plantas: PlantaPre[]; pendentes: TransplantePendente[] }>;
-  aplicarMudancasPre(mudancas: PlantaPre[]): Promise<void>;
+  aplicarMudancasPre(mudancas: (PlantaPre & { grupoLido: GrupoPlanta | null })[]): Promise<void>;
 }
 
 export interface EspecieRepository {

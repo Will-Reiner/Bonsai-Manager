@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, type GrupoPlanta } from '@prisma/client';
 import { ATIVIDADE_TRANSPLANTE, PREF_PRE_TRANSPLANTE_DIAS } from '../../agenda/agenda.types';
 import { diasDePreTransplante, PlantaPre } from '../dominio/grupo';
 import { PlantaRepository, CreatePlantaDTO, UpdatePlantaDTO, PlantaWithEspecie } from '../types/planta.types';
@@ -153,11 +153,15 @@ export class PrismaPlantaRepository implements PlantaRepository {
     };
   }
 
-  async aplicarMudancasPre(mudancas: PlantaPre[]): Promise<void> {
+  async aplicarMudancasPre(mudancas: (PlantaPre & { grupoLido: GrupoPlanta | null })[]): Promise<void> {
     await this.prisma.$transaction(
       mudancas.map((m) =>
-        this.prisma.planta.update({
-          where: { id: m.plantaId },
+        this.prisma.planta.updateMany({
+          where: {
+            id: m.plantaId,
+            // Só grava se o grupo não mudou desde a leitura (registro/troca manual concorrente vence)
+            grupo: m.grupoLido,
+          },
           data: { grupo: m.grupo, grupoAnterior: m.grupoAnterior, preTransplanteAgendaId: m.preTransplanteAgendaId },
         }),
       ),

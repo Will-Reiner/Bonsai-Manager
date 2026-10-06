@@ -42,7 +42,7 @@ describe('atualizarGruposAutomaticos', () => {
     await atualizarGruposAutomaticos(repo, 'user-1', AGORA);
 
     expect(repo.aplicarMudancasPre).toHaveBeenCalledWith([
-      { plantaId: 'p1', grupo: 'PRE_TRANSPLANTE', grupoAnterior: 'REFINAMENTO', preTransplanteAgendaId: 'ag-1' },
+      { plantaId: 'p1', grupo: 'PRE_TRANSPLANTE', grupoAnterior: 'REFINAMENTO', preTransplanteAgendaId: 'ag-1', grupoLido: 'REFINAMENTO' },
     ]);
   });
 
