@@ -90,6 +90,8 @@ Funções puras em `server/src/modules/agenda/dominio/`, testadas isoladamente.
 
 > **Fase 1 (implementada):** candidatas e "última vez" são calculadas no cliente a partir de `GET /api/agendas` (já traz o histórico completo, em cache via `useAgendas`) — `web/src/lib/cuidados.ts`. `GET /agendas/candidatas` e `/ultimas` só se o volume justificar.
 
+> **Fase 2 (implementada):** `POST /rotinas` aceita `atividadeIds[]` (uma rotina por planta+atividade, numa transação); sugestão de intervalo (mediana) calculada no cliente; "Repetir" em próximo passo com rotina já existente e com pendente cria a tarefa avulsa; "Pausar" fica no painel da rotina (RotinaSheet).
+
 `GET /api/agendas` e `GET /api/agendas/:id` passam a incluir `rotina` (intervalo, pausada) para o ícone ↻.
 
 ## Interface (web/)

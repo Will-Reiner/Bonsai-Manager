@@ -44,6 +44,9 @@ cd server && npm run test:coverage
 # Dev server (outside Docker, requires local DB)
 cd server && npm run dev
 
+# Após mudar server/ com o Docker no Windows: o container não recarrega sozinho
+docker restart bonsai_api
+
 # Prisma commands
 cd server && npm run prisma:generate
 cd server && npm run prisma:migrate:dev
@@ -59,7 +62,7 @@ cd web && npm run build      # tsc -b + vite build → web/dist
 cd web && npm run lint       # oxlint
 ```
 
-Structure: `src/lib/endpoints.ts` (all API calls), `src/lib/queries.ts` (TanStack Query hooks + cache keys), `src/lib/upload.ts` (compress → presigned URL → PUT direto no R2), `src/context/CareContext.tsx` (sheets globais de registrar/agendar/reagendar cuidado; `abrirTarefa` navega para `/tarefas/:id`), `src/pages/*` (incl. `BancadaPage` `/`, `TarefaPage` `/tarefas/:id`, `RegistrarPage` `/registrar?planta=` fotos → triagem por código → o que foi feito geral/planta; usa `POST /api/agendas/registrar` com `concluirAgendaIds` (pendentes da mesma planta+atividade, atrasadas ou ≤ 90 dias, escolhidas na tela, viram o registro — `dominio/reconciliar.ts`); "última vez" via `src/lib/cuidados.ts`, `ConcluirPage` `/concluir?ids=`, que usa `POST /api/agendas/concluir`: conclusão em lote + Revisão geral automática, preferência `revisao_automatica_dias`), `src/lib/loteFotos.ts` + `src/components/TriagemFotos.tsx` (triagem fotos por código compartilhada lote/registrar; código novo → "Criar planta #X" criada só ao salvar), `POST /api/agendas/lote` aceita `plantaIds[]` + `detalhes` (observação agendamento). `Planta.especieId` opcional: planta sem espécie aparece topo Coleção com "!". Styling: Tailwind v4, tokens em `src/index.css`.
+Structure: `src/lib/endpoints.ts` (all API calls), `src/lib/queries.ts` (TanStack Query hooks + cache keys), `src/lib/upload.ts` (compress → presigned URL → PUT direto no R2), `src/context/CareContext.tsx` (sheets globais de registrar/agendar/reagendar cuidado; `abrirTarefa` navega para `/tarefas/:id`), `src/pages/*` (incl. `BancadaPage` `/`, `TarefaPage` `/tarefas/:id`, `RegistrarPage` `/registrar?planta=` fotos → triagem por código → o que foi feito geral/planta; usa `POST /api/agendas/registrar` com `concluirAgendaIds` (pendentes da mesma planta+atividade, atrasadas ou ≤ 90 dias, escolhidas na tela, viram o registro — `dominio/reconciliar.ts`); "última vez" via `src/lib/cuidados.ts`, rotinas rolantes em `src/components/care/RepetirCampo.tsx` + `RotinaSheet.tsx` (API `/api/rotinas`, `POST /api/agendas/:id/pular`; regras puras em `server/src/modules/agenda/dominio/rotina.ts`), `ConcluirPage` `/concluir?ids=`, que usa `POST /api/agendas/concluir`: conclusão em lote + Revisão geral automática, preferência `revisao_automatica_dias`), `src/lib/loteFotos.ts` + `src/components/TriagemFotos.tsx` (triagem fotos por código compartilhada lote/registrar; código novo → "Criar planta #X" criada só ao salvar), `POST /api/agendas/lote` aceita `plantaIds[]` + `detalhes` (observação agendamento). `Planta.especieId` opcional: planta sem espécie aparece topo Coleção com "!". Styling: Tailwind v4, tokens em `src/index.css`.
 
 ### Backend extras
 
