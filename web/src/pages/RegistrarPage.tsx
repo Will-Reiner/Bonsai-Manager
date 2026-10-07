@@ -114,6 +114,16 @@ export function RegistrarPage() {
     );
   };
 
+  // Fim da triagem: decide depois que as atribuições das fotos entraram no estado
+  const [fimTriagem, setFimTriagem] = useState(false);
+  useEffect(() => {
+    if (!fimTriagem) return;
+    setFimTriagem(false);
+    if (tocadas.length) ir('feito');
+    else toast('Escolha a planta de ao menos uma foto.', 'error');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fimTriagem]);
+
   function escolherArquivos(files: FileList | null) {
     const lista = [...(files ?? [])].filter((f) => f.type.startsWith('image/'));
     if (!lista.length) return;
@@ -226,7 +236,7 @@ export function RegistrarPage() {
         lote={lote}
         inicio={triagem.inicio}
         voltarDireto={triagem.voltarDireto}
-        onFim={() => (triagem.voltarDireto ? voltar() : ir('feito'))}
+        onFim={() => (triagem.voltarDireto ? voltar() : setFimTriagem(true))}
         onSair={voltar}
       />
     );
