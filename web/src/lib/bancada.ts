@@ -1,5 +1,5 @@
-import { GRUPOS_PLANTA, type Agenda, type Planta } from '@/types';
-import { agruparPorAtividade, diasAte, especieNome, grupoLabel, type GrupoAtividade } from './format';
+import { GRUPOS_PLANTA, type Agenda, type GrupoPlanta, type Planta } from '@/types';
+import { GRUPO_CORES, agruparPorAtividade, diasAte, especieNome, grupoLabel, type GrupoAtividade } from './format';
 import { fimDaEstacao } from './estacoes';
 
 export type Periodo = 'semana' | 'mes' | 'estacao' | 'todas';
@@ -44,13 +44,15 @@ export interface Bloco {
   chave: string;
   /** null = sem cabeçalho (modo "por tarefa") */
   titulo: string | null;
+  /** Classes da faixa do cabeçalho (cor do grupo da planta); null = sem cabeçalho */
+  cor: string | null;
   grupos: GrupoAtividade[];
 }
 
 /** Blocos por grupo da planta (ordem fixa) ou espécie (A–Z), com as tarefas agrupadas por atividade dentro. */
 export function blocosDaBancada(agendas: Agenda[], modo: Agrupar, plantas: Map<string, Planta>): Bloco[] {
   if (!agendas.length) return [];
-  if (modo === 'tarefas') return [{ chave: 'tarefas', titulo: null, grupos: agruparPorAtividade(agendas) }];
+  if (modo === 'tarefas') return [{ chave: 'tarefas', titulo: null, cor: null, grupos: agruparPorAtividade(agendas) }];
 
   const chaveDe = (a: Agenda) => {
     const p = plantas.get(a.plantaId);
@@ -67,11 +69,13 @@ export function blocosDaBancada(agendas: Agenda[], modo: Agrupar, plantas: Map<s
       : k
         ? especieNome(plantas.get(porChave.get(k)![0].plantaId)?.especie)
         : 'Sem espécie';
+  const cor = (k: string) =>
+    modo === 'especies' ? 'bg-primary-light text-primary-dark' : k ? GRUPO_CORES[k as GrupoPlanta] : 'bg-line text-ink';
   const ordem =
     modo === 'grupos'
       ? [...GRUPOS_PLANTA.map((g) => g.value as string), '']
       : [...[...porChave.keys()].filter(Boolean).sort((a, b) => titulo(a).localeCompare(titulo(b), 'pt-BR')), ''];
   return ordem
     .filter((k) => porChave.has(k))
-    .map((k) => ({ chave: k || 'sem', titulo: titulo(k), grupos: agruparPorAtividade(porChave.get(k)!) }));
+    .map((k) => ({ chave: k || 'sem', titulo: titulo(k), cor: cor(k), grupos: agruparPorAtividade(porChave.get(k)!) }));
 }
