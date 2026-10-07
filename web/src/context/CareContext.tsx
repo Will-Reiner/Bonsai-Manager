@@ -1,11 +1,7 @@
 import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from 'react';
 import { useNavigate } from 'react-router';
-import { ScheduleCareSheet } from '@/components/care/ScheduleCareSheet';
+import { ReagendarSheet } from '@/components/care/ReagendarSheet';
 import type { Agenda } from '@/types';
-
-type Aberto =
-  | { tipo: 'agendar'; plantaId?: string; agenda?: Agenda; repetir?: boolean }
-  | null;
 
 interface CareContextData {
   registrarCuidado: (plantaId?: string) => void;
@@ -17,42 +13,33 @@ interface CareContextData {
 
 const CareContext = createContext<CareContextData | null>(null);
 
-/** Sheets de cuidado acessíveis de qualquer tela (Bancada, Coleção, Detalhe, botão +). */
+/** Ações de cuidado acessíveis de qualquer tela (Bancada, Coleção, Detalhe, botão +). */
 export function CareProvider({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
-  const [aberto, setAberto] = useState<Aberto>(null);
-  // Remonta o sheet a cada abertura para começar com o formulário limpo
-  const [versao, setVersao] = useState(0);
-  const abrir = useCallback((next: Aberto) => {
-    setVersao((v) => v + 1);
-    setAberto(next);
-  }, []);
-  const fechar = useCallback(() => setAberto(null), []);
+  // Remonta o sheet a cada abertura para começar com a data da tarefa
+  const [reagendando, setReagendando] = useState<{ agenda: Agenda; versao: number } | null>(null);
+  const fechar = useCallback(() => setReagendando(null), []);
 
   const value = useMemo(
     () => ({
       registrarCuidado: (plantaId?: string) => navigate(plantaId ? `/registrar?planta=${plantaId}` : '/registrar'),
-      agendarCuidado: (plantaId?: string, opcoes?: { repetir?: boolean }) =>
-        abrir({ tipo: 'agendar', plantaId, repetir: opcoes?.repetir }),
+      agendarCuidado: (plantaId?: string, opcoes?: { repetir?: boolean }) => {
+        const p = new URLSearchParams();
+        if (plantaId) p.set('planta', plantaId);
+        if (opcoes?.repetir) p.set('repetir', '1');
+        const s = p.toString();
+        navigate(s ? `/agendar?${s}` : '/agendar');
+      },
       abrirTarefa: (agenda: Agenda) => navigate(`/tarefas/${agenda.id}`),
-      reagendar: (agenda: Agenda) => abrir({ tipo: 'agendar', agenda }),
+      reagendar: (agenda: Agenda) => setReagendando((r) => ({ agenda, versao: (r?.versao ?? 0) + 1 })),
     }),
-    [abrir, navigate],
+    [navigate],
   );
 
   return (
     <CareContext.Provider value={value}>
       {children}
-      {aberto?.tipo === 'agendar' && (
-        <ScheduleCareSheet
-          key={versao}
-          open
-          onClose={fechar}
-          plantaId={aberto.plantaId}
-          agenda={aberto.agenda}
-          repetirInicial={aberto.repetir}
-        />
-      )}
+      {reagendando && <ReagendarSheet key={reagendando.versao} agenda={reagendando.agenda} onClose={fechar} />}
     </CareContext.Provider>
   );
 }
