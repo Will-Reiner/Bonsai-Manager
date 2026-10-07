@@ -4,11 +4,12 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { ChevronRight, LogOut, MapPin, Pencil, ShieldCheck } from 'lucide-react';
 import { Avatar, Button, Field, PageHeader } from '@/components/ui';
 import { PhotoInput } from '@/components/PhotoInput';
+import { MoverTransplanteCampo } from '@/components/fluxo/MoverTransplanteCampo';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/context/ToastContext';
 import { errorMessage } from '@/lib/api';
 import { authApi, preferenciasApi } from '@/lib/endpoints';
-import { keys, useAgendas, usePreferencias, useRevisaoDias, useTransplanteDias, usePreTransplanteDias, usePlantas } from '@/lib/queries';
+import { keys, useAgendas, usePreferencias, useRevisaoDias, useTransplanteDias, usePreTransplanteDias, usePlantas, useMoverRecemTransplantada } from '@/lib/queries';
 import { uploadImage } from '@/lib/upload';
 
 const OPCOES_REVISAO = [
@@ -121,6 +122,40 @@ function TempoPreTransplante() {
   );
 }
 
+/** Valor inicial de "Mover para Recém transplantadas" — também muda sozinho com a última escolha ao registrar. */
+function MoverTransplantePreferencia() {
+  const queryClient = useQueryClient();
+  const toast = useToast();
+  const prefs = usePreferencias();
+  const marcado = useMoverRecemTransplantada();
+  const [salvando, setSalvando] = useState(false);
+
+  async function mudar(v: boolean) {
+    setSalvando(true);
+    try {
+      await preferenciasApi.set('mover_recem_transplantada', v ? 'sim' : 'nao');
+      await queryClient.invalidateQueries({ queryKey: keys.preferencias });
+      toast('Preferência salva');
+    } catch (error) {
+      toast(errorMessage(error), 'error');
+    } finally {
+      setSalvando(false);
+    }
+  }
+
+  return (
+    <section className="card mt-4 p-4">
+      <span className="label">Ao registrar cuidados</span>
+      <MoverTransplanteCampo
+        checked={marcado}
+        onChange={mudar}
+        disabled={prefs.isLoading || salvando}
+        hint="Já vem marcado (ou não) ao registrar um Transplante. Muda sozinho conforme a sua última escolha."
+      />
+    </section>
+  );
+}
+
 export function ProfilePage() {
   const { user, isAdmin, logout } = useAuth();
   const me = useQuery({ queryKey: keys.me, queryFn: authApi.me });
@@ -160,6 +195,7 @@ export function ProfilePage() {
       <RevisaoAutomatica />
       <TempoPreTransplante />
       <TempoTransplante />
+      <MoverTransplantePreferencia />
 
       <nav className="card mt-4 divide-y divide-line overflow-hidden">
         <MenuItem to="/perfil/editar" icon={<Pencil size={20} />} label="Editar perfil" />

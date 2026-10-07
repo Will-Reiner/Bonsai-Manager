@@ -149,6 +149,7 @@ export interface Preferencias {
   revisao_automatica_dias?: string;
   transplante_dias?: string;
   pre_transplante_dias?: string;
+  mover_recem_transplantada?: string;
   [chave: string]: string | undefined;
 }
 

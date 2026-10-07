@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   agendasApi,
   atividadesApi,
@@ -60,6 +60,27 @@ export function usePreTransplanteDias() {
   const prefs = usePreferencias();
   const dias = parseInt(prefs.data?.pre_transplante_dias ?? '30', 10);
   return Number.isNaN(dias) ? 30 : Math.min(365, Math.max(1, dias));
+}
+
+/** "Mover para Recém transplantadas" vem marcado ao registrar/concluir um Transplante? (padrão sim; última escolha). */
+export function useMoverRecemTransplantada() {
+  const prefs = usePreferencias();
+  return prefs.data?.mover_recem_transplantada !== 'nao';
+}
+
+/** Lembra a escolha de "Mover para Recém transplantadas" como preferência da conta (em segundo plano). */
+export function useLembrarMover() {
+  const queryClient = useQueryClient();
+  const atual = useMoverRecemTransplantada();
+  return (usado: boolean) => {
+    if (usado === atual) return;
+    preferenciasApi
+      .set('mover_recem_transplantada', usado ? 'sim' : 'nao')
+      .then(() => queryClient.invalidateQueries({ queryKey: keys.preferencias }))
+      .catch(() => {
+        // falhou: só não lembra a escolha desta vez
+      });
+  };
 }
 
 /** Atividades ordenadas: as rastreadas nas preferências do usuário primeiro. */
