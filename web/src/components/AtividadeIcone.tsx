@@ -16,13 +16,13 @@ const ICONES: [string, LucideIcon][] = [
 
 const normalizar = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
 
-/** Ícone da atividade num quadradinho; atividade desconhecida usa um genérico. */
+/** Ícone da atividade num círculo; atividade desconhecida usa um genérico. */
 export function AtividadeIcone({ nome, size = 18, className = '' }: { nome: string; size?: number; className?: string }) {
   const n = normalizar(nome);
   const Icone = ICONES.find(([trecho]) => n.includes(trecho))?.[1] ?? CircleDot;
   return (
-    <span className={`flex shrink-0 items-center justify-center rounded-xl bg-primary-light text-primary ${className}`} aria-hidden>
-      <Icone size={size} />
+    <span className={`flex shrink-0 items-center justify-center rounded-full bg-primary-light text-primary ${className}`} aria-hidden>
+      <Icone size={size} strokeWidth={1.75} />
     </span>
   );
 }
