@@ -252,9 +252,9 @@ function RodaLinhaDoTempo({ passado, pendentes, abrirFoto }: { passado: ItemLinh
 }
 
 const ESTILO = {
-  feita: { card: 'border-accent/25 bg-accent-light', icone: 'bg-white text-accent', rotulo: 'bg-accent text-white' },
-  futura: { card: 'border-primary/30 bg-primary-light', icone: 'bg-white text-primary', rotulo: 'bg-primary text-white' },
-  atrasada: { card: 'border-danger/40 bg-danger-light', icone: 'bg-white text-danger', rotulo: 'bg-danger text-white' },
+  feita: { card: 'border-accent/25 bg-accent-light', icone: 'bg-card text-accent', rotulo: 'bg-accent text-white' },
+  futura: { card: 'border-primary/30 bg-primary-light', icone: 'bg-card text-primary', rotulo: 'bg-primary text-white' },
+  atrasada: { card: 'border-danger/40 bg-danger-light', icone: 'bg-card text-danger', rotulo: 'bg-danger text-white' },
 };
 
 function CardLinha({ item, rotulo, abrirFoto }: { item: ItemLinha; rotulo?: string; abrirFoto: (f: Foto) => void }) {

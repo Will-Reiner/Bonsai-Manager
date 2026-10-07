@@ -331,7 +331,7 @@ export function ConcluirPage() {
         <ProximosPassos value={proximos} onChange={setProximos} />
       </div>
 
-      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-white/95 px-4 pb-safe pt-3 backdrop-blur">
+      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-card/95 px-4 pb-safe pt-3 backdrop-blur">
         <div className="mx-auto mb-3 max-w-2xl">
           <Button block onClick={concluir} loading={salvando} disabled={!marcadas.length}>
             Concluir{marcadas.length > 1 ? ` (${marcadas.length})` : ''}

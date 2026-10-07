@@ -1,3 +1,4 @@
+import type { CSSProperties } from 'react';
 import type { Agenda, GrupoPlanta, ModoAquisicao, Planta } from '@/types';
 import { GRUPOS_PLANTA, MODOS_AQUISICAO } from '@/types';
 
@@ -10,14 +11,26 @@ export const especieNome = (e?: { nomeComum?: string | null; nomeCientifico?: st
 export const modoAquisicaoLabel = (m?: ModoAquisicao | null) =>
   MODOS_AQUISICAO.find((x) => x.value === m)?.label ?? '—';
 
+/** Cor de faixa/selo e cor do texto sobre ela. */
+export interface TomFaixa {
+  cor: string;
+  texto: string;
+}
+
 /** Cores por prioridade: alerta (debilitada, recém transplantada), preparação (pré-transplante), saúde (crescimento, refinamento). */
-export const GRUPO_CORES: Record<GrupoPlanta, string> = {
-  DEBILITADA: 'bg-danger text-white',
-  RECEM_TRANSPLANTADA: 'bg-amber-500 text-white',
-  PRE_TRANSPLANTE: 'bg-indigo-500 text-white',
-  EM_CRESCIMENTO: 'bg-primary text-white',
-  REFINAMENTO: 'bg-emerald-100 text-emerald-800',
+export const GRUPO_CORES: Record<GrupoPlanta, TomFaixa> = {
+  DEBILITADA: { cor: '#C0392B', texto: '#FFFFFF' },
+  RECEM_TRANSPLANTADA: { cor: '#E0911B', texto: '#3B2606' },
+  PRE_TRANSPLANTE: { cor: '#5B6BD6', texto: '#FFFFFF' },
+  EM_CRESCIMENTO: { cor: '#2F7D3A', texto: '#FFFFFF' },
+  REFINAMENTO: { cor: '#A9D49B', texto: '#21451C' },
 };
+
+/** Faixa neutra (areia): sem grupo, espécie, tarefa. */
+export const TOM_NEUTRO: TomFaixa = { cor: '#D6C0B3', texto: '#2B1F17' };
+
+/** Estilo para `className="faixa"` ou `"selo"`. */
+export const estiloFaixa = (tom: TomFaixa) => ({ '--faixa': tom.cor, color: tom.texto }) as CSSProperties;
 
 export const grupoLabel = (g?: GrupoPlanta | null) => GRUPOS_PLANTA.find((x) => x.value === g)?.label ?? 'Sem grupo';
 

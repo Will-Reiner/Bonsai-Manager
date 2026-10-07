@@ -35,8 +35,8 @@ export function HistoricoPlanta({ agendas, atualId }: { agendas: Agenda[]; atual
                 atual
                   ? 'border-2 border-primary bg-primary-light'
                   : passado
-                    ? 'border border-line bg-white opacity-70'
-                    : 'border-2 border-dashed border-line bg-white'
+                    ? 'border border-line bg-card opacity-70'
+                    : 'border-2 border-dashed border-line bg-card'
               }`}
             >
               {atual && <span className="text-[11px] font-bold uppercase tracking-wider text-primary">Agora</span>}

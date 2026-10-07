@@ -26,7 +26,7 @@ export function AdminPage() {
               role="tab"
               aria-selected={secao === s}
               onClick={() => setSecao(s)}
-              className={`rounded-lg py-2 text-sm font-semibold transition ${secao === s ? 'bg-white text-primary shadow-sm' : 'text-muted'}`}
+              className={`rounded-lg py-2 text-sm font-semibold transition ${secao === s ? 'bg-card text-primary shadow-sm' : 'text-muted'}`}
             >
               {s}
             </button>

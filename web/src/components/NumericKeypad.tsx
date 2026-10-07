@@ -49,14 +49,14 @@ export function NumericKeypad({
   return (
     <div className="grid grid-cols-3 gap-2">
       {TECLAS.map((d) => (
-        <button key={d} type="button" onClick={() => digitar(d)} className={`${tecla} bg-white text-ink active:bg-primary-light`}>
+        <button key={d} type="button" onClick={() => digitar(d)} className={`${tecla} bg-card text-ink active:bg-primary-light`}>
           {d}
         </button>
       ))}
-      <button type="button" onClick={apagar} className={`${tecla} bg-white/60 text-muted`} aria-label="Apagar">
+      <button type="button" onClick={apagar} className={`${tecla} bg-card/60 text-muted`} aria-label="Apagar">
         <Delete size={24} />
       </button>
-      <button type="button" onClick={() => digitar('0')} className={`${tecla} bg-white text-ink active:bg-primary-light`}>
+      <button type="button" onClick={() => digitar('0')} className={`${tecla} bg-card text-ink active:bg-primary-light`}>
         0
       </button>
       <button

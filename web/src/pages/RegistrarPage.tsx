@@ -382,7 +382,7 @@ export function RegistrarPage() {
         <ProximosPassos value={proximos} onChange={setProximos} />
       </div>
 
-      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-white/95 px-4 pb-safe pt-3 backdrop-blur">
+      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-card/95 px-4 pb-safe pt-3 backdrop-blur">
         <div className="mx-auto mb-3 max-w-2xl space-y-2">
           {lote.falhas.length > 0 && fase !== 'salvando' && (
             <Button block variant="secondary" onClick={reenviarESalvar}>

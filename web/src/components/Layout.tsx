@@ -27,7 +27,7 @@ export function Layout() {
     <div className="min-h-dvh pb-24">
       <Outlet />
 
-      <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-white/95 pb-safe backdrop-blur">
+      <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-card/95 pb-safe backdrop-blur">
         <div className="mx-auto grid h-16 max-w-md grid-cols-4 items-center">
           {tabs.map((tab, i) =>
             tab ? (

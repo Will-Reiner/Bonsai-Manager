@@ -293,7 +293,7 @@ function SeletorFotos({ fotos, onAdd, onRemove }: { fotos: File[]; onAdd: (files
   const inputRef = useRef<HTMLInputElement>(null);
   const cameraRef = useRef<HTMLInputElement>(null);
   const tile =
-    'flex flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed border-line bg-white text-muted transition hover:border-primary hover:text-primary';
+    'flex flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed border-line bg-card text-muted transition hover:border-primary hover:text-primary';
   return (
     <div className="grid grid-cols-3 gap-2">
       {fotos.map((f, i) => (

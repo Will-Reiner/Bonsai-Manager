@@ -1,5 +1,5 @@
 import { GRUPOS_PLANTA, type Agenda, type GrupoPlanta, type Planta } from '@/types';
-import { GRUPO_CORES, agruparPorAtividade, diasAte, especieNome, grupoLabel, type GrupoAtividade } from './format';
+import { GRUPO_CORES, TOM_NEUTRO, agruparPorAtividade, diasAte, especieNome, grupoLabel, type GrupoAtividade, type TomFaixa } from './format';
 import { fimDaEstacao } from './estacoes';
 
 export type Periodo = 'semana' | 'mes' | 'estacao' | 'todas';
@@ -44,8 +44,8 @@ export interface Bloco {
   chave: string;
   /** null = sem cabeçalho (modo "por tarefa") */
   titulo: string | null;
-  /** Classes da faixa do cabeçalho (cor do grupo da planta); null = sem cabeçalho */
-  cor: string | null;
+  /** Cor da faixa do cabeçalho; null = sem cabeçalho */
+  cor: TomFaixa | null;
   grupos: GrupoAtividade[];
 }
 
@@ -69,8 +69,7 @@ export function blocosDaBancada(agendas: Agenda[], modo: Agrupar, plantas: Map<s
       : k
         ? especieNome(plantas.get(porChave.get(k)![0].plantaId)?.especie)
         : 'Sem espécie';
-  const cor = (k: string) =>
-    modo === 'especies' ? 'bg-primary-light text-primary-dark' : k ? GRUPO_CORES[k as GrupoPlanta] : 'bg-line text-ink';
+  const cor = (k: string) => (modo === 'grupos' && k ? GRUPO_CORES[k as GrupoPlanta] : TOM_NEUTRO);
   const ordem =
     modo === 'grupos'
       ? [...GRUPOS_PLANTA.map((g) => g.value as string), '']

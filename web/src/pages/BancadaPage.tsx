@@ -8,6 +8,7 @@ import { BotaoPreferencias, OpcoesChips } from '@/components/Preferencias';
 import { Sheet } from '@/components/Sheet';
 import { useAuth } from '@/context/AuthContext';
 import { AGRUPAMENTOS, PERIODOS, blocosDaBancada, tarefasDaBancada, type Agrupar, type Bloco, type Periodo } from '@/lib/bancada';
+import { TOM_NEUTRO, estiloFaixa } from '@/lib/format';
 import { useEscolha } from '@/lib/escolhas';
 import { useAgendas, usePlantas } from '@/lib/queries';
 import { errorMessage } from '@/lib/api';
@@ -124,7 +125,10 @@ function Blocos({ blocos }: { blocos: Bloco[] }) {
       {blocos.map((b) =>
         b.titulo ? (
           <div key={b.chave} className="card overflow-hidden">
-            <h3 className={`flex items-center justify-between gap-2 px-4 py-2.5 font-sans text-sm font-bold uppercase tracking-wide ${b.cor}`}>
+            <h3
+              className="faixa flex items-center justify-between gap-2 px-4 py-2.5 font-sans text-sm font-bold uppercase tracking-wide"
+              style={estiloFaixa(b.cor ?? TOM_NEUTRO)}
+            >
               <span className="truncate">{b.titulo}</span>
               <span className="shrink-0 font-semibold normal-case opacity-90">
                 {b.grupos.reduce((n, g) => n + g.agendas.length, 0)} tarefa(s)

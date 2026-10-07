@@ -19,7 +19,7 @@ export function BotaoTopo({
       onClick={onClick}
       aria-label={label}
       className={`relative flex size-11 items-center justify-center rounded-full border transition active:scale-90 ${
-        marcado ? 'border-primary bg-primary-light text-primary' : 'border-line bg-white text-ink'
+        marcado ? 'border-primary bg-primary-light text-primary' : 'border-line bg-card text-ink'
       }`}
     >
       {children}

@@ -1,24 +1,26 @@
 @import 'tailwindcss';
 
-/* Paleta herdada de mobile_app/src/constants/theme.ts */
+/* Tema Argila clara — docs/superpowers/specs/2026-10-07-tema-argila-bancada-design.md */
 @theme {
-  --color-primary: #285430;
-  --color-primary-dark: #1a3a20;
-  --color-primary-light: #e8f0e9;
-  --color-accent: #a47c6a;
-  --color-accent-light: #f3ebe6;
-  --color-bg: #f6f5f0;
-  --color-card: #ffffff;
-  --color-ink: #2b2b28;
-  --color-muted: #6b6b63;
-  --color-line: #e3e2d9;
+  --color-primary: #493628;
+  --color-primary-dark: #34261c;
+  --color-primary-light: #e9ddd5;
+  --color-accent: #ab886d;
+  --color-accent-light: #d6c0b3;
+  --color-bg: #efecec;
+  --color-card: #f8f6f5;
+  --color-ink: #2b1f17;
+  --color-muted: #7a6a5e;
+  --color-line: #ded3cb;
   --color-danger: #c0392b;
   --color-danger-light: #fbeae8;
   --color-warning: #b7791f;
   --color-warning-light: #fdf3e1;
+  --color-late: #8b4a2b;
+  --color-late-light: #e8d6cb;
 
-  --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-  --font-display: 'Fraunces', ui-serif, Georgia, 'Times New Roman', serif;
+  --font-sans: 'Figtree', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-display: 'Newsreader', ui-serif, Georgia, 'Times New Roman', serif;
 }
 
 @layer base {
@@ -33,6 +35,9 @@
   h3 {
     @apply font-display text-primary-dark;
   }
+  h1 {
+    font-style: italic;
+  }
   input,
   select,
   textarea {
@@ -42,7 +47,7 @@
 
 @layer components {
   .input {
-    @apply w-full rounded-xl border border-line bg-white px-3.5 py-3 text-ink outline-none transition placeholder:text-muted/70 focus:border-primary focus:ring-2 focus:ring-primary/15;
+    @apply w-full rounded-xl border border-line bg-card px-3.5 py-3 text-ink outline-none transition placeholder:text-muted/70 focus:border-primary focus:ring-2 focus:ring-primary/15;
   }
   .label {
     @apply mb-1.5 block text-sm font-medium text-ink;
@@ -51,10 +56,22 @@
     @apply rounded-2xl border border-line bg-card;
   }
   .chip {
-    @apply inline-flex items-center gap-1.5 rounded-full border border-line bg-white px-3.5 py-2 text-sm font-medium text-ink transition active:scale-95;
+    @apply inline-flex items-center gap-1.5 rounded-full border border-line bg-card px-3.5 py-2 text-sm font-medium text-ink transition active:scale-95;
   }
   .chip-active {
     @apply border-primary bg-primary text-white;
+  }
+  /* Faixa de grupo: cor cheia à esquerda, dissolvendo no fundo (cor em --faixa, via estiloFaixa) */
+  .faixa {
+    background: linear-gradient(
+      90deg,
+      var(--faixa) 0%,
+      var(--faixa) 35%,
+      color-mix(in srgb, var(--faixa) 18%, var(--color-bg)) 100%
+    );
+  }
+  .selo {
+    background: linear-gradient(90deg, var(--faixa) 40%, color-mix(in srgb, var(--faixa) 30%, var(--color-bg)) 100%);
   }
 }
 

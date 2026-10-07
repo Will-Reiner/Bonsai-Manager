@@ -91,7 +91,7 @@ export function SpeciesPicker({ value, onChange }: { value: string; onChange: (i
               key={e.id}
               onClick={() => onChange(e.id)}
               className={`flex w-full items-center gap-3 rounded-xl border px-3.5 py-3 text-left transition ${
-                selecionada ? 'border-primary bg-primary-light' : 'border-line bg-white'
+                selecionada ? 'border-primary bg-primary-light' : 'border-line bg-card'
               }`}
             >
               <div className="min-w-0 flex-1">

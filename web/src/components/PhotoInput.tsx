@@ -76,7 +76,7 @@ export function PhotoInput({
         </div>
       ) : (
         <div
-          className={`flex w-full flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-line bg-white text-muted ${aspect}`}
+          className={`flex w-full flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-line bg-card text-muted ${aspect}`}
         >
           <span className="text-sm font-medium">{label}</span>
           <div className="flex gap-2">
