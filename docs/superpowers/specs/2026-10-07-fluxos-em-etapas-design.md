@@ -12,11 +12,11 @@ Fora do escopo: API (nenhuma mudança no servidor), cadastro de planta (já é e
 
 ### `web/src/lib/fluxos.ts` (lógica pura, testada com Vitest)
 
-- `etapaValida<T extends string>(lista: T[], pedida: string | null): T` — a pedida se estiver na lista, senão a primeira.
-- `etapasRegistrar({ temPlantas, temFotos, plantaFixa, temCandidatas })` → lista de etapas:
-  `inicio`, `triagem` (só com fotos e sem planta fixa), `feito`, `tarefas` (só com candidatas), `final`. Sem plantas tocadas → só `['inicio']` (recarregar no meio do fluxo volta ao início).
-- `etapasConcluir()` → `['procedimento', 'final']`.
-- `etapasAgendar({ plantaFixa })` → `plantas` (omitida com planta fixa), `cuidados`, `quando`.
+- `Fluxo<T> = { sequencia: T[]; alcance: number }` — etapas em ordem e quantas, do início, o estado atual libera.
+- `etapaValida(fluxo, desvios, pedida)` — sem pedido → primeira; desvio permitido ou etapa liberada → ela; qualquer outra (recarga, link direto, etapa que sumiu) → a última liberada.
+- `fluxoRegistrar({ temFotos, temPlantas, plantaFixa, temTipos, temCandidatas })`: sequência `inicio`, `triagem` (só com fotos e sem planta fixa), `feito`, `tarefas` (só com candidatas), `final`; sem fotos nem plantas só o início é liberado (recarregar no meio do fluxo volta ao início), sem tipos para em `feito`.
+- `fluxoConcluir({ temMarcadas })` → `procedimento`, `final`.
+- `fluxoAgendar({ plantaFixa, temPlantas, temCuidados })` → `plantas` (omitida com planta fixa), `cuidados`, `quando`.
 - `resumoMaisOpcoes(itens: (string | false | null | undefined)[]): string` — junta os itens preenchidos com " · "; vazio → `''`.
 
 ### `useEtapas(lista)` (`web/src/components/fluxo/useEtapas.ts`)
