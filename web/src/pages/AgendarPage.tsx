@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button, Field } from '@/components/ui';
+import { AgendaDaPlanta, AgendaDasPlantas } from '@/components/care/AgendaDaPlanta';
 import { AtividadeChips } from '@/components/care/AtividadeChips';
 import { DataFuturaCampo } from '@/components/care/DataFuturaCampo';
 import { PlantasLista } from '@/components/care/PlantasPicker';
@@ -14,7 +15,7 @@ import { errorMessage } from '@/lib/api';
 import { agendasApi, guiasSazonaisApi, rotinasApi } from '@/lib/endpoints';
 import { daquiADias, fromDateInput, plantaTitulo, toDateInput } from '@/lib/format';
 import { fluxoAgendar, resumoMaisOpcoes } from '@/lib/fluxos';
-import { keys, useAgendas, usePlantas, useRotinas } from '@/lib/queries';
+import { keys, useAgendas, useAtividadesOrdenadas, usePlantas, useRotinas } from '@/lib/queries';
 import { estacoesDoGuia, medianaIntervaloDias, rotuloUltima, textoIntervalo, ultimasPorPlanta } from '@/lib/cuidados';
 
 /** Agendar cuidados (ou criar rotinas) em etapas: plantas → cuidados → quando. `?planta=` pula a 1ª; `?repetir=1` abre em Repetir. */
@@ -54,6 +55,8 @@ export function AgendarPage() {
   const estacoesSugeridas = atividadeIds.length === 1 && especieId ? estacoesDoGuia(guias.data, atividadeIds[0]) : null;
   const jaTem = (rotinas.data ?? []).filter((r) => plantaIds.includes(r.plantaId) && atividadeIds.includes(r.atividadeId));
   const total = plantaIds.length * atividadeIds.length;
+  const atividades = useAtividadesOrdenadas();
+  const rotuloNova = atividadeIds.map((id) => atividades.data.find((a) => a.id === id)?.nome ?? 'Cuidado').join(' + ');
 
   const fluxo = fluxoAgendar({ plantaFixa: !!plantaFixa, temPlantas: plantaIds.length > 0, temCuidados: atividadeIds.length > 0 });
   const { etapa, avancar, sair } = useEtapas(fluxo);
@@ -162,6 +165,11 @@ export function AgendarPage() {
           <textarea className="input min-h-16" value={detalhes} onChange={(e) => setDetalhes(e.target.value)} placeholder="Ex.: usar adubo Bioplant" />
         </Field>
       </MaisOpcoes>
+      {plantaIds.length === 1 ? (
+        <AgendaDaPlanta plantaId={plantaIds[0]} data={data} atividadeIds={atividadeIds} rotuloNova={rotuloNova} notaNova={repetir ? 'primeira vez' : undefined} />
+      ) : (
+        <AgendaDasPlantas plantaIds={plantaIds} data={data} atividadeIds={atividadeIds} rotuloNova={rotuloNova} notaNova={repetir ? 'primeira vez' : undefined} />
+      )}
     </FluxoLayout>
   );
 }

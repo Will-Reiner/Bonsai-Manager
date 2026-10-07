@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { Sheet } from '@/components/Sheet';
 import { Button } from '@/components/ui';
+import { AgendaDaPlanta } from './AgendaDaPlanta';
 import { DataFuturaCampo } from './DataFuturaCampo';
 import { useToast } from '@/context/ToastContext';
 import { errorMessage } from '@/lib/api';
@@ -40,6 +41,14 @@ export function ReagendarSheet({ agenda, onClose }: { agenda: Agenda; onClose: (
           {agenda.atividade?.nome} · {agenda.planta?.nome || 'planta'}
         </p>
         <DataFuturaCampo value={data} onChange={setData} livre />
+        <AgendaDaPlanta
+          plantaId={agenda.plantaId}
+          ignorarId={agenda.id}
+          data={data}
+          atividadeIds={[agenda.atividadeId]}
+          rotuloNova={agenda.atividade?.nome ?? 'Tarefa'}
+          notaNova="nova data"
+        />
         <Button type="submit" block loading={salvando}>
           Salvar nova data
         </Button>
