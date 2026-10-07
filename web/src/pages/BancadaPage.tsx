@@ -99,7 +99,10 @@ export function BancadaPage() {
         <div className="space-y-4 pb-6">
           {blocos.map((b) => (
             <section key={b.chave}>
-              <FaixaGrupo bloco={b} />
+              <FaixaGrupo
+                bloco={b}
+                concluirIds={agrupar === 'tarefas' ? b.grupos[0]?.agendas.map((a) => a.id) : undefined}
+              />
               {b.grupos.map((g) => (
                 <div key={g.atividadeId}>
                   {agrupar !== 'tarefas' && <CabecalhoTarefa grupo={g} />}

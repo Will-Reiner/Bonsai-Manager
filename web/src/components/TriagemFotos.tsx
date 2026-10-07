@@ -95,7 +95,7 @@ export function TriagemFotos({
       {/* Painel inferior */}
       <div className="rounded-t-3xl bg-bg px-3 pt-3">
         <div className="mx-auto max-w-md">
-          <div className="mb-2 flex h-14 items-center gap-3 rounded-2xl bg-white px-3">
+          <div className="mb-2 flex h-14 items-center gap-3 rounded-2xl bg-card px-3">
             <span className="min-w-14 text-2xl font-semibold tabular-nums text-primary-dark">
               {digitado ? `#${digitado}` : <span className="text-base font-normal text-muted">#</span>}
             </span>

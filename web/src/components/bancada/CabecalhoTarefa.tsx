@@ -14,7 +14,8 @@ export function CabecalhoTarefa({ grupo: g }: { grupo: GrupoAtividade }) {
       {g.agendas.length > 1 && (
         <button
           type="button"
-          className="shrink-0 text-xs font-semibold text-primary"
+          className="-my-2 shrink-0 px-2 py-2 text-xs font-semibold text-primary"
+          aria-label={`Concluir todas: ${g.nome}`}
           onClick={() => navigate(`/concluir?ids=${g.agendas.map((a) => a.id).join(',')}`)}
         >
           Concluir todas

@@ -71,7 +71,7 @@
     );
   }
   .selo {
-    background: linear-gradient(90deg, var(--faixa) 40%, color-mix(in srgb, var(--faixa) 30%, var(--color-bg)) 100%);
+    background: linear-gradient(90deg, var(--faixa) 85%, color-mix(in srgb, var(--faixa) 60%, var(--color-bg)) 100%);
   }
 }
 
