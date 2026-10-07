@@ -1,6 +1,8 @@
 import { useMemo, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router';
-import { ImagePlus, LayoutGrid, List, Plus, Search } from 'lucide-react';
+import { FileText, ImagePlus, LayoutGrid, List, Plus, Search } from 'lucide-react';
+import { GrupoBadge } from '@/components/GrupoBadge';
+import { Sheet } from '@/components/Sheet';
 import { Button, EmptyState, ErrorState, PlantThumb, Spinner } from '@/components/ui';
 import { errorMessage } from '@/lib/api';
 import { especieNome, plantaTitulo } from '@/lib/format';
@@ -19,6 +21,7 @@ export function CollectionPage() {
   const [especie, setEspecie] = useState('');
   const [grupo, setGrupo] = useState<'' | 'sem' | GrupoPlanta>('');
   const [ordem, setOrdem] = useState<Ordem>('recentes');
+  const [obs, setObs] = useState<Planta | null>(null);
   const [view, setView] = useState<'grid' | 'lista'>(() =>
     localStorage.getItem(VIEW_KEY) === 'lista' ? 'lista' : 'grid',
   );
@@ -177,53 +180,79 @@ export function CollectionPage() {
           ) : view === 'grid' ? (
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
               {lista.map((p) => (
-                <Link key={p.id} to={`/plantas/${p.id}`} className="card overflow-hidden transition active:scale-[0.98]">
-                  <div className="relative">
-                    <PlantThumb url={p.fotoCapaUrl} className="aspect-square w-full" />
-                    {!p.especieId && (
-                      <span className="absolute left-2 top-2 flex size-6 items-center justify-center rounded-full bg-danger text-sm font-bold text-white ring-2 ring-white" aria-label="Sem espécie">
-                        !
-                      </span>
-                    )}
-                    {proximaTarefa.has(p.id) && (
-                      <span className="absolute right-2 top-2 size-2.5 rounded-full bg-warning ring-2 ring-white" aria-label="Tem tarefa pendente" />
-                    )}
-                  </div>
-                  <div className="p-2.5">
-                    <p className="truncate font-semibold">{plantaTitulo(p)}</p>
-                    <p className="truncate text-xs text-muted">
-                      {p.especieId ? especieNome(p.especie) : <span className="font-medium text-danger">Sem espécie · completar</span>}
-                    </p>
-                  </div>
-                </Link>
+                <div key={p.id} className="relative">
+                  <Link to={`/plantas/${p.id}`} className="card block overflow-hidden transition active:scale-[0.98]">
+                    <div className="relative">
+                      <PlantThumb url={p.fotoCapaUrl} className="aspect-square w-full" />
+                      {!p.especieId && (
+                        <span className="absolute left-2 top-2 flex size-6 items-center justify-center rounded-full bg-danger text-sm font-bold text-white ring-2 ring-white" aria-label="Sem espécie">
+                          !
+                        </span>
+                      )}
+                      <GrupoBadge grupo={p.grupo} className="absolute bottom-2 left-2 max-w-[calc(100%-1rem)] shadow-sm" />
+                    </div>
+                    <div className="p-2.5">
+                      <p className="truncate font-semibold">{plantaTitulo(p)}</p>
+                      <p className="truncate text-xs text-muted">
+                        {p.especieId ? especieNome(p.especie) : <span className="font-medium text-danger">Sem espécie · completar</span>}
+                      </p>
+                    </div>
+                  </Link>
+                  {p.observacoes?.trim() && (
+                    <BotaoObs onClick={() => setObs(p)} className="absolute right-2 top-2 bg-white/90 shadow-sm" />
+                  )}
+                </div>
               ))}
             </div>
           ) : (
             <div className="space-y-2">
               {lista.map((p) => (
-                <Link key={p.id} to={`/plantas/${p.id}`} className="card flex items-center gap-3 p-2.5">
-                  <PlantThumb url={p.fotoCapaUrl} className="size-14 shrink-0 rounded-xl" />
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate font-semibold">{plantaTitulo(p)}</p>
-                    <p className="truncate text-sm text-muted">
-                      {p.especieId ? (
-                        especieNome(p.especie)
-                      ) : (
-                        <span className="font-medium text-danger">
-                          <span className="mr-1 inline-flex size-5 items-center justify-center rounded-full bg-danger text-xs font-bold text-white">!</span>
-                          Sem espécie · completar
-                        </span>
-                      )}
-                      {p.identificador && p.nome ? ` · ${p.identificador}` : ''}
-                    </p>
-                  </div>
-                  {proximaTarefa.has(p.id) && <span className="size-2.5 shrink-0 rounded-full bg-warning" aria-label="Tem tarefa pendente" />}
-                </Link>
+                <div key={p.id} className="relative">
+                  <Link to={`/plantas/${p.id}`} className={`card flex items-center gap-3 p-2.5 ${p.observacoes?.trim() ? 'pr-12' : ''}`}>
+                    <PlantThumb url={p.fotoCapaUrl} className="size-14 shrink-0 rounded-xl" />
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate font-semibold">{plantaTitulo(p)}</p>
+                      <p className="truncate text-sm text-muted">
+                        {p.especieId ? (
+                          especieNome(p.especie)
+                        ) : (
+                          <span className="font-medium text-danger">
+                            <span className="mr-1 inline-flex size-5 items-center justify-center rounded-full bg-danger text-xs font-bold text-white">!</span>
+                            Sem espécie · completar
+                          </span>
+                        )}
+                        {p.identificador && p.nome ? ` · ${p.identificador}` : ''}
+                      </p>
+                      <GrupoBadge grupo={p.grupo} className="mt-1" />
+                    </div>
+                  </Link>
+                  {p.observacoes?.trim() && (
+                    <BotaoObs onClick={() => setObs(p)} className="absolute right-2.5 top-1/2 -translate-y-1/2 bg-bg" />
+                  )}
+                </div>
               ))}
             </div>
           )}
         </>
       )}
+
+      <Sheet open={!!obs} onClose={() => setObs(null)} title="Observações">
+        <p className="mb-2 text-sm font-medium text-muted">{plantaTitulo(obs)}</p>
+        <p className="whitespace-pre-line text-ink">{obs?.observacoes}</p>
+      </Sheet>
     </div>
+  );
+}
+
+function BotaoObs({ onClick, className }: { onClick: () => void; className: string }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`flex size-8 items-center justify-center rounded-full text-ink transition active:scale-90 ${className}`}
+      aria-label="Ver observações"
+    >
+      <FileText size={16} />
+    </button>
   );
 }

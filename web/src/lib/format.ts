@@ -10,6 +10,15 @@ export const especieNome = (e?: { nomeComum?: string | null; nomeCientifico?: st
 export const modoAquisicaoLabel = (m?: ModoAquisicao | null) =>
   MODOS_AQUISICAO.find((x) => x.value === m)?.label ?? '—';
 
+/** Cores por prioridade: alerta (debilitada, recém transplantada), preparação (pré-transplante), saúde (crescimento, refinamento). */
+export const GRUPO_CORES: Record<GrupoPlanta, string> = {
+  DEBILITADA: 'bg-danger text-white',
+  RECEM_TRANSPLANTADA: 'bg-amber-500 text-white',
+  PRE_TRANSPLANTE: 'bg-indigo-500 text-white',
+  EM_CRESCIMENTO: 'bg-primary text-white',
+  REFINAMENTO: 'bg-emerald-100 text-emerald-800',
+};
+
 export const grupoLabel = (g?: GrupoPlanta | null) => GRUPOS_PLANTA.find((x) => x.value === g)?.label ?? 'Sem grupo';
 
 const startOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
