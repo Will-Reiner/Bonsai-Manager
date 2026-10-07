@@ -1,16 +1,23 @@
 import { useMemo, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router';
+import { useSearchParams } from 'react-router';
 import { useQueryClient } from '@tanstack/react-query';
-import { Check, ChevronDown, Plus, X } from 'lucide-react';
+import { Check, ChevronRight, Plus, SlidersHorizontal, X } from 'lucide-react';
 import { Button, EmptyState, ErrorState, Field, PageHeader, PlantThumb, Spinner } from '@/components/ui';
 import { ProximosPassos, proximosParaApi, type Proximo } from '@/components/care/ProximosPassos';
 import { repetirValido } from '@/components/care/RepetirCampo';
 import { PhotoInput } from '@/components/PhotoInput';
+import { AjustarPlantas } from '@/components/fluxo/AjustarPlantas';
+import { FluxoLayout } from '@/components/fluxo/FluxoLayout';
+import { MaisOpcoes } from '@/components/fluxo/MaisOpcoes';
+import { MoverTransplanteCampo } from '@/components/fluxo/MoverTransplanteCampo';
+import { QuandoCampo } from '@/components/fluxo/QuandoCampo';
+import { useEtapas } from '@/components/fluxo/useEtapas';
 import { useToast } from '@/context/ToastContext';
 import { errorMessage } from '@/lib/api';
 import { agendasApi } from '@/lib/endpoints';
+import { fluxoConcluir, resumoMaisOpcoes } from '@/lib/fluxos';
 import { fromDateInput, plantaRotulo, toDateInput } from '@/lib/format';
-import { keys, useAgendas, useAtividadesOrdenadas } from '@/lib/queries';
+import { keys, useAgendas, useAtividadesOrdenadas, useLembrarMover, useMoverRecemTransplantada } from '@/lib/queries';
 import { ATIVIDADE_TRANSPLANTE } from '@/types';
 import { uploadImage } from '@/lib/upload';
 
@@ -21,11 +28,11 @@ interface Ajuste {
 }
 
 const AJUSTE_VAZIO: Ajuste = { detalhes: '', observacaoFutura: '', foto: null };
+const temAjuste = (aj: Ajuste) => !!(aj.detalhes || aj.observacaoFutura || aj.foto);
 
-/** Concluir uma tarefa ou um grupo: campos comuns + ajuste opcional por planta. */
+/** Concluir uma tarefa ou um grupo em etapas: procedimento → finalizar (+ desvio Ajustar plantas). */
 export function ConcluirPage() {
   const [params] = useSearchParams();
-  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const toast = useToast();
   const agendas = useAgendas();
@@ -38,7 +45,6 @@ export function ConcluirPage() {
   );
 
   const [desmarcadas, setDesmarcadas] = useState<Set<string>>(new Set());
-  const [aberta, setAberta] = useState<string | null>(null);
   const [ajustes, setAjustes] = useState<Record<string, Ajuste>>({});
   const [trocarAtividade, setTrocarAtividade] = useState(false);
   const [atividadeId, setAtividadeId] = useState('');
@@ -49,7 +55,10 @@ export function ConcluirPage() {
   const [observacaoFutura, setObservacaoFutura] = useState('');
   const [foto, setFoto] = useState<File | null>(null);
   const [proximos, setProximos] = useState<Proximo[]>([]);
-  const [moverTransplante, setMoverTransplante] = useState(true);
+  const moverPadrao = useMoverRecemTransplantada();
+  const lembrarMover = useLembrarMover();
+  const [moverEscolha, setMoverEscolha] = useState<boolean | null>(null);
+  const moverTransplante = moverEscolha ?? moverPadrao;
   const [salvando, setSalvando] = useState(false);
 
   const marcadas = tarefas.filter((t) => !desmarcadas.has(t.id));
@@ -59,6 +68,10 @@ export function ConcluirPage() {
   const comTransplante =
     !!transplanteId &&
     (marcadas.some((t) => (atividadeId || t.atividadeId) === transplanteId) || extras.includes(transplanteId));
+
+  const fluxo = fluxoConcluir({ temMarcadas: marcadas.length > 0 });
+  const { etapa, ir, avancar, voltar, sair } = useEtapas(fluxo, marcadas.length > 1 ? ['ajustar'] : []);
+  const progresso = { etapas: fluxo.sequencia, atual: etapa };
 
   const alternar = (id: string) =>
     setDesmarcadas((s) => {
@@ -75,7 +88,8 @@ export function ConcluirPage() {
     if (!marcadas.length) return toast('Marque ao menos uma planta.', 'error');
     if (!data) return toast('Informe a data.', 'error');
     if (data > toDateInput()) return toast('A data não pode ser no futuro.', 'error');
-    if (proximos.some((p) => !p.atividadeId || !p.data || !repetirValido(p.repetir))) return toast('Complete os próximos passos.', 'error');
+    if (proximos.some((p) => !p.atividadeId || !p.data || !repetirValido(p.repetir)))
+      return toast('Complete os próximos passos (em Mais opções).', 'error');
     setSalvando(true);
     try {
       const urlComum = foto ? await uploadImage(foto) : null;
@@ -103,12 +117,13 @@ export function ConcluirPage() {
         itens,
         moverRecemTransplantada: comTransplante && moverTransplante ? true : undefined,
       });
+      if (comTransplante) lembrarMover(moverTransplante);
       queryClient.invalidateQueries({ queryKey: keys.agendas });
       queryClient.invalidateQueries({ queryKey: keys.rotinas });
       queryClient.invalidateQueries({ queryKey: ['fotos'] });
       queryClient.invalidateQueries({ queryKey: keys.plantas });
       toast(`${marcadas.length > 1 ? `${marcadas.length} tarefas concluídas` : 'Tarefa concluída'} 🌿`);
-      navigate('/', { replace: true });
+      sair();
     } catch (error) {
       toast(errorMessage(error), 'error');
       setSalvando(false);
@@ -133,211 +148,207 @@ export function ConcluirPage() {
     );
   }
 
-  return (
-    <div className="min-h-dvh pb-32">
-      <PageHeader title={tarefas.length > 1 ? `Concluir ${atividadeAtual?.nome ?? 'grupo'}` : 'Concluir tarefa'} back />
+  // ───────────── Ajustar plantas (desvio) ─────────────
+  if (etapa === 'ajustar') {
+    return (
+      <FluxoLayout titulo="Ajustar plantas" rodape={<Button block onClick={voltar}>Pronto</Button>}>
+        <AjustarPlantas
+          itens={marcadas.map((t) => ({
+            id: t.id,
+            thumb: <PlantThumb url={t.planta?.fotoCapaUrl} className="size-14 shrink-0 rounded-xl" />,
+            titulo: plantaRotulo(t.planta),
+            subtitulo: t.planta?.identificador && t.planta?.nome ? t.planta.nome : undefined,
+            ajustado: temAjuste(ajuste(t.id)),
+          }))}
+          conteudo={(id) => {
+            const aj = ajuste(id);
+            return (
+              <>
+                <Field label="Descrição desta planta">
+                  <textarea className="input min-h-16" value={aj.detalhes} onChange={(e) => setAjuste(id, { detalhes: e.target.value })} placeholder={detalhes || 'Substitui a descrição geral'} />
+                </Field>
+                <Field label="Obs. desta planta">
+                  <textarea className="input min-h-16" value={aj.observacaoFutura} onChange={(e) => setAjuste(id, { observacaoFutura: e.target.value })} placeholder={observacaoFutura || 'Substitui a obs. geral'} />
+                </Field>
+                <PhotoInput file={aj.foto} onChange={(f) => setAjuste(id, { foto: f })} label="Foto desta planta" aspect="aspect-[16/9]" />
+              </>
+            );
+          }}
+        />
+      </FluxoLayout>
+    );
+  }
 
-      <div className="mx-auto max-w-2xl space-y-6 px-4 pt-4">
-        {/* Plantas */}
-        <section>
-          <span className="label">{tarefas.length > 1 ? 'Plantas' : 'Planta'}</span>
-          <div className="space-y-2">
-            {tarefas.map((t) => {
-              const marcada = !desmarcadas.has(t.id);
-              const aj = ajuste(t.id);
-              const temAjuste = !!(aj.detalhes || aj.observacaoFutura || aj.foto);
-              return (
-                <div key={t.id} className={`card overflow-hidden ${marcada ? '' : 'opacity-50'}`}>
-                  <div className="flex items-center gap-3 p-2.5">
-                    {tarefas.length > 1 && (
-                      <button
-                        type="button"
-                        onClick={() => alternar(t.id)}
-                        className={`flex size-7 shrink-0 items-center justify-center rounded-lg border-2 ${
-                          marcada ? 'border-primary bg-primary text-white' : 'border-line'
-                        }`}
-                        aria-pressed={marcada}
-                        aria-label={`Incluir ${plantaRotulo(t.planta)}`}
-                      >
-                        {marcada && <Check size={16} strokeWidth={3} />}
-                      </button>
-                    )}
-                    <PlantThumb url={t.planta?.fotoCapaUrl} className="size-14 shrink-0 rounded-xl" />
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate font-semibold">{plantaRotulo(t.planta)}</p>
-                      {t.planta?.identificador && t.planta?.nome && (
-                        <p className="truncate text-sm text-muted">{t.planta.nome}</p>
-                      )}
-                      {t.detalhes && (
-                        <p className="truncate text-xs text-primary-dark" title={t.detalhes}>
-                          Obs.: {t.detalhes}
-                        </p>
-                      )}
-                      {temAjuste && <p className="text-xs font-medium text-primary">Com ajuste próprio</p>}
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => setAberta(aberta === t.id ? null : t.id)}
-                      className="flex size-10 items-center justify-center rounded-full text-muted hover:bg-line/50"
-                      aria-label="Ajustar só esta planta"
-                      aria-expanded={aberta === t.id}
-                    >
-                      <ChevronDown size={20} className={`transition ${aberta === t.id ? 'rotate-180' : ''}`} />
-                    </button>
-                  </div>
-                  {aberta === t.id && (
-                    <div className="space-y-3 border-t border-line p-3">
-                      <p className="text-xs text-muted">Só para esta planta (substitui os campos comuns).</p>
-                      <Field label="Descrição">
-                        <textarea
-                          className="input min-h-16"
-                          value={aj.detalhes}
-                          onChange={(e) => setAjuste(t.id, { detalhes: e.target.value })}
-                        />
-                      </Field>
-                      <Field label="Obs.">
-                        <textarea
-                          className="input min-h-16"
-                          value={aj.observacaoFutura}
-                          onChange={(e) => setAjuste(t.id, { observacaoFutura: e.target.value })}
-                        />
-                      </Field>
-                      <PhotoInput
-                        file={aj.foto}
-                        onChange={(f) => setAjuste(t.id, { foto: f })}
-                        label="Foto desta planta"
-                        aspect="aspect-[16/9]"
-                      />
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </section>
-
-        {/* Atividade */}
-        <section>
-          <span className="label">Procedimento</span>
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="chip chip-active">{atividadeId ? nomeAtividade(atividadeId) : atividadeAtual?.nome}</span>
-            <Button variant="ghost" size="sm" type="button" onClick={() => setTrocarAtividade((v) => !v)}>
-              {trocarAtividade ? 'Fechar' : 'Trocar'}
-            </Button>
-          </div>
-          {trocarAtividade && (
-            <div className="mt-2 flex flex-wrap gap-2">
-              {atividades.data.map((a) => (
-                <button
-                  type="button"
-                  key={a.id}
-                  className={`chip ${(atividadeId || atividadeAtual?.id) === a.id ? 'chip-active' : ''}`}
-                  onClick={() => {
-                    setAtividadeId(a.id === atividadeAtual?.id ? '' : a.id);
-                    setExtras((x) => x.filter((e) => e !== a.id));
-                    setTrocarAtividade(false);
-                  }}
-                >
-                  {a.nome}
-                </button>
-              ))}
-            </div>
-          )}
-        </section>
-
-        {/* Feito junto */}
-        <section>
-          <span className="label">Feito junto (opcional)</span>
-          <div className="flex flex-wrap gap-2">
-            {extras.map((id) => (
-              <button
-                type="button"
-                key={id}
-                className="chip chip-active"
-                onClick={() => setExtras((x) => x.filter((e) => e !== id))}
-                aria-label={`Remover ${nomeAtividade(id)}`}
-              >
-                {nomeAtividade(id)} <X size={14} />
-              </button>
-            ))}
-            <Button variant="ghost" size="sm" type="button" onClick={() => setEscolherExtra((v) => !v)}>
-              <Plus size={16} /> Procedimento
-            </Button>
-          </div>
-          {escolherExtra && (
-            <div className="mt-2 flex flex-wrap gap-2">
-              {atividades.data
-                .filter((a) => !extras.includes(a.id) && a.id !== (atividadeId || atividadeAtual?.id))
-                .map((a) => (
-                  <button
-                    type="button"
-                    key={a.id}
-                    className="chip"
-                    onClick={() => {
-                      setExtras((x) => [...x, a.id]);
-                      setEscolherExtra(false);
-                    }}
-                  >
-                    {a.nome}
-                  </button>
-                ))}
-            </div>
-          )}
-        </section>
-
-        <Field label="Quando">
-          <input type="date" className="input" value={data} max={toDateInput()} onChange={(e) => setData(e.target.value)} />
-        </Field>
-
-        <Field label="Descrição (opcional)" hint="Se preencher, substitui a observação do agendamento.">
-          <textarea
-            className="input min-h-20"
-            value={detalhes}
-            onChange={(e) => setDetalhes(e.target.value)}
-            placeholder="O que foi feito"
-          />
-        </Field>
-
-        <Field label="Obs. (opcional)" hint="Aparece em destaque no histórico da planta.">
-          <textarea
-            className="input min-h-16"
-            value={observacaoFutura}
-            onChange={(e) => setObservacaoFutura(e.target.value)}
-            placeholder="Ex.: arame apertado no galho da esquerda"
-          />
-        </Field>
-
+  // ───────────── Finalizar ─────────────
+  if (etapa === 'final') {
+    const resumo = resumoMaisOpcoes([
+      detalhes.trim() && 'Descrição',
+      observacaoFutura.trim() && 'Obs.',
+      comTransplante && (moverTransplante ? 'Mover p/ Recém transplantadas' : 'Não mover p/ Recém transplantadas'),
+      proximos.length > 0 && (proximos.length === 1 ? '1 próximo passo' : `${proximos.length} próximos passos`),
+    ]);
+    return (
+      <FluxoLayout
+        titulo="Finalizar"
+        progresso={progresso}
+        rodape={
+          <Button block onClick={concluir} loading={salvando} disabled={!marcadas.length}>
+            Concluir{marcadas.length > 1 ? ` (${marcadas.length})` : ''}
+          </Button>
+        }
+      >
+        <QuandoCampo value={data} onChange={setData} />
         <PhotoInput
           file={foto}
           onChange={setFoto}
           label={marcadas.length > 1 ? 'Foto (todas as plantas)' : 'Foto (opcional)'}
           aspect="aspect-[16/9]"
         />
+        <MaisOpcoes resumo={resumo} dica="Descrição, observação, próximos passos">
+          <Field label="Descrição" hint="Se preencher, substitui a observação do agendamento.">
+            <textarea className="input min-h-20" value={detalhes} onChange={(e) => setDetalhes(e.target.value)} placeholder="O que foi feito" />
+          </Field>
+          <Field label="Obs." hint="Aparece em destaque no histórico da planta.">
+            <textarea className="input min-h-16" value={observacaoFutura} onChange={(e) => setObservacaoFutura(e.target.value)} placeholder="Ex.: arame apertado no galho da esquerda" />
+          </Field>
+          {comTransplante && <MoverTransplanteCampo checked={moverTransplante} onChange={setMoverEscolha} />}
+          <ProximosPassos value={proximos} onChange={setProximos} />
+        </MaisOpcoes>
+      </FluxoLayout>
+    );
+  }
 
-        {comTransplante && (
-          <label className="card flex cursor-pointer items-center gap-3 p-3">
-            <input
-              type="checkbox"
-              className="size-5 shrink-0 accent-primary"
-              checked={moverTransplante}
-              onChange={(e) => setMoverTransplante(e.target.checked)}
-            />
-            <span className="min-w-0 flex-1">
-              <span className="block font-semibold">Mover para Recém transplantadas</span>
-              <span className="block text-xs text-muted">Depois do prazo (ajustável no Perfil) a planta volta ao grupo de antes.</span>
-            </span>
-          </label>
-        )}
-        <ProximosPassos value={proximos} onChange={setProximos} />
-      </div>
+  // ───────────── Procedimento ─────────────
+  const ajustadas = marcadas.filter((t) => temAjuste(ajuste(t.id))).length;
+  return (
+    <FluxoLayout
+      titulo={tarefas.length > 1 ? `Concluir ${atividadeAtual?.nome ?? 'grupo'}` : 'Concluir tarefa'}
+      progresso={progresso}
+      rodape={
+        <Button block onClick={avancar} disabled={!marcadas.length}>
+          Continuar
+        </Button>
+      }
+    >
+      {/* Plantas */}
+      <section>
+        <span className="label">{tarefas.length > 1 ? 'Plantas' : 'Planta'}</span>
+        <div className="space-y-2">
+          {tarefas.map((t) => {
+            const marcada = !desmarcadas.has(t.id);
+            return (
+              <div key={t.id} className={`card flex items-center gap-3 p-2.5 ${marcada ? '' : 'opacity-50'}`}>
+                {tarefas.length > 1 && (
+                  <button
+                    type="button"
+                    onClick={() => alternar(t.id)}
+                    className={`flex size-7 shrink-0 items-center justify-center rounded-lg border-2 ${
+                      marcada ? 'border-primary bg-primary text-white' : 'border-line'
+                    }`}
+                    aria-pressed={marcada}
+                    aria-label={`Incluir ${plantaRotulo(t.planta)}`}
+                  >
+                    {marcada && <Check size={16} strokeWidth={3} />}
+                  </button>
+                )}
+                <PlantThumb url={t.planta?.fotoCapaUrl} className="size-14 shrink-0 rounded-xl" />
+                <div className="min-w-0 flex-1">
+                  <p className="truncate font-semibold">{plantaRotulo(t.planta)}</p>
+                  {t.planta?.identificador && t.planta?.nome && <p className="truncate text-sm text-muted">{t.planta.nome}</p>}
+                  {t.detalhes && (
+                    <p className="truncate text-xs text-primary-dark" title={t.detalhes}>
+                      Obs.: {t.detalhes}
+                    </p>
+                  )}
+                  {marcada && temAjuste(ajuste(t.id)) && <p className="text-xs font-medium text-primary">Com ajuste próprio</p>}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </section>
 
-      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-card/95 px-4 pb-safe pt-3 backdrop-blur">
-        <div className="mx-auto mb-3 max-w-2xl">
-          <Button block onClick={concluir} loading={salvando} disabled={!marcadas.length}>
-            Concluir{marcadas.length > 1 ? ` (${marcadas.length})` : ''}
+      {/* Atividade */}
+      <section>
+        <span className="label">Procedimento</span>
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="chip chip-active">{atividadeId ? nomeAtividade(atividadeId) : atividadeAtual?.nome}</span>
+          <Button variant="ghost" size="sm" type="button" onClick={() => setTrocarAtividade((v) => !v)}>
+            {trocarAtividade ? 'Fechar' : 'Trocar'}
           </Button>
         </div>
-      </div>
-    </div>
+        {trocarAtividade && (
+          <div className="mt-2 flex flex-wrap gap-2">
+            {atividades.data.map((a) => (
+              <button
+                type="button"
+                key={a.id}
+                className={`chip ${(atividadeId || atividadeAtual?.id) === a.id ? 'chip-active' : ''}`}
+                onClick={() => {
+                  setAtividadeId(a.id === atividadeAtual?.id ? '' : a.id);
+                  setExtras((x) => x.filter((e) => e !== a.id));
+                  setTrocarAtividade(false);
+                }}
+              >
+                {a.nome}
+              </button>
+            ))}
+          </div>
+        )}
+      </section>
+
+      {/* Feito junto */}
+      <section>
+        <span className="label">Feito junto (opcional)</span>
+        <div className="flex flex-wrap gap-2">
+          {extras.map((id) => (
+            <button
+              type="button"
+              key={id}
+              className="chip chip-active"
+              onClick={() => setExtras((x) => x.filter((e) => e !== id))}
+              aria-label={`Remover ${nomeAtividade(id)}`}
+            >
+              {nomeAtividade(id)} <X size={14} />
+            </button>
+          ))}
+          <Button variant="ghost" size="sm" type="button" onClick={() => setEscolherExtra((v) => !v)}>
+            <Plus size={16} /> Procedimento
+          </Button>
+        </div>
+        {escolherExtra && (
+          <div className="mt-2 flex flex-wrap gap-2">
+            {atividades.data
+              .filter((a) => !extras.includes(a.id) && a.id !== (atividadeId || atividadeAtual?.id))
+              .map((a) => (
+                <button
+                  type="button"
+                  key={a.id}
+                  className="chip"
+                  onClick={() => {
+                    setExtras((x) => [...x, a.id]);
+                    setEscolherExtra(false);
+                  }}
+                >
+                  {a.nome}
+                </button>
+              ))}
+          </div>
+        )}
+      </section>
+
+      {marcadas.length > 1 && (
+        <button type="button" onClick={() => ir('ajustar')} className="card flex w-full items-center gap-3 p-3 text-left">
+          <SlidersHorizontal size={18} className="shrink-0 text-primary" />
+          <span className="min-w-0 flex-1">
+            <span className="block font-semibold">Algo diferente em alguma planta?</span>
+            <span className={`block text-xs ${ajustadas ? 'font-medium text-primary' : 'text-muted'}`}>
+              {ajustadas ? `${ajustadas} planta(s) com ajuste próprio` : 'Ajustar plantas (descrição, obs., foto)'}
+            </span>
+          </span>
+          <ChevronRight size={18} className="shrink-0 text-muted" />
+        </button>
+      )}
+    </FluxoLayout>
   );
 }
