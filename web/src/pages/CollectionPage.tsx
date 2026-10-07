@@ -1,35 +1,48 @@
-import { useMemo, useRef, useState } from 'react';
-import { Link, useNavigate } from 'react-router';
-import { FileText, ImagePlus, LayoutGrid, List, Plus, Search } from 'lucide-react';
+import { useMemo, useRef, useState, type ReactNode } from 'react';
+import { flushSync } from 'react-dom';
+import { Link } from 'react-router';
+import { FileText, LayoutGrid, List, Search, X } from 'lucide-react';
 import { GrupoBadge } from '@/components/GrupoBadge';
+import { BotaoPreferencias, BotaoTopo, OpcoesChips } from '@/components/Preferencias';
 import { Sheet } from '@/components/Sheet';
 import { Button, EmptyState, ErrorState, PlantThumb, Spinner } from '@/components/ui';
 import { errorMessage } from '@/lib/api';
+import { useEscolha } from '@/lib/escolhas';
 import { especieNome, plantaTitulo } from '@/lib/format';
 import { useAgendas, usePlantas } from '@/lib/queries';
 import { GRUPOS_PLANTA, type GrupoPlanta, type Planta } from '@/types';
 
 type Ordem = 'recentes' | 'alfabetica' | 'tarefa';
-const VIEW_KEY = 'bonsai_colecao_view';
+type View = 'grid' | 'lista';
+type FiltroGrupo = '' | 'sem' | GrupoPlanta;
+
+const ORDENS: { value: Ordem; label: string }[] = [
+  { value: 'recentes', label: 'Recentes' },
+  { value: 'alfabetica', label: 'A–Z' },
+  { value: 'tarefa', label: 'Próxima tarefa' },
+];
+const VIEWS: { value: View; label: ReactNode }[] = [
+  { value: 'grid', label: <><LayoutGrid size={16} /> Grade</> },
+  { value: 'lista', label: <><List size={16} /> Lista</> },
+];
+const FILTROS_GRUPO: { value: FiltroGrupo; label: string }[] = [
+  { value: '', label: 'Todos' },
+  ...GRUPOS_PLANTA,
+  { value: 'sem', label: 'Sem grupo' },
+];
 
 export function CollectionPage() {
   const plantas = usePlantas();
   const agendas = useAgendas();
-  const navigate = useNavigate();
-  const fotosRef = useRef<HTMLInputElement>(null);
+  const buscaRef = useRef<HTMLInputElement>(null);
   const [busca, setBusca] = useState('');
-  const [especie, setEspecie] = useState('');
-  const [grupo, setGrupo] = useState<'' | 'sem' | GrupoPlanta>('');
-  const [ordem, setOrdem] = useState<Ordem>('recentes');
+  const [buscando, setBuscando] = useState(false);
+  const [prefs, setPrefs] = useState(false);
   const [obs, setObs] = useState<Planta | null>(null);
-  const [view, setView] = useState<'grid' | 'lista'>(() =>
-    localStorage.getItem(VIEW_KEY) === 'lista' ? 'lista' : 'grid',
-  );
-
-  const trocarView = (v: 'grid' | 'lista') => {
-    setView(v);
-    localStorage.setItem(VIEW_KEY, v);
-  };
+  const [view, setView] = useEscolha<View>('bonsai_colecao_view', 'grid', VIEWS);
+  const [ordem, setOrdem] = useEscolha<Ordem>('bonsai_colecao_ordem', 'recentes', ORDENS);
+  const [grupo, setGrupo] = useEscolha<FiltroGrupo>('bonsai_colecao_grupo', '', FILTROS_GRUPO);
+  const [especieSalva, setEspecie] = useEscolha<string>('bonsai_colecao_especie', '');
 
   // Próxima tarefa pendente por planta
   const proximaTarefa = useMemo(() => {
@@ -49,6 +62,12 @@ export function CollectionPage() {
     });
     return [...mapa.entries()].sort((a, b) => a[1].localeCompare(b[1], 'pt-BR'));
   }, [plantas.data]);
+
+  const temSemEspecie = !!plantas.data?.some((p) => !p.especieId);
+  // Espécie salva que saiu da coleção não filtra mais nada
+  const especie =
+    (especieSalva === 'sem' && temSemEspecie) || especies.some(([id]) => id === especieSalva) ? especieSalva : '';
+  const filtrosAtivos = Number(!!grupo) + Number(!!especie);
 
   const lista = useMemo(() => {
     const termo = busca.trim().toLowerCase();
@@ -73,37 +92,42 @@ export function CollectionPage() {
     );
   }, [plantas.data, busca, especie, grupo, ordem, proximaTarefa]);
 
+  const total = plantas.data?.length ?? 0;
+  const filtrando = filtrosAtivos > 0 || !!busca.trim();
+
+  function alternarBusca() {
+    if (buscando) {
+      setBusca('');
+      setBuscando(false);
+    } else {
+      // Foco no mesmo toque: no iPhone o teclado só abre assim
+      flushSync(() => setBuscando(true));
+      buscaRef.current?.focus();
+    }
+  }
+
+  function limparFiltros() {
+    setGrupo('');
+    setEspecie('');
+  }
+
   return (
     <div className="mx-auto max-w-2xl px-4 pt-safe">
-      <header className="flex items-end justify-between pb-3 pt-6">
-        <div>
+      <header className="flex items-end justify-between gap-3 pb-3 pt-6">
+        <div className="min-w-0">
           <h1 className="text-3xl font-semibold">Coleção</h1>
-          {plantas.data && <p className="text-sm text-muted">{plantas.data.length} planta(s)</p>}
-        </div>
-        <div className="flex gap-2">
-          {!!plantas.data?.length && (
-            <Button size="sm" variant="secondary" onClick={() => fotosRef.current?.click()}>
-              <ImagePlus size={16} /> Fotos
-            </Button>
+          {plantas.data && (
+            <p className="text-sm text-muted">{filtrando ? `${lista.length} de ${total} planta(s)` : `${total} planta(s)`}</p>
           )}
-          <Link to="/plantas/nova">
-            <Button size="sm">
-              <Plus size={16} /> Planta
-            </Button>
-          </Link>
         </div>
-        <input
-          ref={fotosRef}
-          type="file"
-          accept="image/*"
-          multiple
-          className="hidden"
-          onChange={(e) => {
-            const files = [...(e.target.files ?? [])];
-            e.target.value = '';
-            if (files.length) navigate('/fotos/lote', { state: { files } });
-          }}
-        />
+        {total > 0 && (
+          <div className="flex shrink-0 gap-2">
+            <BotaoTopo label={buscando ? 'Fechar busca' : 'Buscar'} onClick={alternarBusca} marcado={buscando}>
+              {buscando ? <X size={20} /> : <Search size={20} />}
+            </BotaoTopo>
+            <BotaoPreferencias ativos={filtrosAtivos} onClick={() => setPrefs(true)} />
+          </div>
+        )}
       </header>
 
       {plantas.isLoading ? (
@@ -122,61 +146,31 @@ export function CollectionPage() {
         />
       ) : (
         <>
-          <div className="sticky top-0 z-20 -mx-4 space-y-2 bg-bg/95 px-4 pb-3 pt-safe backdrop-blur">
-            <div className="relative">
-              <Search size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted" />
-              <input
-                className="input pl-10"
-                placeholder="Buscar por nome, código ou espécie"
-                value={busca}
-                onChange={(e) => setBusca(e.target.value)}
-                type="search"
-              />
-            </div>
-            <div className="flex gap-2">
-              <select className="input min-w-0 flex-1 py-2 text-sm" value={grupo} onChange={(e) => setGrupo(e.target.value as typeof grupo)} aria-label="Filtrar por grupo">
-                <option value="">Todos os grupos</option>
-                {GRUPOS_PLANTA.map((g) => (
-                  <option key={g.value} value={g.value}>
-                    {g.label}
-                  </option>
-                ))}
-                <option value="sem">Sem grupo</option>
-              </select>
-              <select className="input min-w-0 flex-1 py-2 text-sm" value={especie} onChange={(e) => setEspecie(e.target.value)}>
-                <option value="">Todas as espécies</option>
-                {plantas.data?.some((p) => !p.especieId) && <option value="sem">Sem espécie</option>}
-                {especies.map(([id, nome]) => (
-                  <option key={id} value={id}>
-                    {nome}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="flex gap-2">
-              <select className="input min-w-0 flex-1 py-2 text-sm" value={ordem} onChange={(e) => setOrdem(e.target.value as Ordem)}>
-                <option value="recentes">Recentes</option>
-                <option value="alfabetica">A–Z</option>
-                <option value="tarefa">Próxima tarefa</option>
-              </select>
-              <div className="flex rounded-xl border border-line bg-white p-0.5">
-                {(['grid', 'lista'] as const).map((v) => (
-                  <button
-                    key={v}
-                    onClick={() => trocarView(v)}
-                    className={`flex size-9 items-center justify-center rounded-[10px] ${view === v ? 'bg-primary-light text-primary' : 'text-muted'}`}
-                    aria-label={v === 'grid' ? 'Ver em grade' : 'Ver em lista'}
-                    aria-pressed={view === v}
-                  >
-                    {v === 'grid' ? <LayoutGrid size={18} /> : <List size={18} />}
-                  </button>
-                ))}
+          {buscando && (
+            <div className="sticky top-0 z-20 -mx-4 bg-bg/95 px-4 pb-3 pt-safe backdrop-blur">
+              <div className="relative">
+                <Search size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted" />
+                <input
+                  ref={buscaRef}
+                  className="input pl-10"
+                  placeholder="Buscar por nome, código ou espécie"
+                  value={busca}
+                  onChange={(e) => setBusca(e.target.value)}
+                  type="search"
+                />
               </div>
             </div>
-          </div>
+          )}
 
           {lista.length === 0 ? (
-            <p className="py-10 text-center text-sm text-muted">Nenhuma planta encontrada.</p>
+            <div className="py-10 text-center text-sm text-muted">
+              <p>Nenhuma planta encontrada.</p>
+              {filtrosAtivos > 0 && (
+                <button type="button" className="mt-2 font-medium text-primary" onClick={limparFiltros}>
+                  Limpar filtros
+                </button>
+              )}
+            </div>
           ) : view === 'grid' ? (
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
               {lista.map((p) => (
@@ -235,6 +229,40 @@ export function CollectionPage() {
           )}
         </>
       )}
+
+      <Sheet
+        open={prefs}
+        onClose={() => setPrefs(false)}
+        title="Preferências"
+        footer={
+          <div className="flex gap-2">
+            {filtrosAtivos > 0 && (
+              <Button variant="secondary" className="flex-1" onClick={limparFiltros}>
+                Limpar filtros
+              </Button>
+            )}
+            <Button className="flex-1" onClick={() => setPrefs(false)}>
+              Ver {lista.length} planta(s)
+            </Button>
+          </div>
+        }
+      >
+        <div className="space-y-5">
+          <OpcoesChips titulo="Visualização" opcoes={VIEWS} value={view} onChange={setView} />
+          <OpcoesChips titulo="Ordenar por" opcoes={ORDENS} value={ordem} onChange={setOrdem} />
+          <OpcoesChips titulo="Grupo" opcoes={FILTROS_GRUPO} value={grupo} onChange={setGrupo} />
+          <OpcoesChips
+            titulo="Espécie"
+            opcoes={[
+              { value: '', label: 'Todas' },
+              ...(temSemEspecie ? [{ value: 'sem', label: 'Sem espécie' }] : []),
+              ...especies.map(([id, nome]) => ({ value: id, label: nome })),
+            ]}
+            value={especie}
+            onChange={setEspecie}
+          />
+        </div>
+      </Sheet>
 
       <Sheet open={!!obs} onClose={() => setObs(null)} title="Observações">
         <p className="mb-2 text-sm font-medium text-muted">{plantaTitulo(obs)}</p>

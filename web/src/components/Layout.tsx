@@ -1,6 +1,6 @@
-import { useState, type ReactNode } from 'react';
+import { useRef, useState, type ReactNode } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router';
-import { CalendarCheck, CalendarPlus, ClipboardList, Leaf, Plus, Sprout, User } from 'lucide-react';
+import { CalendarCheck, CalendarPlus, ClipboardList, ImagePlus, Leaf, Plus, Sprout, User } from 'lucide-react';
 import { Sheet } from './Sheet';
 import { useCare } from '@/context/CareContext';
 
@@ -15,6 +15,7 @@ const tabs = [
 export function Layout() {
   const [acoes, setAcoes] = useState(false);
   const navigate = useNavigate();
+  const fotosRef = useRef<HTMLInputElement>(null);
   const { registrarCuidado, agendarCuidado } = useCare();
 
   const acao = (fn: () => void) => () => {
@@ -78,8 +79,29 @@ export function Layout() {
             text="Nova planta na coleção"
             onClick={acao(() => navigate('/plantas/nova'))}
           />
+          <AcaoItem
+            icon={<ImagePlus size={22} />}
+            title="Fotos em lote"
+            text="Várias fotos, separadas por planta"
+            onClick={() => {
+              setAcoes(false);
+              fotosRef.current?.click();
+            }}
+          />
         </div>
       </Sheet>
+      <input
+        ref={fotosRef}
+        type="file"
+        accept="image/*"
+        multiple
+        className="hidden"
+        onChange={(e) => {
+          const files = [...(e.target.files ?? [])];
+          e.target.value = '';
+          if (files.length) navigate('/fotos/lote', { state: { files } });
+        }}
+      />
     </div>
   );
 }

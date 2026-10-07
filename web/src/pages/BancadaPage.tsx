@@ -5,30 +5,13 @@ import { Button, EmptyState, ErrorState, SectionTitle, Spinner } from '@/compone
 import { BenchTaskCard } from '@/components/BenchTaskCard';
 import { useAuth } from '@/context/AuthContext';
 import { AGRUPAMENTOS, PERIODOS, blocosDaBancada, tarefasDaBancada, type Agrupar, type Bloco, type Periodo } from '@/lib/bancada';
+import { lerEscolha, salvarEscolha } from '@/lib/escolhas';
 import { useAgendas, usePlantas } from '@/lib/queries';
 import { errorMessage } from '@/lib/api';
 import type { Planta } from '@/types';
 
 const PERIODO_KEY = 'bonsai_bancada_periodo';
 const AGRUPAR_KEY = 'bonsai_bancada_agrupar';
-
-/** Lê uma escolha salva; armazenamento indisponível ou valor estranho → padrão. */
-function lerEscolha<T extends string>(chave: string, validos: { value: T }[], padrao: T): T {
-  try {
-    const v = localStorage.getItem(chave);
-    return validos.some((o) => o.value === v) ? (v as T) : padrao;
-  } catch {
-    return padrao;
-  }
-}
-
-function salvarEscolha(chave: string, valor: string) {
-  try {
-    localStorage.setItem(chave, valor);
-  } catch {
-    // sem armazenamento: a escolha vale só nesta visita
-  }
-}
 
 function saudacao() {
   const h = new Date().getHours();
