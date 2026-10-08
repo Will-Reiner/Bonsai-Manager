@@ -24,11 +24,14 @@ import { ehNova, useLoteFotos } from '@/lib/loteFotos';
 import { keys, useAgendas, useAtividades, useLembrarMover, useMoverRecemTransplantada, usePlantas } from '@/lib/queries';
 import { ATIVIDADE_TRANSPLANTE } from '@/types';
 import { candidatasReconciliacao, rotuloUltima, textoPrazo, ultimasPorPlanta } from '@/lib/cuidados';
+import { detalhesFinais, dicaDescricao, preencherInstrucoes } from '@/lib/instrucao';
 
 interface Ajuste {
   /** undefined = segue os tipos gerais */
   atividadeIds?: string[];
   detalhes: string;
+  /** false = a nota mostra a instrução das tarefas concluídas (pré-preenchida) */
+  detalhesEditado?: boolean;
   observacaoFutura: string;
 }
 const AJUSTE_VAZIO: Ajuste = { detalhes: '', observacaoFutura: '' };
@@ -52,6 +55,7 @@ export function RegistrarPage() {
   const [atividadeIds, setAtividadeIds] = useState<string[]>([]);
   const [data, setData] = useState(toDateInput());
   const [detalhes, setDetalhes] = useState('');
+  const [detalhesEditado, setDetalhesEditado] = useState(false);
   const [observacaoFutura, setObservacaoFutura] = useState('');
   const [ajustes, setAjustes] = useState<Record<string, Ajuste>>({});
   const [proximos, setProximos] = useState<Proximo[]>([]);
@@ -87,7 +91,14 @@ export function RegistrarPage() {
     agendas.data ?? [],
     reais.map((pid) => ({ plantaId: pid, atividadeIds: tiposDe(pid) })),
   );
-  const concluirAgendaIds = candidatas.filter((a) => !desmarcadas.includes(a.id)).map((a) => a.id);
+  const aConcluir = candidatas.filter((a) => !desmarcadas.includes(a.id));
+  const concluirAgendaIds = aConcluir.map((a) => a.id);
+  // Nota vem com a instrução das tarefas que o registro conclui: igual em todas → geral; diferentes → no ajuste da planta.
+  // Sem mudança ela é omitida: a tarefa agendada mantém a instrução e os cuidados novos não a herdam.
+  const instrucoes = preencherInstrucoes(aConcluir, (a) => a.plantaId);
+  const valorDetalhes = detalhesEditado ? detalhes : instrucoes.geral;
+  const instrucaoDe = (pid: string) => instrucoes.porChave[pid] ?? '';
+  const valorAjuste = (pid: string) => (ajuste(pid).detalhesEditado ? ajuste(pid).detalhes : instrucaoDe(pid));
   const transplanteId = atividades.data?.find((a) => a.nome === ATIVIDADE_TRANSPLANTE)?.id;
   const comTransplante = !!transplanteId && tocadas.some((pid) => tiposDe(pid).includes(transplanteId));
 
@@ -186,7 +197,11 @@ export function RegistrarPage() {
           plantas: tocadas.map((pid) => ({
             plantaId: real(pid),
             atividadeIds: tiposDe(pid),
-            detalhes: (ajuste(pid).detalhes || detalhes).trim() || undefined,
+            detalhes: detalhesFinais(
+              { valor: valorAjuste(pid), preenchido: instrucaoDe(pid) },
+              { valor: valorDetalhes, preenchido: instrucoes.geral },
+              'omitir',
+            ),
             observacaoFutura: (ajuste(pid).observacaoFutura || observacaoFutura).trim() || undefined,
             fotos: fotosDe(pid)
               .filter(({ item }) => item.url)
@@ -312,7 +327,7 @@ export function RegistrarPage() {
                   </button>
                 )}
                 <Field label="Nota desta planta">
-                  <textarea className="input min-h-16" value={aj.detalhes} onChange={(e) => setAjuste(pid, { detalhes: e.target.value })} placeholder={detalhes || 'Substitui a nota geral'} />
+                  <textarea className="input min-h-16" value={valorAjuste(pid)} onChange={(e) => setAjuste(pid, { detalhes: e.target.value, detalhesEditado: true })} placeholder={valorDetalhes || 'Substitui a nota geral'} />
                 </Field>
                 <Field label="Obs. desta planta">
                   <textarea className="input min-h-16" value={aj.observacaoFutura} onChange={(e) => setAjuste(pid, { observacaoFutura: e.target.value })} placeholder={observacaoFutura || 'Substitui a obs. geral'} />
@@ -403,7 +418,7 @@ export function RegistrarPage() {
   const nomes = atividadeIds.map((id) => atividades.data?.find((a) => a.id === id)?.nome).filter(Boolean).join(', ');
   const ajustadas = tocadas.filter((pid) => temAjuste(ajuste(pid))).length;
   const resumo = resumoMaisOpcoes([
-    (detalhes.trim() || Object.values(ajustes).some((a) => a.detalhes.trim())) && 'Nota',
+    (valorDetalhes.trim() || tocadas.some((pid) => valorAjuste(pid).trim())) && 'Nota',
     (observacaoFutura.trim() || Object.values(ajustes).some((a) => a.observacaoFutura.trim())) && 'Obs. para o futuro',
     comTransplante && (moverTransplante ? 'Mover p/ Recém transplantadas' : 'Não mover p/ Recém transplantadas'),
     proximos.length > 0 && (proximos.length === 1 ? '1 próximo passo' : `${proximos.length} próximos passos`),
@@ -438,8 +453,16 @@ export function RegistrarPage() {
       </section>
       <QuandoCampo value={data} onChange={setData} />
       <MaisOpcoes resumo={resumo} dica="Nota, observação para o futuro, próximos passos">
-        <Field label="Nota">
-          <textarea className="input min-h-20" value={detalhes} onChange={(e) => setDetalhes(e.target.value)} placeholder="O que foi feito" />
+        <Field label="Nota" hint={dicaDescricao(instrucoes)}>
+          <textarea
+            className="input min-h-20"
+            value={valorDetalhes}
+            onChange={(e) => {
+              setDetalhes(e.target.value);
+              setDetalhesEditado(true);
+            }}
+            placeholder="O que foi feito"
+          />
         </Field>
         <Field label="Obs. para o futuro" hint="Aparece em destaque no histórico da planta.">
           <textarea className="input min-h-16" value={observacaoFutura} onChange={(e) => setObservacaoFutura(e.target.value)} placeholder="Ex.: arame apertado no galho da esquerda" />

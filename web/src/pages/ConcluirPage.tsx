@@ -17,12 +17,15 @@ import { errorMessage } from '@/lib/api';
 import { agendasApi } from '@/lib/endpoints';
 import { fluxoConcluir, resumoMaisOpcoes } from '@/lib/fluxos';
 import { fromDateInput, plantaRotulo, toDateInput } from '@/lib/format';
+import { detalhesFinais, dicaDescricao, preencherInstrucoes, textoEditado } from '@/lib/instrucao';
 import { keys, useAgendas, useAtividadesOrdenadas, useLembrarMover, useMoverRecemTransplantada } from '@/lib/queries';
 import { ATIVIDADE_TRANSPLANTE } from '@/types';
 import { uploadImage } from '@/lib/upload';
 
 interface Ajuste {
   detalhes: string;
+  /** false = a descrição mostra a instrução da tarefa (pré-preenchida) */
+  detalhesEditado?: boolean;
   observacaoFutura: string;
   foto: File | null;
 }
@@ -52,6 +55,7 @@ export function ConcluirPage() {
   const [escolherExtra, setEscolherExtra] = useState(false);
   const [data, setData] = useState(toDateInput());
   const [detalhes, setDetalhes] = useState('');
+  const [detalhesEditado, setDetalhesEditado] = useState(false);
   const [observacaoFutura, setObservacaoFutura] = useState('');
   const [foto, setFoto] = useState<File | null>(null);
   const [proximos, setProximos] = useState<Proximo[]>([]);
@@ -62,6 +66,10 @@ export function ConcluirPage() {
   const [salvando, setSalvando] = useState(false);
 
   const marcadas = tarefas.filter((t) => !desmarcadas.has(t.id));
+  // Descrição vem com a instrução do agendamento: igual em todas → geral; diferentes → no ajuste de cada tarefa
+  const instrucoes = preencherInstrucoes(marcadas, (t) => t.id);
+  const valorDetalhes = detalhesEditado ? detalhes : instrucoes.geral;
+  const instrucaoDe = (id: string) => instrucoes.porChave[id] ?? '';
   const atividadeAtual = tarefas[0]?.atividade;
   const nomeAtividade = (id: string) => atividades.data.find((a) => a.id === id)?.nome ?? '…';
   const transplanteId = atividades.data.find((a) => a.nome === ATIVIDADE_TRANSPLANTE)?.id;
@@ -83,6 +91,7 @@ export function ConcluirPage() {
   const ajuste = (id: string) => ajustes[id] ?? AJUSTE_VAZIO;
   const setAjuste = (id: string, patch: Partial<Ajuste>) =>
     setAjustes((a) => ({ ...a, [id]: { ...ajuste(id), ...patch } }));
+  const valorAjuste = (id: string) => (ajuste(id).detalhesEditado ? ajuste(id).detalhes : instrucaoDe(id));
 
   async function concluir() {
     if (!marcadas.length) return toast('Marque ao menos uma planta.', 'error');
@@ -99,7 +108,8 @@ export function ConcluirPage() {
         const urlPropria = aj.foto ? await uploadImage(aj.foto) : null;
         itens.push({
           agendaId: t.id,
-          detalhes: aj.detalhes.trim() || undefined,
+          // Sem mudança, a instrução própria é reenviada para a descrição geral não sobrescrevê-la
+          detalhes: detalhesFinais({ valor: valorAjuste(t.id), preenchido: instrucaoDe(t.id) }, { valor: '', preenchido: '' }, 'reenviar'),
           observacaoFutura: aj.observacaoFutura.trim() || undefined,
           fotos: [urlComum, urlPropria].filter((u): u is string => !!u),
         });
@@ -110,7 +120,7 @@ export function ConcluirPage() {
       await agendasApi.concluir({
         dataConcluida: hoje ? new Date().toISOString() : fromDateInput(data),
         atividadeId: atividadeId || undefined,
-        detalhes: detalhes.trim() || undefined,
+        detalhes: textoEditado(valorDetalhes, instrucoes.geral),
         observacaoFutura: observacaoFutura.trim() || undefined,
         extras: extrasFinais.length ? extrasFinais : undefined,
         proximos: proximosParaApi(proximos),
@@ -167,7 +177,7 @@ export function ConcluirPage() {
             return (
               <>
                 <Field label="Descrição desta planta">
-                  <textarea className="input min-h-16" value={aj.detalhes} onChange={(e) => setAjuste(id, { detalhes: e.target.value })} placeholder={detalhes || 'Substitui a descrição geral'} />
+                  <textarea className="input min-h-16" value={valorAjuste(id)} onChange={(e) => setAjuste(id, { detalhes: e.target.value, detalhesEditado: true })} placeholder={valorDetalhes || 'Substitui a descrição geral'} />
                 </Field>
                 <Field label="Obs. desta planta">
                   <textarea className="input min-h-16" value={aj.observacaoFutura} onChange={(e) => setAjuste(id, { observacaoFutura: e.target.value })} placeholder={observacaoFutura || 'Substitui a obs. geral'} />
@@ -184,7 +194,7 @@ export function ConcluirPage() {
   // ───────────── Finalizar ─────────────
   if (etapa === 'final') {
     const resumo = resumoMaisOpcoes([
-      detalhes.trim() && 'Descrição',
+      valorDetalhes.trim() && 'Descrição',
       observacaoFutura.trim() && 'Obs.',
       comTransplante && (moverTransplante ? 'Mover p/ Recém transplantadas' : 'Não mover p/ Recém transplantadas'),
       proximos.length > 0 && (proximos.length === 1 ? '1 próximo passo' : `${proximos.length} próximos passos`),
@@ -207,8 +217,16 @@ export function ConcluirPage() {
           aspect="aspect-[16/9]"
         />
         <MaisOpcoes resumo={resumo} dica="Descrição, observação, próximos passos">
-          <Field label="Descrição" hint="Se preencher, substitui a observação do agendamento.">
-            <textarea className="input min-h-20" value={detalhes} onChange={(e) => setDetalhes(e.target.value)} placeholder="O que foi feito" />
+          <Field label="Descrição" hint={dicaDescricao(instrucoes)}>
+            <textarea
+              className="input min-h-20"
+              value={valorDetalhes}
+              onChange={(e) => {
+                setDetalhes(e.target.value);
+                setDetalhesEditado(true);
+              }}
+              placeholder="O que foi feito"
+            />
           </Field>
           <Field label="Obs." hint="Aparece em destaque no histórico da planta.">
             <textarea className="input min-h-16" value={observacaoFutura} onChange={(e) => setObservacaoFutura(e.target.value)} placeholder="Ex.: arame apertado no galho da esquerda" />
