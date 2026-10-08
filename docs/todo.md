@@ -1,26 +1,23 @@
-- [x] facilitar visualizacao de tarefas no futuro quando esta concluindo/agendando uma tarefa para ele ter nocao melhor do que fazer
-  > Feito em 2026-10-07: "Já marcado nesta planta" em Agendar (etapa Quando?) e Reagendar — linha do tempo das pendentes da planta com a tarefa nova encaixada na data escolhida; aviso de mesmo cuidado já marcado e de outra tarefa a até 3 dias; com 2+ plantas, resumo por planta do que está a até 90 dias da data.
+# para fazer agora:
 
-- [x] nos cards de plantas na colecao mostrar info importantes: retirar pontinho no canto superior direito, adicionar qual grupo ela esta (podemos fazer cores diferentes para cada grupo por prioridade: cores que mostre atencao para as recem transplantadas e debilitadas; cores forte mais q demonstre saude para as em crescimento e nas refinamento uma cor mais leve), caso tenha uma observacao da planta, coloque um icone de "texto" que abre essa observacao na tela.
-  > Feito em 2026-10-07: selo do grupo com cores de prioridade (em degradê, tema Argila), ícone de observação abre folha com o texto, pontinho removido.
+- [ ] criar acesso rapido na bancada para por exemplo: registrar adubacao liquida em todas, registrar aplicacao de enraizador em todas pre-transplante e/ou pos transplante. permitir usuario configurar botoes de acesso rapido com suas preferencias e tarefas.
 
-- [x] quando registrar um cuidado, colocar ali na tela de registrar uma opcao do tipo: "concluir a tarefa agendada" caso tenha, e deixar pro usuário determinar a faixa de tempo, por exemplo: tarefas agendadas até 1 mes ou 1 semana etc. ps: cada tipo de tarefa pode ter uma faixa de tempo diferente (sistema ja vem com preferência de faixa de tempo padroes e usuario pode mudar dps)
-  > Descartado em 2026-10-07: já existia ("Tarefas que serão concluídas", janela fixa de 90 dias). Conferido que funciona com várias plantas e tarefas.
+- [ ] ao registrar duas tarefas, entra as duas separadas no histórico, logo se coloquei adubacao e desaramacao e coloquei uma obs e descrição em específico para uma das tarefas, esse texto pode acabar em um card errado então das duas uma: ou a gente junta os cards quando as tarefas forem registradas juntas ou a gnt separa a descrição e obs por tarefa na hora de registrar. oq vc sugere? eu pensando na UX acho que a primeira ideia faz mais sentido pois é menos coisa q o usuario deve fazer
 
-- [x] mudar telas de registro, agendamento e outras com varios dados a ser inputados para serem mais limpas no sentido de: distribuir os inputs em telas seguintes (ex: ao inves de uma tela só com adiconar tarefa, fotos, data, obs, etc, comecar um uma tela para tarefa, outra para fotos, outra para data), podemos pensar em quais dados colocar em cada pagina para facilitar pro usuario e tornar o processo mais padrão. veja que podemos facilitar muito pro usuário com essa ideia para alguns inputs que podem ou não aparecer, como por exemplo se houver tarefas agendadas para o registro em questão ou se o usuario escolher diversas plantas ao mesmo tempo e quiser mudar algo específico em cada (teria uma tela só pra isso). tudo isso pensando em facilitar a experiência do usuário
+- [x] a revisao geral nao esta funcionando do jeito que deveria, testei e tem atividades para o dia x e tem revisao geral no dia x tb. eu sei q a tarefa foi trocada por uma rotina em uma sessao de ontem... vamos fazer com q ela deixe de ser rotina e seja uma tarefa comum que só X dias depois caso o usuario n tenha agendado nenhuma outra tarefa. e torne a revisao geral como desligada por padrao
+  > Feito em 2026-10-08: mudou de ideia, a Revisão geral saiu do app por completo (tarefas, rotinas, atividade e preferência apagadas pela migration `remover_revisao_geral`).
 
-- [x] nessa ideia, estava pensando aqui e talvez seria interessante ao inves de ter varias telas, colocar algumas opções de inputs em uma area "opcoes avançadas" na pagina de inputs, oq vc acha? talvez mesclar essas ideias, com algumas opções que o usuário tende a pre selecionar uma vez e que tende a manter a mesma opcao para sempre em opcoes avançadas mas tb separar alguns inputs como seleção de tarefa e outros em uma pagina e fotos em outra. vamos discutir isso pensando em facilitar para o usuário adicionar o mais rapido possível seus procedimentos e plantas mas dando espaço para ele ser específico nas configurações se quiser
-  > Feito em 2026-10-07 (spec em docs/superpowers/specs/2026-10-07-fluxos-em-etapas-design.md): Registrar, Concluir e Agendar em etapas curtas (voltar do navegador volta uma etapa), etapa de tarefas a concluir só quando houver, desvio "Ajustar plantas" com 2+ plantas, "Mais opções" recolhido com resumo; Agendar virou página; "Mover para Recém transplantadas" lembra a última escolha e fica editável no Perfil.
+- [ ] imagem um pouco maior na hora que tiver selecao de planta(s) pois o usuario tende a pesquisar vendo as fotos
 
-- [x] na pagina de colecao temos varios botoes e filtros no topo: pesquisar por nome/codigo, adicionar fotos, add planta, filtro grupos, filtro especies, por data/nome e preferência de por cards quadrados ou um por linha. vamos simplificar a visualização disso:
-  - [x] botao de adicionar fotos no modal "+" do menu inferior
-  - [x] retirar add planta pois ja temos no modal
-  - [x] todos os filtros de grupos,data, visualizacao etc colocar em uma pagina de um unico botao de preferência que ficará no topo direito da pagina
-  - [x] para a area de input de texto para pesquisa por nome/codigo coloque um botao do lado do botao de preferência de "lupa" caso o usuario queira pesquisar por escrita
-  > Feito em 2026-10-07: filtros, ordenação e visualização ficam lembrados entre visitas.
+- [ ] na bancada, ao clicar numa planta com tarefa pendente vai pra uma pagina de visualizacao do historico e opcoes para a tarefa, vamos refazer essa pagina para q seja possivel selecionar outros procedimentos pendentes dessa planta para completa-los ou apaga-los ou reagendalos. nessa página nao precisa ter o histórico, vamos colocar só a foto da arvore, ultima tarefa feita e as tarefas pendentes. mas com destaque na tarefa que o usuario clicou.
 
-- [x] na pagina de bancada, usar a mesma logica de preferências da colecao em um único botao no canto superior direito. alem disso, vamos fazer as seguintes alterações visuais:
-  - [x] ta dificil diferenciar grupos de tarefas pois aparece apenas o grupo com titulo maior e as tarefas com um titulo menor. preciso fazer uma diferenciação maior nisso para facilitar ao usuario. me de ideias. talvez criar uns icones bem específicos para as tarefas e separar os grupos em cards bem visuais com cores diferentes e as tarefas de outra maneira. isso vale também para diferenciacao de atrasadas (talvez com uma cor forte de atenção) para proximas tarefas.
-  > Feito em 2026-10-07 (spec em docs/superpowers/specs/2026-10-07-tema-argila-bancada-design.md): tema Argila clara + Newsreader/Figtree no app inteiro; Bancada com faixas de grupo em degradê, tipo de tarefa com ícone, atrasadas primeiro e destacadas no item (sem seções Atrasadas/Próximas), visualização lista/fotos nas preferências.
+- [ ] no perfil temos varias preferencias das coisas do app, vamos criar um botao de preferencias dentro do perfil para colocar todas essas opcoes.
 
-criar acesso rapido na bancada para por exemplo: registrar adubacao liquida em todas, registrar aplicacao de enraizador em todas pre-transplante e/ou pos transplante. permitir usuario configurar botoes de acesso rapido com suas preferencias e tarefas.
+- [ ] ID tem q comecar a ser obrigatorio visto que ao adicionar fotos, fazemos tudo pelo fluxo de ID. Logo, caso o usuario nao adicione ID, adicione automaticamente um ID para ele. (veja que o ID tem q sempre ser um numero)
+
+- [ ] tela de concluido apos criar nova planta tem coisa errada kkk vamos alterar ela
+
+# ideias para o futuro:
+- alguma animacao ou icone especial para plantas fazendo aniversario
+- animacoes gerais ao completar alguns objetivos como 100 plantas adicionadas, 1000 cuidados feitos etc
+- 
