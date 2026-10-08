@@ -104,7 +104,7 @@ export interface ConcluirResultado {
 
 export const agendasApi = {
   list: () => data<Agenda[]>(api.get('/agendas')),
-  create: (body: { plantaId: string; atividadeId: string; dataAgendada: string }) =>
+  create: (body: { plantaId: string; atividadeId: string; dataAgendada: string; detalhes?: string }) =>
     data<Agenda>(api.post('/agendas', body)),
   /** Vários cuidados para várias plantas na mesma data (tudo ou nada). `detalhes` = observação/instrução. */
   createLote: (body: { plantaIds: string[]; atividadeIds: string[]; dataAgendada: string; detalhes?: string }) =>

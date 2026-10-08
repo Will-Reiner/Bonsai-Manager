@@ -28,7 +28,7 @@ describe('UpdateAgendaUseCase', () => {
     const usuarioId = 'user-1';
     const updateData = {
       status: 'CONCLUIDA' as any,
-      observacoes: 'Atividade concluída com sucesso',
+      detalhes: 'Atividade concluída com sucesso',
     };
     const expectedAgenda = { id: agendaId, ...updateData };
 
@@ -48,13 +48,13 @@ describe('UpdateAgendaUseCase', () => {
     const usuarioId = 'user-1';
     const updateData = {
       status: 'CONCLUIDA' as any,
-      observacoes: 'Atividade concluída com sucesso',
+      detalhes: 'Atividade concluída com sucesso',
       recursosUtilizados: [
         { recursoId: 'recurso-1', quantidadeUtilizada: 2 },
         { recursoId: 'recurso-2', quantidadeUtilizada: 1 },
       ],
     };
-    const expectedAgenda = { id: agendaId, status: 'CONCLUIDA', observacoes: 'Atividade concluída com sucesso' };
+    const expectedAgenda = { id: agendaId, status: 'CONCLUIDA', detalhes: 'Atividade concluída com sucesso' };
 
     mockAgendaRepository.existsByIdAndUser.mockResolvedValue(true);
     mockAgendaRepository.updateWithResources.mockResolvedValue(expectedAgenda);

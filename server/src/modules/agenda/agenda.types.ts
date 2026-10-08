@@ -8,7 +8,7 @@ export interface CreateAgendaDTO {
   plantaId: string;
   atividadeId: string;
   dataAgendada: string;
-  observacoes?: string;
+  /** Instrução para quando o cuidado for feito. */
   detalhes?: string;
 }
 
@@ -24,7 +24,6 @@ export interface UpdateAgendaDTO {
   dataAgendada?: string;
   dataConcluida?: string | null;
   status?: AgendaStatus;
-  observacoes?: string;
   detalhes?: string;
   observacaoFutura?: string;
   recursosUtilizados?: {

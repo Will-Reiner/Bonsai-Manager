@@ -4,13 +4,14 @@ import { estacoesSchema } from '../rotina/rotina.schema';
 // O Enum do Prisma é replicado aqui para validação
 const AgendaStatus = z.enum(['PENDENTE', 'CONCLUIDO', 'CANCELADO']);
 
-// Schema para criar um novo agendamento (continua simples)
+// Schema para criar um agendamento (uma planta + uma atividade)
 export const createAgendaSchema = z.object({
   body: z.object({
     plantaId: z.string().uuid({ message: 'O ID da planta é obrigatório.' }),
     atividadeId: z.string().uuid({ message: 'O ID da atividade é obrigatório.' }),
     dataAgendada: z.string().datetime({ message: 'A data agendada deve ser uma data válida.' }),
-    observacoes: z.string().optional(), // Observações iniciais do agendamento
+    /** Instrução para quando o cuidado for feito (mesmo limite do lote). */
+    detalhes: z.string().max(2000, { message: 'Observação muito longa.' }).optional(),
   }),
 });
 
@@ -43,7 +44,6 @@ export const updateAgendaSchema = z.object({
     dataAgendada: z.string().datetime().optional(),
     dataConcluida: z.string().datetime().optional().nullable(),
     status: AgendaStatus.optional(),
-    observacoes: z.string().optional(),
     // Novos campos que vêm do antigo "histórico"
     detalhes: z.string().optional(),
     observacaoFutura: z.string().optional(),
