@@ -1,9 +1,22 @@
 import type { CSSProperties } from 'react';
-import type { Agenda, GrupoPlanta, ModoAquisicao, Planta } from '@/types';
+import type { Agenda, GrupoPlanta, ModoAquisicao } from '@/types';
 import { GRUPOS_PLANTA, MODOS_AQUISICAO } from '@/types';
 
-export const plantaTitulo = (p?: Partial<Planta> | null) =>
-  p?.nome || p?.identificador || p?.especie?.nomeComum || p?.especie?.nomeCientifico || 'Planta sem nome';
+/** O mínimo para nomear uma planta (Planta, Agenda['planta'], Rotina['planta'], alvo da triagem). */
+export type PlantaRef =
+  | {
+      nome?: string | null;
+      identificador?: number | null;
+      especie?: { nomeComum?: string | null; nomeCientifico?: string | null } | null;
+    }
+  | null
+  | undefined;
+
+/** Apelido ou espécie — sem o ID; null se não houver nenhum. */
+export const plantaNome = (p: PlantaRef) => p?.nome || p?.especie?.nomeComum || p?.especie?.nomeCientifico || null;
+
+export const plantaTitulo = (p: PlantaRef) =>
+  plantaNome(p) || (p?.identificador != null ? `Planta #${p.identificador}` : 'Planta sem nome');
 
 export const especieNome = (e?: { nomeComum?: string | null; nomeCientifico?: string | null } | null) =>
   e?.nomeComum || e?.nomeCientifico || 'Espécie desconhecida';
@@ -93,9 +106,12 @@ export function fromDateInput(value: string): string {
 
 export const daquiADias = (dias: number) => new Date(Date.now() + dias * 86_400_000).toISOString();
 
-/** Rótulo curto para identificar a planta: o identificador (ex.: JB-03) tem prioridade. */
-export const plantaRotulo = (p?: Agenda['planta']) =>
-  p?.identificador || p?.nome || p?.especie?.nomeComum || p?.especie?.nomeCientifico || 'Planta';
+/** Rótulo curto para identificar a planta: o ID (#14) tem prioridade. */
+export const plantaRotulo = (p: PlantaRef) => (p?.identificador != null ? `#${p.identificador}` : plantaNome(p) || 'Planta');
+
+/** "#14 · Ficus" — ID e nome juntos, para listas de escolha. */
+export const plantaCodigoNome = (p: PlantaRef) =>
+  [p?.identificador != null ? `#${p.identificador}` : null, plantaNome(p)].filter(Boolean).join(' · ') || 'Planta';
 
 export interface GrupoAtividade {
   atividadeId: string;
