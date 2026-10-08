@@ -15,6 +15,7 @@ describe('atualizarGruposAutomaticos', () => {
       update: jest.fn(),
       delete: jest.fn(),
       existsByIdAndUser: jest.fn(),
+      maiorIdentificador: jest.fn().mockResolvedValue(0),
       findUrlsDeMidia: jest.fn(),
       resolverGruposVencidos: jest.fn().mockResolvedValue(undefined),
       estadoPreTransplante: jest.fn().mockResolvedValue({ dias: 30, plantas: [], pendentes: [] }),

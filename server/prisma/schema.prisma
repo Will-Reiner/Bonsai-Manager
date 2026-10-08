@@ -155,7 +155,8 @@ model Especie {
 model Planta {
   id               String        @id @default(uuid())
   nome             String?
-  identificador    String?
+  /// ID numérico da planta, único por usuário (gerado se não informado).
+  identificador    Int
   dataAquisicao    DateTime?
   modoAquisicao    ModoAquisicao?
   observacoes      String?       @db.Text

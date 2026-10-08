@@ -6,7 +6,7 @@ export interface CreatePlantaRequestDTO {
   especieId?: string;
   usuarioId: string;
   nome?: string;
-  identificador?: string;
+  identificador?: number;
   dataAquisicao?: string | null;
   modoAquisicao?: ModoAquisicao | null;
   observacoes?: string;
@@ -19,7 +19,7 @@ export interface CreatePlantaRequestDTO {
 export interface UpdatePlantaRequestDTO {
   especieId?: string;
   nome?: string;
-  identificador?: string | null;
+  identificador?: number;
   dataAquisicao?: string | null;
   modoAquisicao?: ModoAquisicao | null;
   observacoes?: string;
@@ -34,7 +34,7 @@ export interface CreatePlantaDTO {
   especieId?: string;
   usuarioId: string;
   nome?: string;
-  identificador?: string;
+  identificador: number;
   dataAquisicao?: Date | null;
   modoAquisicao?: ModoAquisicao | null;
   observacoes?: string;
@@ -47,7 +47,7 @@ export interface CreatePlantaDTO {
 export interface UpdatePlantaDTO {
   especieId?: string;
   nome?: string;
-  identificador?: string | null;
+  identificador?: number;
   dataAquisicao?: Date | null;
   modoAquisicao?: ModoAquisicao | null;
   observacoes?: string;
@@ -64,7 +64,7 @@ export interface PlantaWithEspecie {
   especieId: string | null;
   usuarioId: string;
   nome: string | null;
-  identificador: string | null;
+  identificador: number;
   dataAquisicao: Date | null;
   modoAquisicao: ModoAquisicao | null;
   observacoes: string | null;
@@ -90,6 +90,8 @@ export interface PlantaRepository {
   update(id: string, usuarioId: string, data: UpdatePlantaDTO): Promise<PlantaWithEspecie>;
   delete(id: string, usuarioId: string): Promise<void>;
   existsByIdAndUser(id: string, usuarioId: string): Promise<boolean>;
+  /** Maior ID (identificador) das plantas do usuário; 0 se ele não tem plantas. */
+  maiorIdentificador(usuarioId: string): Promise<number>;
   /** URLs de mídia da planta: capa + arquivos e thumbnails da galeria. */
   findUrlsDeMidia(id: string): Promise<string[]>;
   /** Plantas do usuário com `grupoExpiraEm <= agora` voltam ao grupo anterior. */

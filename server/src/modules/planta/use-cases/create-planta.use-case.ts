@@ -1,5 +1,8 @@
 import { CreatePlantaRequestDTO, CreatePlantaDTO, PlantaWithEspecie, PlantaRepository, EspecieRepository } from '../types/planta.types';
 
+/** Tentativas de gerar o ID quando outra criação simultânea pega o mesmo número. */
+const TENTATIVAS_ID_AUTOMATICO = 3;
+
 export class CreatePlantaUseCase {
   constructor(
     private plantaRepository: PlantaRepository,
@@ -13,13 +16,27 @@ export class CreatePlantaUseCase {
     }
 
     // Transformar dataAquisicao de string para Date se fornecida
-    const createData: CreatePlantaDTO = {
+    const base = {
       ...data,
       dataAquisicao: data.dataAquisicao ? new Date(data.dataAquisicao) : undefined,
     };
 
-    // Criar a planta
-    return this.plantaRepository.create(createData);
+    // ID informado pelo usuário: conflito vira 409 no controller, sem nova tentativa
+    if (data.identificador !== undefined) {
+      return this.plantaRepository.create({ ...base, identificador: data.identificador });
+    }
+
+    // Sem ID: próximo número livre do usuário
+    for (let tentativa = 1; ; tentativa++) {
+      const createData: CreatePlantaDTO = {
+        ...base,
+        identificador: (await this.plantaRepository.maiorIdentificador(data.usuarioId)) + 1,
+      };
+      try {
+        return await this.plantaRepository.create(createData);
+      } catch (error: any) {
+        if (error?.code !== 'P2002' || tentativa >= TENTATIVAS_ID_AUTOMATICO) throw error;
+      }
+    }
   }
 }
-

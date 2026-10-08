@@ -124,6 +124,11 @@ export class PrismaPlantaRepository implements PlantaRepository {
     return count > 0;
   }
 
+  async maiorIdentificador(usuarioId: string): Promise<number> {
+    const { _max } = await this.prisma.planta.aggregate({ where: { usuarioId }, _max: { identificador: true } });
+    return _max.identificador ?? 0;
+  }
+
   async resolverGruposVencidos(usuarioId: string, agora: Date): Promise<void> {
     // Copia coluna→coluna (o Prisma não faz isso em updateMany)
     await this.prisma.$executeRaw`

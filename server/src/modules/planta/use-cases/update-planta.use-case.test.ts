@@ -17,6 +17,7 @@ describe('UpdatePlantaUseCase', () => {
       update: jest.fn(),
       delete: jest.fn(),
       existsByIdAndUser: jest.fn(),
+      maiorIdentificador: jest.fn().mockResolvedValue(0),
       findUrlsDeMidia: jest.fn(),
       resolverGruposVencidos: jest.fn().mockResolvedValue(undefined),
       estadoPreTransplante: jest.fn().mockResolvedValue({ dias: 30, plantas: [], pendentes: [] }),
@@ -76,7 +77,7 @@ describe('UpdatePlantaUseCase', () => {
       especieId: 'especie-123',
       usuarioId: 'user-123',
       nome: 'Nome Atualizado',
-      identificador: null,
+      identificador: 1,
       dataAquisicao: new Date('2024-02-01'),
       modoAquisicao: ModoAquisicao.ESTACA,
 
