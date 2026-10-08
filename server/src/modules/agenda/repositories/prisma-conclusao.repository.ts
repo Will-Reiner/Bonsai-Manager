@@ -127,7 +127,7 @@ export class PrismaConclusaoRepository implements ConclusaoRepository {
         // Poucas idas ao banco, independente do número de plantas (lotes grandes estouravam o tempo)
         const absorvidos = new Set(plano.absorver.map((a) => `${a.plantaId}|${a.atividadeId}`));
         const novas = plano.cuidados.flatMap((c) =>
-          c.atividadeIds.flatMap((atividadeId, i) =>
+          c.atividadeIds.flatMap((atividadeId) =>
             absorvidos.has(`${c.plantaId}|${atividadeId}`)
               ? []
               : [
@@ -137,8 +137,9 @@ export class PrismaConclusaoRepository implements ConclusaoRepository {
                     dataAgendada: plano.data,
                     dataConcluida: plano.data,
                     status: 'CONCLUIDO' as const,
-                    // Nota e obs. só no primeiro cuidado: no histórico os cuidados do dia aparecem juntos
-                    ...(i === 0 ? { detalhes: c.detalhes, observacaoFutura: c.observacaoFutura } : {}),
+                    // Nota e obs. do registro valem para todos os cuidados da planta (o histórico junta os do dia)
+                    detalhes: c.detalhes,
+                    observacaoFutura: c.observacaoFutura,
                   },
                 ],
           ),
@@ -149,15 +150,14 @@ export class PrismaConclusaoRepository implements ConclusaoRepository {
         const cuidadoDe = new Map(plano.cuidados.map((c) => [c.plantaId, c]));
         for (const a of plano.absorver) {
           const c = cuidadoDe.get(a.plantaId)!;
-          const primeiro = c.atividadeIds[0] === a.atividadeId;
           const { count } = await tx.agenda.updateMany({
             where: { id: a.agendaId, status: 'PENDENTE' },
             data: {
               status: 'CONCLUIDO',
               dataConcluida: plano.data,
               // Sem nota no registro, mantém a instrução que veio do agendamento
-              ...(primeiro && c.detalhes !== undefined ? { detalhes: c.detalhes } : {}),
-              ...(primeiro && c.observacaoFutura !== undefined ? { observacaoFutura: c.observacaoFutura } : {}),
+              ...(c.detalhes !== undefined ? { detalhes: c.detalhes } : {}),
+              ...(c.observacaoFutura !== undefined ? { observacaoFutura: c.observacaoFutura } : {}),
             },
           });
           if (count === 0) throw new Error('Acesso negado ou agendamento não encontrado.');

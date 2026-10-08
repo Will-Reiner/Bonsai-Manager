@@ -157,7 +157,9 @@ export function ConcluirPage() {
             id: t.id,
             thumb: <PlantThumb url={t.planta?.fotoCapaUrl} className="size-14 shrink-0 rounded-xl" />,
             titulo: plantaRotulo(t.planta),
-            subtitulo: t.planta?.identificador && t.planta?.nome ? t.planta.nome : undefined,
+            subtitulo:
+              [t.planta?.identificador && t.planta?.nome ? t.planta.nome : null, t.atividade?.nome].filter(Boolean).join(' · ') ||
+              undefined,
             ajustado: temAjuste(ajuste(t.id)),
           }))}
           conteudo={(id) => {

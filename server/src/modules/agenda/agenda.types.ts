@@ -130,7 +130,7 @@ export interface RegistrarCuidadosDTO {
 export interface PlanoRegistro {
   usuarioId: string;
   data: Date;
-  /** Uma entrada por planta; detalhes/obs. e fotos vão no primeiro cuidado dela. */
+  /** Uma entrada por planta; detalhes/obs. vão em todos os cuidados dela e as fotos no primeiro. */
   cuidados: {
     plantaId: string;
     atividadeIds: string[];
