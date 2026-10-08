@@ -20,7 +20,19 @@
 - [x] tela de concluido apos criar nova planta tem coisa errada kkk vamos alterar ela
   > Feito em 2026-10-08: mostra a capa, o número da planta em destaque ("anote na etiqueta") e o botão "Agendar primeiro cuidado"; a página da planta também passou a mostrar o #N.
 
+- [x] triagem de fotos (lote/registrar) oferece "Criar planta #1234567890" com mais de 9 dígitos, mas a API só aceita até 999999999 e recusa só na hora de salvar (depois das fotos enviadas). Limitar o teclado a 9 dígitos ou não oferecer criar acima disso (`web/src/components/TriagemFotos.tsx`).
+  > Feito em 2026-10-08: na triagem não acontecia (o teclado sempre foi limitado a 6 dígitos); o campo "Código / etiqueta" de criar/editar planta é que aceitava mais de 9 — agora corta em 9.
+
+- [x] na Coleção (grade e lista), planta sem nome e sem espécie mostra o número duas vezes: título "Planta #14" e subtítulo "Sem espécie · completar · #14". Não mostrar o "· #N" quando o título já é o número (`web/src/pages/CollectionPage.tsx`).
+  > Feito em 2026-10-08: o subtítulo não repete o título — sem nome e sem espécie fica só o aviso; sem nome e com espécie fica só o #N (`subtituloDaColecao` em `web/src/lib/format.ts`).
+
+- [x] ordem alfabética da Coleção põe "Planta #10" antes de "Planta #9". Usar `localeCompare(..., 'pt-BR', { numeric: true })` (`web/src/pages/CollectionPage.tsx`).
+  > Feito em 2026-10-08.
+
+- [x] erro de validação da API (Zod) chega no toast como JSON cru (ex.: código da planta inválido). Controllers devem devolver só a mensagem do primeiro erro do Zod — vale para todos os schemas, não só planta.
+  > Feito em 2026-10-08: `mensagemDoErro` (`server/src/utils/errors.ts`) devolve só a mensagem do primeiro erro do Zod; usado nas respostas genéricas de erro dos controllers.
+
 # ideias para o futuro:
 - alguma animacao ou icone especial para plantas fazendo aniversario
 - animacoes gerais ao completar alguns objetivos como 100 plantas adicionadas, 1000 cuidados feitos etc
-- 
+- investigar codigo para possiveis erros q possam ter em endpoints e outras coisas, e otimizar as coisas e melhorar logs de erros e outras coisas
