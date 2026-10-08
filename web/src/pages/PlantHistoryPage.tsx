@@ -1,7 +1,8 @@
-import { useMemo } from 'react';
+import { Fragment, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router';
 import { CalendarPlus } from 'lucide-react';
 import { Button, EmptyState, PageHeader, SectionTitle, Spinner } from '@/components/ui';
+import { NotasDoCuidado } from '@/components/NotasDoCuidado';
 import { TaskCard } from '@/components/TaskCard';
 import { useCare } from '@/context/CareContext';
 import { dataLonga, plantaTitulo } from '@/lib/format';
@@ -63,20 +64,24 @@ export function PlantHistoryPage() {
                   <li key={chaveItem(item)} className="relative">
                     <span className="absolute -left-[27px] top-1.5 size-3 rounded-full border-2 border-bg bg-primary" />
                     <p className="text-xs text-muted">{dataLonga(item.data)}</p>
-                    {item.tipo === 'tarefa' ? (
+                    {item.tipo === 'cuidado' ? (
                       <>
-                        <button onClick={() => abrirTarefa(item.agenda)} className="mt-1 block text-left">
-                          <p className="font-semibold">{item.agenda.atividade?.nome ?? 'Cuidado'}</p>
-                          {item.agenda.detalhes && <p className="mt-0.5 text-sm">{item.agenda.detalhes}</p>}
-                          {item.agenda.observacaoFutura && (
-                            <p className="mt-1 text-sm text-accent">Próxima vez: {item.agenda.observacaoFutura}</p>
-                          )}
-                        </button>
-                        <Miniaturas fotos={item.agenda.fotos ?? []} abrir={abrirFoto} />
+                        <p className="mt-1 font-semibold">
+                          {item.agendas.map((a, i) => (
+                            <Fragment key={a.id}>
+                              {i > 0 && ' + '}
+                              <button onClick={() => abrirTarefa(a)} className="text-left">
+                                {a.atividade?.nome ?? 'Cuidado'}
+                              </button>
+                            </Fragment>
+                          ))}
+                        </p>
+                        <NotasDoCuidado notas={item.notas} />
+                        <Miniaturas fotos={item.fotos} abrir={abrirFoto} />
                       </>
-                    ) : (
+                    ) : item.tipo === 'fotos' ? (
                       <Miniaturas fotos={item.fotos} abrir={abrirFoto} />
-                    )}
+                    ) : null}
                   </li>
                 ))}
               </ol>

@@ -10,7 +10,7 @@ import { useCare } from '@/context/CareContext';
 import { errorMessage } from '@/lib/api';
 import { dataCurta, dataRelativa, especieNome, grupoLabel, modoAquisicaoLabel, plantaTitulo, tempoDesde } from '@/lib/format';
 import { rotuloUltima, textoEstacoes, textoIntervalo, ultimasPorPlanta } from '@/lib/cuidados';
-import { chaveItem, dataDaFoto, fotosOrdenadas, linhaDoTempo, type ItemLinha } from '@/lib/linhaDoTempo';
+import { chaveItem, dataDaFoto, fotosOrdenadas, linhaDoTempo, tituloCuidado, type ItemLinha } from '@/lib/linhaDoTempo';
 import { useAgendas, useFotos, usePlanta, useRotinas } from '@/lib/queries';
 import type { Foto } from '@/types';
 
@@ -236,7 +236,7 @@ function Secao({ titulo, verMais, children }: { titulo: string; verMais?: string
  */
 function RodaLinhaDoTempo({ passado, pendentes, abrirFoto }: { passado: ItemLinha[]; pendentes: ItemLinha[]; abrirFoto: (f: Foto) => void }) {
   const itens = [...passado, ...pendentes];
-  const ultima = passado.findLastIndex((i) => i.tipo === 'tarefa');
+  const ultima = passado.findLastIndex((i) => i.tipo === 'cuidado');
   const proxima = pendentes.length ? passado.length : -1;
   // Próxima no lugar da direita e o que veio logo antes (normalmente a última feita) à esquerda;
   // sem pendentes, a última feita fica à esquerda
@@ -264,13 +264,22 @@ function CardLinha({ item, rotulo, abrirFoto }: { item: ItemLinha; rotulo?: stri
   const fotos = item.tipo === 'tarefa' ? (item.agenda.fotos ?? []) : item.fotos;
   const capa = fotos[0]?.caminhoArquivo;
 
-  const titulo = item.tipo === 'tarefa' ? (item.agenda.atividade?.nome ?? 'Cuidado') : fotos.length > 1 ? `${fotos.length} fotos` : 'Foto';
+  const titulo =
+    item.tipo === 'tarefa'
+      ? (item.agenda.atividade?.nome ?? 'Cuidado')
+      : item.tipo === 'cuidado'
+        ? tituloCuidado(item.agendas)
+        : fotos.length > 1
+          ? `${fotos.length} fotos`
+          : 'Foto';
   const quando =
     estado === 'feita' ? dataCurta(item.data) : estado === 'atrasada' ? `Atrasada · ${dataRelativa(item.data)}` : dataRelativa(item.data);
 
   return (
     <button
-      onClick={() => (item.tipo === 'tarefa' ? abrirTarefa(item.agenda) : abrirFoto(item.fotos[0]))}
+      onClick={() =>
+        item.tipo === 'tarefa' ? abrirTarefa(item.agenda) : item.tipo === 'cuidado' ? abrirTarefa(item.agendas[0]) : abrirFoto(item.fotos[0])
+      }
       className={`flex h-full w-full flex-col rounded-3xl border-2 p-3 text-left ${estilo.card}`}
     >
       <div className="relative">
@@ -281,7 +290,7 @@ function CardLinha({ item, rotulo, abrirFoto }: { item: ItemLinha; rotulo?: stri
             {estado === 'feita' ? <Check size={28} strokeWidth={2.5} /> : <CalendarClock size={28} />}
           </div>
         )}
-        {fotos.length > 1 && item.tipo === 'tarefa' && (
+        {fotos.length > 1 && item.tipo !== 'fotos' && (
           <span className="absolute bottom-1.5 right-1.5 flex items-center gap-1 rounded-full bg-black/60 px-2 py-0.5 text-[11px] font-semibold text-white">
             <Camera size={12} /> {fotos.length}
           </span>
