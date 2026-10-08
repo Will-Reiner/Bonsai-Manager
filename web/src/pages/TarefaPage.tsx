@@ -4,6 +4,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { Ban, CalendarClock, Check, Repeat, Settings2, SkipForward, StickyNote, Trash2 } from 'lucide-react';
 import { ConfirmSheet } from '@/components/Sheet';
 import { RotinaSheet } from '@/components/care/RotinaSheet';
+import { CarrosselDoDia } from '@/components/CarrosselDoDia';
 import { HistoricoPlanta } from '@/components/HistoricoPlanta';
 import { Button, EmptyState, ErrorState, PageHeader, PlantThumb, Spinner } from '@/components/ui';
 import { useCare } from '@/context/CareContext';
@@ -12,9 +13,10 @@ import { errorMessage } from '@/lib/api';
 import { textoIntervalo } from '@/lib/cuidados';
 import { agendasApi } from '@/lib/endpoints';
 import { dataLonga, dataRelativa, diasAte, plantaRotulo } from '@/lib/format';
+import { tarefasDoDia } from '@/lib/linhaDoTempo';
 import { keys, useAgendas } from '@/lib/queries';
 
-/** Detalhe da tarefa: planta em destaque + histórico horizontal + ações. */
+/** Detalhe da tarefa: planta em destaque + tarefas do dia (concluída) + histórico horizontal + ações. */
 export function TarefaPage() {
   const { id = '' } = useParams();
   const navigate = useNavigate();
@@ -86,6 +88,7 @@ export function TarefaPage() {
   const atrasada = pendente && diasAte(agenda.dataAgendada) < 0;
   const rotuloStatus = pendente ? 'Agendada' : agenda.status === 'CONCLUIDO' ? 'Concluída' : 'Cancelada';
   const dataStatus = agenda.status === 'CONCLUIDO' ? (agenda.dataConcluida ?? agenda.dataAgendada) : agenda.dataAgendada;
+  const concluida = agenda.status === 'CONCLUIDO';
 
   return (
     <div className="min-h-dvh pb-10">
@@ -100,40 +103,50 @@ export function TarefaPage() {
           </div>
         </Link>
 
-        <p className={`mt-4 text-sm ${atrasada ? 'font-medium text-danger' : 'text-muted'}`}>
-          {rotuloStatus} · {dataRelativa(dataStatus)} ({dataLonga(dataStatus)})
-        </p>
-        {agenda.rotina && (
-          <p className="mt-1 flex items-center gap-1.5 text-sm text-muted">
-            <Repeat size={14} /> Rotina {textoIntervalo(agenda.rotina.intervaloDias)}
-            {agenda.rotina.pausada && ' · pausada'}
-          </p>
-        )}
-        {agenda.pulada && <p className="mt-1 text-sm text-muted">Pulada</p>}
-
-        {pendente && agenda.detalhes && (
-          <div className="mt-4 flex gap-2.5 rounded-2xl bg-primary-light p-3 text-sm text-primary-dark">
-            <StickyNote size={18} className="mt-0.5 shrink-0" />
-            <p className="whitespace-pre-line">{agenda.detalhes}</p>
-          </div>
-        )}
-
-        {!!agenda.fotos?.length && (
+        {concluida ? (
+          <CarrosselDoDia
+            tarefas={tarefasDoDia(daPlanta, agenda)}
+            atualId={agenda.id}
+            onTrocar={(outra) => navigate(`/tarefas/${outra}`, { replace: true })}
+          />
+        ) : (
           <>
-            <h2 className="mb-2.5 mt-6 text-xs font-semibold uppercase tracking-wider text-muted">
-              Fotos do cuidado · {agenda.fotos.length}
-            </h2>
-            <div className="grid grid-cols-3 gap-1.5">
-              {agenda.fotos.map((f) => (
-                <Link
-                  key={f.id}
-                  to={`/plantas/${agenda.plantaId}/galeria?foto=${f.id}`}
-                  className="aspect-square overflow-hidden rounded-xl bg-primary-light"
-                >
-                  <img src={f.caminhoArquivo} alt="" loading="lazy" className="size-full object-cover" />
-                </Link>
-              ))}
-            </div>
+            <p className={`mt-4 text-sm ${atrasada ? 'font-medium text-danger' : 'text-muted'}`}>
+              {rotuloStatus} · {dataRelativa(dataStatus)} ({dataLonga(dataStatus)})
+            </p>
+            {agenda.rotina && (
+              <p className="mt-1 flex items-center gap-1.5 text-sm text-muted">
+                <Repeat size={14} /> Rotina {textoIntervalo(agenda.rotina.intervaloDias)}
+                {agenda.rotina.pausada && ' · pausada'}
+              </p>
+            )}
+            {agenda.pulada && <p className="mt-1 text-sm text-muted">Pulada</p>}
+
+            {pendente && agenda.detalhes && (
+              <div className="mt-4 flex gap-2.5 rounded-2xl bg-primary-light p-3 text-sm text-primary-dark">
+                <StickyNote size={18} className="mt-0.5 shrink-0" />
+                <p className="whitespace-pre-line">{agenda.detalhes}</p>
+              </div>
+            )}
+
+            {!!agenda.fotos?.length && (
+              <>
+                <h2 className="mb-2.5 mt-6 text-xs font-semibold uppercase tracking-wider text-muted">
+                  Fotos do cuidado · {agenda.fotos.length}
+                </h2>
+                <div className="grid grid-cols-3 gap-1.5">
+                  {agenda.fotos.map((f) => (
+                    <Link
+                      key={f.id}
+                      to={`/plantas/${agenda.plantaId}/galeria?foto=${f.id}`}
+                      className="aspect-square overflow-hidden rounded-xl bg-primary-light"
+                    >
+                      <img src={f.caminhoArquivo} alt="" loading="lazy" className="size-full object-cover" />
+                    </Link>
+                  ))}
+                </div>
+              </>
+            )}
           </>
         )}
 
