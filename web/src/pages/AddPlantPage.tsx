@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { useQueryClient } from '@tanstack/react-query';
 import { Camera, Check, CheckCircle2, ImagePlus, X } from 'lucide-react';
-import { Button, Field, PageHeader } from '@/components/ui';
+import { Button, Field, PageHeader, PlantThumb } from '@/components/ui';
 import { PhotoInput } from '@/components/PhotoInput';
 import { GrupoChips } from '@/components/GrupoChips';
 import { SpeciesPicker } from '@/components/SpeciesPicker';
@@ -135,12 +135,20 @@ export function AddPlantPage() {
   if (criada) {
     return (
       <div className="flex min-h-dvh flex-col items-center justify-center px-6 text-center">
-        <CheckCircle2 size={56} className="text-primary" />
+        {criada.fotoCapaUrl ? (
+          <PlantThumb url={criada.fotoCapaUrl} className="size-28 rounded-3xl" />
+        ) : (
+          <CheckCircle2 size={56} className="text-primary" />
+        )}
         <h1 className="mt-4 text-2xl font-semibold">{plantaTitulo({ ...criada, especie: criada.especie ?? especie })} na coleção!</h1>
-        <p className="mt-1 text-muted">Que tal agendar o primeiro cuidado?</p>
+        <p className="mt-5 font-display text-5xl font-bold tracking-tight text-primary">#{criada.identificador}</p>
+        <p className="mt-2 max-w-xs text-sm text-muted">Anote na etiqueta — é por ele que as fotos encontram a planta.</p>
         <div className="mt-8 grid w-full max-w-xs gap-3">
-          <Button onClick={() => navigate(`/plantas/${criada.id}`, { replace: true })}>Ver planta</Button>
-          <Button variant="secondary" onClick={resetar}>
+          <Button onClick={() => navigate(`/agendar?planta=${criada.id}`, { replace: true })}>Agendar primeiro cuidado</Button>
+          <Button variant="secondary" onClick={() => navigate(`/plantas/${criada.id}`, { replace: true })}>
+            Ver planta
+          </Button>
+          <Button variant="ghost" onClick={resetar}>
             Adicionar mais uma
           </Button>
         </div>

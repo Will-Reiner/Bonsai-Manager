@@ -17,7 +17,8 @@
 - [x] ID tem q comecar a ser obrigatorio visto que ao adicionar fotos, fazemos tudo pelo fluxo de ID. Logo, caso o usuario nao adicione ID, adicione automaticamente um ID para ele. (veja que o ID tem q sempre ser um numero)
   > Feito em 2026-10-08 (spec em docs/superpowers/specs/2026-10-08-id-obrigatorio-design.md): ID virou número obrigatório; sem ID o servidor gera o próximo livre; a migration numerou as plantas antigas (códigos com letras descartados).
 
-- [ ] tela de concluido apos criar nova planta tem coisa errada kkk vamos alterar ela
+- [x] tela de concluido apos criar nova planta tem coisa errada kkk vamos alterar ela
+  > Feito em 2026-10-08: mostra a capa, o número da planta em destaque ("anote na etiqueta") e o botão "Agendar primeiro cuidado"; a página da planta também passou a mostrar o #N.
 
 # ideias para o futuro:
 - alguma animacao ou icone especial para plantas fazendo aniversario
