@@ -14,6 +14,7 @@ import { textoIntervalo } from '@/lib/cuidados';
 import { agendasApi } from '@/lib/endpoints';
 import { dataLonga, dataRelativa, diasAte, plantaRotulo } from '@/lib/format';
 import { tarefasDoDia } from '@/lib/linhaDoTempo';
+import { MANTER_ROLAGEM } from '@/lib/rolagem';
 import { keys, useAgendas } from '@/lib/queries';
 
 /** Detalhe da tarefa: planta em destaque + tarefas do dia (concluída) + histórico horizontal + ações. */
@@ -107,7 +108,7 @@ export function TarefaPage() {
           <CarrosselDoDia
             tarefas={tarefasDoDia(daPlanta, agenda)}
             atualId={agenda.id}
-            onTrocar={(outra) => navigate(`/tarefas/${outra}`, { replace: true })}
+            onTrocar={(outra) => navigate(`/tarefas/${outra}`, { replace: true, state: MANTER_ROLAGEM })}
           />
         ) : (
           <>

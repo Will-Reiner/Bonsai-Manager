@@ -3,7 +3,7 @@ import { Check, MessageSquareText } from 'lucide-react';
 import { Sheet } from './Sheet';
 import { NotasDoCuidado } from './NotasDoCuidado';
 import { dataCurta, dataRelativa } from '@/lib/format';
-import { chaveItem, linhaDoTempo, tituloCuidado, type ItemLinha } from '@/lib/linhaDoTempo';
+import { chaveDoAtual, chaveItem, linhaDoTempo, tituloCuidado, type ItemLinha } from '@/lib/linhaDoTempo';
 import type { Agenda } from '@/types';
 
 type Cuidado = Extract<ItemLinha, { tipo: 'cuidado' }>;
@@ -18,9 +18,11 @@ export function HistoricoPlanta({ agendas, atualId }: { agendas: Agenda[]; atual
     return [...passado, ...pendentes];
   }, [agendas]);
 
+  // Só quando muda o card (não ao trocar entre tarefas do mesmo dia no carrossel)
+  const chaveAtual = chaveDoAtual(itens, atualId);
   useEffect(() => {
     atualRef.current?.scrollIntoView({ inline: 'center', block: 'nearest' });
-  }, [atualId, itens.length]);
+  }, [chaveAtual, itens.length]);
 
   return (
     <>

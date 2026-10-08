@@ -18,6 +18,7 @@ import { ConcluirPage } from '@/pages/ConcluirPage';
 import { BatchPhotosPage } from '@/pages/BatchPhotosPage';
 import { EditProfilePage, ProfilePage } from '@/pages/ProfilePages';
 import { AdminPage } from '@/pages/AdminPage';
+import { deveRolarParaTopo } from '@/lib/rolagem';
 
 function Privada({ children }: { children: ReactNode }) {
   const { isAuthenticated } = useAuth();
@@ -34,12 +35,13 @@ function SoAdmin({ children }: { children: ReactNode }) {
   return isAdmin ? children : <Navigate to="/perfil" replace />;
 }
 
-/** Nova tela abre no topo; no "voltar" (POP) mantém a rolagem que o navegador restaurar. */
+/** Nova tela abre no topo; no "voltar" (POP) ou com `MANTER_ROLAGEM` (deslizar o carrossel) mantém a rolagem. */
 function RolarParaTopo() {
-  const { pathname } = useLocation();
+  const { pathname, state } = useLocation();
   const tipo = useNavigationType();
   useEffect(() => {
-    if (tipo !== 'POP') window.scrollTo(0, 0);
+    if (deveRolarParaTopo(tipo, state)) window.scrollTo(0, 0);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- só a troca de tela decide; o state vem junto dela
   }, [pathname, tipo]);
   return null;
 }

@@ -3,24 +3,35 @@ import { Link } from 'react-router';
 import { Repeat } from 'lucide-react';
 import { textoIntervalo } from '@/lib/cuidados';
 import { dataLonga, dataRelativa } from '@/lib/format';
+import { deveReposicionarCarrossel } from '@/lib/rolagem';
 import type { Agenda } from '@/types';
 
 /** Tarefas concluídas no mesmo dia na planta: um painel por tarefa, deslizando para o lado. */
 export function CarrosselDoDia({ tarefas, atualId, onTrocar }: { tarefas: Agenda[]; atualId: string; onTrocar: (id: string) => void }) {
   const ref = useRef<HTMLDivElement>(null);
+  const emitido = useRef<string | null>(null);
   const atual = Math.max(0, tarefas.findIndex((t) => t.id === atualId));
 
-  // Abre no painel da tarefa da URL (antes de pintar, sem pular do 1º painel)
+  // Abre no painel da tarefa da URL (antes de pintar); a troca que veio do próprio deslizar não puxa de volta
   useLayoutEffect(() => {
     const el = ref.current;
-    if (el && el.clientWidth && Math.round(el.scrollLeft / el.clientWidth) !== atual) el.scrollLeft = atual * el.clientWidth;
-  }, [atual]);
+    if (!el || !el.clientWidth) return;
+    // Enquanto há troca pedida pelo deslizar ainda não aplicada, o gesto manda (não puxa de volta)
+    const veioDaRolagem = emitido.current !== null;
+    if (emitido.current === atualId) emitido.current = null;
+    if (deveReposicionarCarrossel({ painelVisivel: Math.round(el.scrollLeft / el.clientWidth), atual, veioDaRolagem })) {
+      el.scrollLeft = atual * el.clientWidth;
+    }
+  }, [atual, atualId]);
 
   function aoRolar() {
     const el = ref.current;
     if (!el || !el.clientWidth) return;
     const i = Math.round(el.scrollLeft / el.clientWidth);
-    if (tarefas[i] && i !== atual) onTrocar(tarefas[i].id);
+    if (tarefas[i] && i !== atual && emitido.current !== tarefas[i].id) {
+      emitido.current = tarefas[i].id;
+      onTrocar(tarefas[i].id);
+    }
   }
 
   return (

@@ -27,6 +27,14 @@ export const chaveItem = (i: ItemLinha) =>
 const dataFeita = (a: Agenda) => a.dataConcluida ?? a.dataAgendada;
 const nomeDe = (a: Agenda) => a.atividade?.nome ?? 'Cuidado';
 
+/** Chave do card que contém a tarefa (o cuidado do dia dela ou a própria pendente); null se não estiver na linha. */
+export function chaveDoAtual(itens: ItemLinha[], agendaId: string): string | null {
+  const item = itens.find((i) =>
+    i.tipo === 'tarefa' ? i.agenda.id === agendaId : i.tipo === 'cuidado' && i.agendas.some((a) => a.id === agendaId),
+  );
+  return item ? chaveItem(item) : null;
+}
+
 /** "Adubação + Desaramação" (sem repetir nomes). */
 export const tituloCuidado = (agendas: Agenda[]) => [...new Set(agendas.map(nomeDe))].join(' + ');
 
