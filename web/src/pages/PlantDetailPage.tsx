@@ -78,7 +78,12 @@ export function PlantDetailPage() {
 
       <div className="mx-auto max-w-2xl px-4">
         <div className="mt-4">
-          <p className="font-display text-2xl font-semibold leading-tight">{especieNome(p.especie)}</p>
+          <div className="flex items-start justify-between gap-3">
+            <p className="font-display text-2xl font-semibold leading-tight">{especieNome(p.especie)}</p>
+            <span className="chip shrink-0 py-1 font-semibold" aria-label={`Código ${p.identificador}`}>
+              #{p.identificador}
+            </span>
+          </div>
           {p.especie?.nomeCientifico && p.especie?.nomeComum && (
             <p className="mt-0.5 text-sm italic text-muted">{p.especie.nomeCientifico}</p>
           )}
