@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { plantaCodigoNome, plantaNome, plantaRotulo, plantaTitulo } from './format';
+import { plantaCodigoNome, plantaNome, plantaRotulo, plantaTitulo, termoDeBusca } from './format';
 
 const ficus = { nomeComum: 'Ficus', nomeCientifico: 'Ficus microcarpa' };
 
@@ -52,5 +52,16 @@ describe('plantaCodigoNome', () => {
 
   it('sem nada', () => {
     expect(plantaCodigoNome(undefined)).toBe('Planta');
+  });
+});
+
+describe('termoDeBusca', () => {
+  it('minúsculo, sem espaços nas pontas', () => {
+    expect(termoDeBusca('  Ficus ')).toBe('ficus');
+  });
+
+  it('"#14" busca pelo número (o ID aparece como #N nas telas)', () => {
+    expect(termoDeBusca('#14')).toBe('14');
+    expect(termoDeBusca(' # 14')).toBe('14');
   });
 });

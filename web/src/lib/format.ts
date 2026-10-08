@@ -109,6 +109,9 @@ export const daquiADias = (dias: number) => new Date(Date.now() + dias * 86_400_
 /** Rótulo curto para identificar a planta: o ID (#14) tem prioridade. */
 export const plantaRotulo = (p: PlantaRef) => (p?.identificador != null ? `#${p.identificador}` : plantaNome(p) || 'Planta');
 
+/** Texto de busca de plantas: "#14" procura pelo número 14, como o ID aparece nas telas. */
+export const termoDeBusca = (busca: string) => busca.trim().toLowerCase().replace(/^#\s*/, '');
+
 /** "#14 · Ficus" — ID e nome juntos, para listas de escolha. */
 export const plantaCodigoNome = (p: PlantaRef) =>
   [p?.identificador != null ? `#${p.identificador}` : null, plantaNome(p)].filter(Boolean).join(' · ') || 'Planta';

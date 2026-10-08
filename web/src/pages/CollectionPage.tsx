@@ -8,7 +8,7 @@ import { Sheet } from '@/components/Sheet';
 import { Button, EmptyState, ErrorState, PlantThumb, Spinner } from '@/components/ui';
 import { errorMessage } from '@/lib/api';
 import { useEscolha } from '@/lib/escolhas';
-import { especieNome, plantaTitulo } from '@/lib/format';
+import { especieNome, plantaTitulo, termoDeBusca } from '@/lib/format';
 import { useAgendas, usePlantas } from '@/lib/queries';
 import { GRUPOS_PLANTA, type GrupoPlanta, type Planta } from '@/types';
 
@@ -70,7 +70,7 @@ export function CollectionPage() {
   const filtrosAtivos = Number(!!grupo) + Number(!!especie);
 
   const lista = useMemo(() => {
-    const termo = busca.trim().toLowerCase();
+    const termo = termoDeBusca(busca);
     const filtradas = (plantas.data ?? []).filter((p) => {
       if (especie === 'sem' ? !!p.especieId : especie && p.especieId !== especie) return false;
       if (grupo === 'sem' ? !!p.grupo : grupo && p.grupo !== grupo) return false;

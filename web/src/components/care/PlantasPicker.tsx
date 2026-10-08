@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { Check, Search } from 'lucide-react';
 import { Sheet } from '@/components/Sheet';
 import { Button, PlantThumb } from '@/components/ui';
-import { especieNome, plantaCodigoNome } from '@/lib/format';
+import { especieNome, plantaCodigoNome, termoDeBusca } from '@/lib/format';
 import { usePlantas } from '@/lib/queries';
 import type { Planta } from '@/types';
 
@@ -29,7 +29,7 @@ export function PlantasLista({ selecionadas, onChange }: { selecionadas: string[
     );
   }, [todas]);
 
-  const termo = busca.trim().toLowerCase();
+  const termo = termoDeBusca(busca);
   const visiveis = termo
     ? todas.filter((p) =>
         [String(p.identificador), p.nome, p.especie?.nomeComum, p.especie?.nomeCientifico]
