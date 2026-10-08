@@ -26,7 +26,7 @@ Toda planta tem um ID **numérico** e único por usuário. Se o usuário não in
 
 ## API
 
-- **Criar** (`POST /api/plantas`): `identificador` opcional, inteiro positivo; o Zod aceita número ou string só com dígitos (`z.coerce`) — a triagem manda o código digitado. Sem ID, o `CreatePlantaUseCase` usa `plantaRepository.maiorIdentificador(usuarioId)` + 1 (ou `1` se não houver plantas). Se o create gerado bater na unicidade (P2002, criação simultânea), recalcula e tenta de novo (até 3 vezes). ID informado pelo usuário que já existe continua dando **409** "Já existe uma planta com esse código." — sem retry.
+- **Criar** (`POST /api/plantas`): `identificador` opcional, inteiro positivo; o Zod aceita número ou string só com dígitos (`z.preprocess`; `''`, `null` e letras são rejeitados) — a triagem manda o código digitado. Máximo 999999999 (cabe em `INTEGER`). Sem ID, o `CreatePlantaUseCase` usa `plantaRepository.maiorIdentificador(usuarioId)` + 1 (ou `1` se não houver plantas). Se o create gerado bater na unicidade (P2002, criação simultânea), recalcula e tenta de novo (até 3 vezes). ID informado pelo usuário que já existe continua dando **409** "Já existe uma planta com esse código." — sem retry.
 - **Editar** (`PUT /api/plantas/:id`): `identificador` opcional, mas se vier é inteiro positivo; `null` não é mais aceito. Conflito → 409 (igual ao criar).
 - Respostas: `identificador` passa a ser `number`.
 
