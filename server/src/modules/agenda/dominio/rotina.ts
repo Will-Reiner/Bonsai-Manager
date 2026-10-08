@@ -19,8 +19,6 @@ export interface RotinaBase extends RegraRotina {
 export interface RotinaEstado extends RotinaBase {
   /** Já existe uma pendente (fora as que estão sendo concluídas agora). */
   temPendente: boolean;
-  /** Revisão geral da planta: remarcada por qualquer cuidado (ver `remarcarRevisoes`). */
-  revisao?: boolean;
 }
 
 export interface ProximaDeRotina {
@@ -52,41 +50,8 @@ export function planejarProximas(
 
   return rotinas.flatMap((r) => {
     const base = ultima.get(r.id);
-    if (!base || r.pausada || r.temPendente || r.revisao) return [];
+    if (!base || r.pausada || r.temPendente) return [];
     const dataAgendada = proximaDataRotina(r, base);
     return dataAgendada ? [{ rotinaId: r.id, plantaId: r.plantaId, atividadeId: r.atividadeId, dataAgendada }] : [];
   });
-}
-
-/** A rotina é a Revisão geral da planta (remarcada por qualquer cuidado). */
-export function ehRevisao(atividadeId: string, idRevisao: string | null): boolean {
-  return idRevisao !== null && atividadeId === idRevisao;
-}
-
-export interface RevisaoEstado extends RotinaBase {
-  /** Pendente atual (fora as concluídas agora). */
-  pendenteId: string | null;
-  pendenteData: Date | null;
-}
-
-export interface Remarcacao {
-  mover: { agendaId: string; dataAgendada: Date }[];
-  criar: ProximaDeRotina[];
-}
-
-/**
- * Qualquer cuidado na planta remarca a Revisão geral para `data + intervalo` (respeitando estações, pausa e fim).
- * Só empurra para frente: um registro retroativo não puxa a pendente para trás.
- */
-export function remarcarRevisoes(revisoes: RevisaoEstado[], data: Date): Remarcacao {
-  const r: Remarcacao = { mover: [], criar: [] };
-  for (const rev of revisoes) {
-    if (rev.pausada) continue;
-    const dataAgendada = proximaDataRotina(rev, data);
-    if (!dataAgendada) continue;
-    if (rev.pendenteId) {
-      if (!rev.pendenteData || dataAgendada > rev.pendenteData) r.mover.push({ agendaId: rev.pendenteId, dataAgendada });
-    } else r.criar.push({ rotinaId: rev.id, plantaId: rev.plantaId, atividadeId: rev.atividadeId, dataAgendada });
-  }
-  return r;
 }

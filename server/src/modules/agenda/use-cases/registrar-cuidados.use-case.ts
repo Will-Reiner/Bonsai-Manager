@@ -1,6 +1,5 @@
 import { ConclusaoRepository, RegistrarCuidadosDTO } from '../agenda.types';
 import { reconciliar } from '../dominio/reconciliar';
-import { remarcarRevisoes } from '../dominio/rotina';
 import { planejarGruposDoTransplante } from './planejar-grupos-transplante';
 import { planejarRotinas } from './planejar-rotinas';
 import { planejarSeguimento } from './planejar-seguimento';
@@ -43,10 +42,9 @@ export class RegistrarCuidadosUseCase {
     if (pendentes.length !== concluirIds.length) throw new Error('Acesso negado ou agendamento não encontrado.');
     const { absorver, cancelar } = reconciliar(cuidados, pendentes);
 
-    // Pendentes concluídas/canceladas aqui avançam a rotina; qualquer cuidado remarca a Revisão geral
+    // Pendentes concluídas/canceladas aqui avançam a rotina
     const rotinas = await planejarRotinas(this.repo, pendentes.map((p) => ({ rotinaId: p.rotinaId, data })), concluirIds);
     const seguimento = planejarSeguimento(plantas, proximos);
-    const revisoes = remarcarRevisoes(await this.repo.revisoesDasPlantas(plantas, concluirIds), data);
 
     const atualizarGrupos = dto.moverRecemTransplantada ? await planejarGruposDoTransplante(this.repo, cuidados, usuarioId, data) : [];
 
@@ -57,8 +55,7 @@ export class RegistrarCuidadosUseCase {
       absorver,
       cancelar,
       ...seguimento,
-      criarPendentes: [...seguimento.criarPendentes, ...rotinas, ...revisoes.criar],
-      moverPendentes: revisoes.mover,
+      criarPendentes: [...seguimento.criarPendentes, ...rotinas],
       atualizarGrupos,
     });
   }

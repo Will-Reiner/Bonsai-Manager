@@ -113,7 +113,7 @@ export const agendasApi = {
   remove: (id: string) => api.delete(`/agendas/${id}`),
   /** Registra um cuidado já feito (fotos + plantas + próximos passos) numa chamada. */
   registrar: (body: RegistrarInput) => data<ConcluirResultado>(api.post('/agendas/registrar', body)),
-  /** Conclui uma ou várias tarefas (com extras e próximos passos); remarca a rotina de Revisão geral de cada planta. */
+  /** Conclui uma ou várias tarefas (com extras e próximos passos). */
   concluir: (body: ConcluirInput) => data<ConcluirResultado>(api.post('/agendas/concluir', body)),
   /** "Pular esta vez" (só tarefa de rotina): a próxima conta a partir de hoje. */
   /** "Pular esta vez"; `proxima` diz se a rotina ganhou a próxima tarefa. */

@@ -1,10 +1,9 @@
 import { ConclusaoRepository, ConcluirAgendasDTO, PlanoConclusao } from '../agenda.types';
-import { remarcarRevisoes } from '../dominio/rotina';
 import { planejarGruposDoTransplante } from './planejar-grupos-transplante';
 import { planejarRotinas } from './planejar-rotinas';
 import { planejarSeguimento } from './planejar-seguimento';
 
-/** Conclui uma ou várias tarefas, avança rotinas, remarca a Revisão geral e agenda os próximos passos. */
+/** Conclui uma ou várias tarefas, avança rotinas e agenda os próximos passos. */
 export class ConcluirAgendasUseCase {
   constructor(private repo: ConclusaoRepository) {}
 
@@ -39,8 +38,6 @@ export class ConcluirAgendasUseCase {
       ids,
     );
     const seguimento = planejarSeguimento(plantas, proximos);
-    // Qualquer cuidado na planta remarca a Revisão geral dela
-    const revisoes = remarcarRevisoes(await this.repo.revisoesDasPlantas(plantas, ids), dataConcluida);
     // Atividade efetiva de cada tarefa (a escolhida na tela ou a original) + extras
     const atualizarGrupos = dto.moverRecemTransplantada
       ? await planejarGruposDoTransplante(
@@ -77,8 +74,7 @@ export class ConcluirAgendasUseCase {
         extras.map((atividadeId) => ({ plantaId, atividadeId, data: dataConcluida, detalhes: dto.detalhes })),
       ),
       ...seguimento,
-      criarPendentes: [...seguimento.criarPendentes, ...rotinas, ...revisoes.criar],
-      moverPendentes: revisoes.mover,
+      criarPendentes: [...seguimento.criarPendentes, ...rotinas],
       atualizarGrupos,
     };
 

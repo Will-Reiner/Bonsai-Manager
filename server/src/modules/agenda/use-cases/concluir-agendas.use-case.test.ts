@@ -20,7 +20,6 @@ describe('ConcluirAgendasUseCase', () => {
       findPendentesDoUsuario: jest.fn().mockResolvedValue([{ id: 'ag-1', plantaId: 'pl-1', atividadeId: 'at-1', rotinaId: null }]),
       findPendentesParaReconciliar: jest.fn(),
       atividadesExistem: jest.fn().mockResolvedValue(true),
-      revisoesDasPlantas: jest.fn().mockResolvedValue([]),
       estadoRotinas: jest.fn().mockResolvedValue([]),
       executar: jest.fn().mockResolvedValue({ concluidas: [], criadas: [] }),
       contarPlantasDoUsuario: jest.fn(),
@@ -86,41 +85,6 @@ describe('ConcluirAgendasUseCase', () => {
     await useCase.execute({ ...base, proximos: [{ atividadeId: 'at-p', dataAgendada: quando }] }, 'user-1');
 
     expect(plano().criarPendentes).toEqual([{ plantaId: 'pl-1', atividadeId: 'at-p', dataAgendada: emDias(14) }]);
-  });
-
-  describe('Revisão geral (rotina)', () => {
-    const rev = { id: 'rev1', plantaId: 'pl-1', atividadeId: 'at-rev', intervaloDias: 30, dataFim: null, pausada: false };
-
-    it('qualquer cuidado remarca a revisão pendente da planta para data feita + intervalo', async () => {
-      repo.revisoesDasPlantas.mockResolvedValue([{ ...rev, pendenteId: 'ag-rev', pendenteData: emDias(3) }]);
-
-      await useCase.execute(base, 'user-1');
-
-      expect(repo.revisoesDasPlantas).toHaveBeenCalledWith(['pl-1'], ['ag-1']);
-      expect(plano().moverPendentes).toEqual([{ agendaId: 'ag-rev', dataAgendada: emDias(30) }]);
-      expect(plano().criarPendentes).toEqual([]);
-    });
-
-    it('concluir a própria revisão cria a próxima', async () => {
-      repo.revisoesDasPlantas.mockResolvedValue([{ ...rev, pendenteId: null, pendenteData: null }]);
-
-      await useCase.execute(base, 'user-1');
-
-      expect(plano().moverPendentes).toEqual([]);
-      expect(plano().criarPendentes).toEqual([
-        { rotinaId: 'rev1', plantaId: 'pl-1', atividadeId: 'at-rev', dataAgendada: emDias(30) },
-      ]);
-    });
-
-    it('consulta as revisões uma vez, com as plantas distintas', async () => {
-      repo.findPendentesDoUsuario.mockResolvedValue([
-        { id: 'ag-1', plantaId: 'pl-1', atividadeId: 'at-1', rotinaId: null },
-        { id: 'ag-2', plantaId: 'pl-1', atividadeId: 'at-1', rotinaId: null },
-      ]);
-      await useCase.execute({ ...base, itens: [{ agendaId: 'ag-1' }, { agendaId: 'ag-2' }] }, 'user-1');
-      expect(repo.revisoesDasPlantas).toHaveBeenCalledTimes(1);
-      expect(repo.revisoesDasPlantas).toHaveBeenCalledWith(['pl-1'], ['ag-1', 'ag-2']);
-    });
   });
 
   it('falha se alguma tarefa não é do usuário ou não está pendente', async () => {

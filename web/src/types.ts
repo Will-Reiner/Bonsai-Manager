@@ -146,7 +146,6 @@ export interface Preferencias {
   atividades_rastreadas?: string;
   usa_identificador?: string;
   usa_nome_planta?: string;
-  revisao_automatica_dias?: string;
   transplante_dias?: string;
   pre_transplante_dias?: string;
   mover_recem_transplantada?: string;

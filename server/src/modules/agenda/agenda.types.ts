@@ -1,7 +1,7 @@
 import { AgendaStatus } from '@prisma/client';
 import { PendenteReconciliavel } from './dominio/reconciliar';
 import { Estacao } from './dominio/estacoes';
-import { RevisaoEstado, RotinaEstado } from './dominio/rotina';
+import { RotinaEstado } from './dominio/rotina';
 import { EstadoGrupo } from '../planta/dominio/grupo';
 
 export interface CreateAgendaDTO {
@@ -50,8 +50,6 @@ export interface AgendaRepository {
   atividadesExistem(ids: string[]): Promise<boolean>;
 }
 
-export const ATIVIDADE_REVISAO = 'Revisão geral';
-export const PREF_REVISAO_DIAS = 'revisao_automatica_dias';
 export const ATIVIDADE_TRANSPLANTE = 'Transplante';
 export const PREF_TRANSPLANTE_DIAS = 'transplante_dias';
 export const PREF_PRE_TRANSPLANTE_DIAS = 'pre_transplante_dias';
@@ -109,8 +107,6 @@ export interface PlanoConclusao {
   criarConcluidas: { plantaId: string; atividadeId: string; data: Date; detalhes?: string }[];
   criarPendentes: NovaPendente[];
   criarRotinas: NovaRotinaDePasso[];
-  /** Pendentes (Revisão geral) remarcadas para uma nova data. */
-  moverPendentes: { agendaId: string; dataAgendada: Date }[];
   /** Mudanças de grupo (Transplante → Recém transplantada). */
   atualizarGrupos: AtualizacaoGrupo[];
 }
@@ -148,8 +144,6 @@ export interface PlanoRegistro {
   cancelar: string[];
   criarPendentes: NovaPendente[];
   criarRotinas: NovaRotinaDePasso[];
-  /** Pendentes (Revisão geral) remarcadas para uma nova data. */
-  moverPendentes: { agendaId: string; dataAgendada: Date }[];
   /** Mudanças de grupo (Transplante → Recém transplantada). */
   atualizarGrupos: AtualizacaoGrupo[];
 }
@@ -168,8 +162,6 @@ export interface ConclusaoRepository {
   /** Agendas PENDENTE do usuário dentre os ids, com planta, atividade e data. */
   findPendentesParaReconciliar(ids: string[], usuarioId: string): Promise<PendenteReconciliavel[]>;
   atividadesExistem(ids: string[]): Promise<boolean>;
-  /** Rotinas de Revisão geral das plantas, com a pendente atual (ignorando `excluirAgendaIds`). */
-  revisoesDasPlantas(plantaIds: string[], excluirAgendaIds: string[]): Promise<RevisaoEstado[]>;
   /** Estado das rotinas; `temPendente` ignora as agendas em `excluirAgendaIds` (as que estão sendo concluídas). */
   estadoRotinas(rotinaIds: string[], excluirAgendaIds: string[]): Promise<RotinaEstado[]>;
   executar(plano: PlanoConclusao): Promise<ResultadoConclusao>;

@@ -265,7 +265,6 @@ model Rotina {
   estacoes      Estacao[] @default([]) // vazio = ano todo (regras na fase 3)
   pausada       Boolean   @default(false)
   dataFim       DateTime?
-  revisao       Boolean   @default(false) // Revisão geral da planta (fase 3)
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 

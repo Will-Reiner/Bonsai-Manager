@@ -26,7 +26,7 @@ export const proximosParaApi = (proximos: Proximo[]) =>
       }))
     : undefined;
 
-/** Próximos passos a agendar após um cuidado (a Revisão geral é rotina da planta e se remarca sozinha). */
+/** Próximos passos a agendar após um cuidado. */
 export function ProximosPassos({ value, onChange }: { value: Proximo[]; onChange: (v: Proximo[]) => void }) {
   const atividades = useAtividadesOrdenadas();
 
@@ -95,9 +95,6 @@ export function ProximosPassos({ value, onChange }: { value: Proximo[]; onChange
         >
           <Plus size={16} /> Agendar próximo passo
         </Button>
-        {value.length === 0 && (
-          <p className="text-xs text-muted">Se a planta tiver Revisão geral, ela é remarcada automaticamente a cada cuidado.</p>
-        )}
       </div>
     </section>
   );

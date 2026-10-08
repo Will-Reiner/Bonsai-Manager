@@ -1,11 +1,9 @@
 import { prisma } from '../../../lib/prisma';
 import { Prisma } from '@prisma/client';
-import { ehRevisao } from '../dominio/rotina';
 import { diasDeTransplante } from '../../planta/dominio/grupo';
 import {
   AtualizacaoGrupo,
   ConclusaoRepository,
-  ATIVIDADE_REVISAO,
   ATIVIDADE_TRANSPLANTE,
   PREF_TRANSPLANTE_DIAS,
   NovaRotinaDePasso,
@@ -40,7 +38,6 @@ export class PrismaConclusaoRepository implements ConclusaoRepository {
         dataFim: true,
         pausada: true,
         estacoes: true,
-        revisao: true,
         _count: { select: { agendas: { where: { status: 'PENDENTE', id: { notIn: excluirAgendaIds } } } } },
       },
     });
@@ -50,39 +47,6 @@ export class PrismaConclusaoRepository implements ConclusaoRepository {
   async atividadesExistem(ids: string[]) {
     const total = await prisma.atividade.count({ where: { id: { in: ids } } });
     return total === ids.length;
-  }
-
-  async revisoesDasPlantas(plantaIds: string[], excluirAgendaIds: string[]) {
-    const rotinas = await prisma.rotina.findMany({
-      where: { plantaId: { in: plantaIds }, revisao: true },
-      select: {
-        id: true,
-        plantaId: true,
-        atividadeId: true,
-        intervaloDias: true,
-        dataFim: true,
-        pausada: true,
-        estacoes: true,
-        agendas: {
-          where: { status: 'PENDENTE', id: { notIn: excluirAgendaIds } },
-          select: { id: true, dataAgendada: true },
-          orderBy: { dataAgendada: 'asc' },
-          take: 1,
-        },
-      },
-    });
-    return rotinas.map(({ agendas, ...r }) => ({
-      ...r,
-      pendenteId: agendas[0]?.id ?? null,
-      pendenteData: agendas[0]?.dataAgendada ?? null,
-    }));
-  }
-
-  /** Remarca pendentes (Revisão geral); revalida PENDENTE para não mexer em tarefa já resolvida. */
-  private async moverPendentes(tx: Prisma.TransactionClient, itens: { agendaId: string; dataAgendada: Date }[]) {
-    for (const m of itens) {
-      await tx.agenda.updateMany({ where: { id: m.agendaId, status: 'PENDENTE' }, data: { dataAgendada: m.dataAgendada } });
-    }
   }
 
   /** Aplica mudanças de grupo (Transplante → Recém transplantada). */
@@ -99,8 +63,6 @@ export class PrismaConclusaoRepository implements ConclusaoRepository {
   private async criarComRotinas(tx: Prisma.TransactionClient, itens: NovaRotinaDePasso[]) {
     if (!itens.length) return [];
     const criadas = [];
-    const idRevisao =
-      (await tx.atividade.findUnique({ where: { nome: ATIVIDADE_REVISAO }, select: { id: true } }))?.id ?? null;
     for (const r of itens) {
       const existente = await tx.rotina.findUnique({
         where: { plantaId_atividadeId: { plantaId: r.plantaId, atividadeId: r.atividadeId } },
@@ -125,7 +87,6 @@ export class PrismaConclusaoRepository implements ConclusaoRepository {
                 intervaloDias: r.intervaloDias,
                 dataFim: r.dataFim,
                 estacoes: r.estacoes,
-                revisao: ehRevisao(r.atividadeId, idRevisao),
               },
             })
           ).id;
@@ -239,7 +200,6 @@ export class PrismaConclusaoRepository implements ConclusaoRepository {
           ...(plano.criarPendentes.length ? await tx.agenda.createManyAndReturn({ data: plano.criarPendentes }) : []),
           ...(await this.criarComRotinas(tx, plano.criarRotinas)),
         ];
-        await this.moverPendentes(tx, plano.moverPendentes);
         await this.atualizarGrupos(tx, plano.atualizarGrupos);
         return { concluidas, criadas };
       },
@@ -306,7 +266,6 @@ export class PrismaConclusaoRepository implements ConclusaoRepository {
         }
         criadas.push(...(await this.criarComRotinas(tx, plano.criarRotinas)));
 
-        await this.moverPendentes(tx, plano.moverPendentes);
         await this.atualizarGrupos(tx, plano.atualizarGrupos);
         return { concluidas, criadas };
       },

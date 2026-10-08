@@ -41,13 +41,6 @@ export const useTiposRecurso = () => useQuery({ queryKey: keys.tiposRecurso, que
 export const usePreferencias = () =>
   useQuery({ queryKey: keys.preferencias, queryFn: preferenciasApi.get, staleTime: 5 * 60_000 });
 
-/** Intervalo (dias) da rotina de Revisão geral criada em plantas novas (padrão 30, 0 = sem rotina) — mesma regra do backend. */
-export function useRevisaoDias() {
-  const prefs = usePreferencias();
-  const dias = parseInt(prefs.data?.revisao_automatica_dias ?? '30', 10);
-  return Number.isNaN(dias) ? 30 : Math.max(0, dias);
-}
-
 /** Dias em Recém transplantada após um Transplante (padrão 15, 1–365) — mesma regra do backend. */
 export function useTransplanteDias() {
   const prefs = usePreferencias();

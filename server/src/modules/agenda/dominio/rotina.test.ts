@@ -1,4 +1,4 @@
-import { ehRevisao, planejarProximas, proximaDataRotina, remarcarRevisoes, RevisaoEstado, RotinaEstado } from './rotina';
+import { planejarProximas, proximaDataRotina, RotinaEstado } from './rotina';
 
 const BASE = new Date('2026-10-05T12:00:00.000Z');
 const dias = (n: number) => new Date(BASE.getTime() + n * 86_400_000);
@@ -85,62 +85,5 @@ describe('proximaDataRotina com estações', () => {
   it('estações vazias ou nulas = ano todo', () => {
     expect(proximaDataRotina({ intervaloDias: 14, dataFim: null, estacoes: [] }, MAIO)).toEqual(new Date('2026-05-15T15:00:00.000Z'));
     expect(proximaDataRotina({ intervaloDias: 14, dataFim: null, estacoes: null }, MAIO)).toEqual(new Date('2026-05-15T15:00:00.000Z'));
-  });
-});
-
-describe('planejarProximas e a revisão', () => {
-  it('rotina de revisão não avança por aqui (é remarcada à parte)', () => {
-    expect(planejarProximas([rotina({ revisao: true })], [{ rotinaId: 'r1', data: BASE }])).toEqual([]);
-  });
-});
-
-describe('remarcarRevisoes', () => {
-  const rev = (over: Partial<RevisaoEstado> = {}): RevisaoEstado => ({
-    id: 'rev1',
-    plantaId: 'p1',
-    atividadeId: 'revisao',
-    intervaloDias: 30,
-    dataFim: null,
-    pausada: false,
-    pendenteId: 'ag-r',
-    pendenteData: dias(10),
-    ...over,
-  });
-
-  it('move a pendente para a data do cuidado + intervalo', () => {
-    expect(remarcarRevisoes([rev()], BASE)).toEqual({ mover: [{ agendaId: 'ag-r', dataAgendada: dias(30) }], criar: [] });
-  });
-
-  it('sem pendente, cria', () => {
-    expect(remarcarRevisoes([rev({ pendenteId: null, pendenteData: null })], BASE)).toEqual({
-      mover: [],
-      criar: [{ rotinaId: 'rev1', plantaId: 'p1', atividadeId: 'revisao', dataAgendada: dias(30) }],
-    });
-  });
-
-  it('pausada ou após a data final não mexe em nada', () => {
-    expect(remarcarRevisoes([rev({ pausada: true }), rev({ id: 'rev2', dataFim: dias(10) })], BASE)).toEqual({ mover: [], criar: [] });
-  });
-
-  it('registro retroativo não puxa a revisão para trás', () => {
-    expect(remarcarRevisoes([rev({ pendenteData: dias(30) })], dias(-14))).toEqual({ mover: [], criar: [] });
-  });
-
-  it('cuidado que leva a revisão para frente move a pendente', () => {
-    expect(remarcarRevisoes([rev({ pendenteData: dias(30) })], dias(5))).toEqual({
-      mover: [{ agendaId: 'ag-r', dataAgendada: dias(35) }],
-      criar: [],
-    });
-  });
-});
-
-describe('ehRevisao', () => {
-  it('é revisão quando a atividade é a Revisão geral', () => {
-    expect(ehRevisao('at-rev', 'at-rev')).toBe(true);
-  });
-
-  it('outra atividade ou Revisão geral inexistente não é revisão', () => {
-    expect(ehRevisao('at-1', 'at-rev')).toBe(false);
-    expect(ehRevisao('at-1', null)).toBe(false);
   });
 });

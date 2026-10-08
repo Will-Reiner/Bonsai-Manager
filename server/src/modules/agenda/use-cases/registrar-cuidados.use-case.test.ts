@@ -19,7 +19,6 @@ describe('RegistrarCuidadosUseCase', () => {
       findPendentesDoUsuario: jest.fn(),
       findPendentesParaReconciliar: jest.fn().mockResolvedValue([]),
       atividadesExistem: jest.fn().mockResolvedValue(true),
-      revisoesDasPlantas: jest.fn().mockResolvedValue([]),
       estadoRotinas: jest.fn().mockResolvedValue([]),
       executar: jest.fn(),
       contarPlantasDoUsuario: jest.fn().mockResolvedValue(1),
@@ -81,28 +80,6 @@ describe('RegistrarCuidadosUseCase', () => {
     expect(plano().criarPendentes).toEqual([
       { plantaId: 'p1', atividadeId: 'at-9', dataAgendada: new Date('2026-11-05T12:00:00.000Z') },
     ]);
-  });
-
-  it('remarca a Revisão geral de cada planta para a data do registro + intervalo', async () => {
-    repo.revisoesDasPlantas.mockResolvedValue([
-      { id: 'rev1', plantaId: 'p1', atividadeId: 'at-rev', intervaloDias: 30, dataFim: null, pausada: false, pendenteId: 'ag-rev', pendenteData: new Date(AGORA.getTime() + 3 * DIA) },
-    ]);
-
-    await useCase.execute(base, 'user-1');
-
-    expect(repo.revisoesDasPlantas).toHaveBeenCalledWith(['p1'], []);
-    expect(plano().moverPendentes).toEqual([{ agendaId: 'ag-rev', dataAgendada: new Date(AGORA.getTime() + 30 * DIA) }]);
-  });
-
-  it('registro retroativo não puxa a Revisão geral para trás', async () => {
-    repo.revisoesDasPlantas.mockResolvedValue([
-      { id: 'rev1', plantaId: 'p1', atividadeId: 'at-rev', intervaloDias: 30, dataFim: null, pausada: false, pendenteId: 'ag-rev', pendenteData: new Date(AGORA.getTime() + 30 * DIA) },
-    ]);
-
-    await useCase.execute({ ...base, data: new Date(AGORA.getTime() - 14 * DIA).toISOString() }, 'user-1');
-
-    expect(plano().moverPendentes).toEqual([]);
-    expect(plano().criarPendentes).toEqual([]);
   });
 
   it('lança erro quando alguma planta não é do usuário', async () => {
@@ -176,7 +153,6 @@ describe('RegistrarCuidadosUseCase', () => {
       expect(repo.findPendentesParaReconciliar).toHaveBeenCalledWith(['ag-1'], 'user-1');
       expect(plano().absorver).toEqual([{ agendaId: 'ag-1', plantaId: 'p1', atividadeId: 'at-1' }]);
       expect(plano().cancelar).toEqual([]);
-      expect(repo.revisoesDasPlantas).toHaveBeenCalledWith(['p1'], ['ag-1']);
     });
 
     it('lança erro quando a tarefa não é do usuário ou não está mais pendente', async () => {

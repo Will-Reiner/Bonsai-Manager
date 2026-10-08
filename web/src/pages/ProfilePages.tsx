@@ -9,16 +9,8 @@ import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/context/ToastContext';
 import { errorMessage } from '@/lib/api';
 import { authApi, preferenciasApi } from '@/lib/endpoints';
-import { keys, useAgendas, usePreferencias, useRevisaoDias, useTransplanteDias, usePreTransplanteDias, usePlantas, useMoverRecemTransplantada } from '@/lib/queries';
+import { keys, useAgendas, usePreferencias, useTransplanteDias, usePreTransplanteDias, usePlantas, useMoverRecemTransplantada } from '@/lib/queries';
 import { uploadImage } from '@/lib/upload';
-
-const OPCOES_REVISAO = [
-  { valor: '0', label: 'Desligada' },
-  { valor: '15', label: '15 dias' },
-  { valor: '30', label: '30 dias' },
-  { valor: '60', label: '60 dias' },
-  { valor: '90', label: '90 dias' },
-];
 
 const OPCOES_PRE_TRANSPLANTE = [
   { valor: '15', label: '15 dias' },
@@ -80,19 +72,6 @@ function PreferenciaDias({
         </select>
       </Field>
     </section>
-  );
-}
-
-/** Intervalo da rotina de Revisão geral criada em cada planta nova. */
-function RevisaoAutomatica() {
-  return (
-    <PreferenciaDias
-      chave="revisao_automatica_dias"
-      dias={useRevisaoDias()}
-      opcoes={OPCOES_REVISAO}
-      label="Revisão geral das plantas novas"
-      hint="Cada planta nova ganha uma rotina de Revisão geral com este intervalo, remarcada a cada cuidado. Para mudar numa planta, use a seção Rotinas dela."
-    />
   );
 }
 
@@ -192,7 +171,6 @@ export function ProfilePage() {
         </dl>
       </section>
 
-      <RevisaoAutomatica />
       <TempoPreTransplante />
       <TempoTransplante />
       <MoverTransplantePreferencia />
