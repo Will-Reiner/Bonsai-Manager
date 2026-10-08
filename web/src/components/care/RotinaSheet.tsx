@@ -7,7 +7,7 @@ import { useToast } from '@/context/ToastContext';
 import { errorMessage } from '@/lib/api';
 import { ESTACOES_LISTA, textoEstacoes, textoIntervalo } from '@/lib/cuidados';
 import { rotinasApi } from '@/lib/endpoints';
-import { dataRelativa, fromDateInput, toDateInput } from '@/lib/format';
+import { dataRelativa, fromDateInput, plantaCodigoNome, toDateInput } from '@/lib/format';
 import { keys, useRotinas } from '@/lib/queries';
 import type { Estacao, Rotina } from '@/types';
 
@@ -72,7 +72,7 @@ function RotinaForm({ rotina, onClose }: { rotina: Rotina; onClose: () => void }
       <Sheet open={!confirmar} onClose={onClose} title={`Rotina · ${rotina.atividade?.nome ?? 'Cuidado'}`}>
         <div className="space-y-5 pb-safe">
           <p className="text-sm text-muted">
-            {rotina.planta?.identificador || rotina.planta?.nome || 'Planta'} · {textoIntervalo(rotina.intervaloDias)}
+            {plantaCodigoNome(rotina.planta)} · {textoIntervalo(rotina.intervaloDias)}
             {textoEstacoes(rotina.estacoes) && ` · ${textoEstacoes(rotina.estacoes)}`} · {status}
           </p>
           <Field label="A cada quantos dias">

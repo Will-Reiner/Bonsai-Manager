@@ -92,7 +92,7 @@ export function AddPlantPage() {
       const planta = await plantasApi.create({
         especieId,
         nome: nome.trim() || undefined,
-        identificador: identificador.trim() || undefined,
+        identificador: Number(identificador) || undefined,
         dataAquisicao: dataAquisicao ? fromDateInput(dataAquisicao) : null,
         modoAquisicao: modo || null,
         grupo,
@@ -173,13 +173,19 @@ export function AddPlantPage() {
           <section className="space-y-4">
             <div>
               <h2 className="mb-1 text-2xl font-semibold">Como você chama ela?</h2>
-              <p className="text-sm text-muted">Opcional — use um apelido, um código de etiqueta, ou os dois.</p>
+              <p className="text-sm text-muted">Opcional — um apelido e o número da etiqueta.</p>
             </div>
             <Field label="Apelido">
               <input className="input" value={nome} onChange={(e) => setNome(e.target.value)} placeholder={`Ex.: ${especieNome(especie)} da varanda`} />
             </Field>
-            <Field label="Código / etiqueta" hint="Único na sua coleção">
-              <input className="input" value={identificador} onChange={(e) => setIdentificador(e.target.value)} placeholder="Ex.: JB-03" />
+            <Field label="Código / etiqueta" hint="Deixe vazio para gerar automaticamente">
+              <input
+                className="input"
+                inputMode="numeric"
+                value={identificador}
+                onChange={(e) => setIdentificador(e.target.value.replace(/\D/g, ''))}
+                placeholder="#"
+              />
             </Field>
           </section>
         )}

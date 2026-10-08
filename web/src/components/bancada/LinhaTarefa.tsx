@@ -3,7 +3,7 @@ import { Check } from 'lucide-react';
 import { PlantThumb } from '@/components/ui';
 import { useCare } from '@/context/CareContext';
 import { ehAtrasada } from '@/lib/bancada';
-import { dataRelativa, diasAte, plantaRotulo } from '@/lib/format';
+import { dataRelativa, diasAte, plantaNome, plantaRotulo } from '@/lib/format';
 import type { Agenda } from '@/types';
 
 /** Planta na lista: miniatura, rótulo e prazo; atrasada ganha fundo em degradê e traço à esquerda. */
@@ -13,7 +13,7 @@ export function LinhaTarefa({ agenda }: { agenda: Agenda }) {
   const atrasada = ehAtrasada(agenda);
   const p = agenda.planta;
   const dias = -diasAte(agenda.dataAgendada);
-  const nome = p?.identificador ? p?.nome || p?.especie?.nomeComum : p?.especie?.nomeComum;
+  const nome = plantaNome(p);
 
   return (
     <div

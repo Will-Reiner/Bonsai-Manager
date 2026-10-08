@@ -12,7 +12,7 @@ import { useToast } from '@/context/ToastContext';
 import { errorMessage } from '@/lib/api';
 import { textoIntervalo } from '@/lib/cuidados';
 import { agendasApi } from '@/lib/endpoints';
-import { dataLonga, dataRelativa, diasAte, plantaRotulo } from '@/lib/format';
+import { dataLonga, dataRelativa, diasAte, plantaNome, plantaRotulo } from '@/lib/format';
 import { tarefasDoDia } from '@/lib/linhaDoTempo';
 import { MANTER_ROLAGEM } from '@/lib/rolagem';
 import { keys, useAgendas } from '@/lib/queries';
@@ -100,7 +100,7 @@ export function TarefaPage() {
           <PlantThumb url={agenda.planta?.fotoCapaUrl} className="aspect-[4/3] w-full" />
           <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent p-4 pt-12 text-white">
             <p className="text-3xl font-bold tracking-tight">{plantaRotulo(agenda.planta)}</p>
-            {agenda.planta?.identificador && agenda.planta?.nome && <p className="text-sm opacity-90">{agenda.planta.nome}</p>}
+            {plantaNome(agenda.planta) && <p className="text-sm opacity-90">{plantaNome(agenda.planta)}</p>}
           </div>
         </Link>
 

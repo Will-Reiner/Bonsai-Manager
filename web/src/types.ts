@@ -53,7 +53,7 @@ export interface Especie {
 export interface Planta {
   id: string;
   nome?: string | null;
-  identificador?: string | null;
+  identificador: number;
   dataAquisicao?: string | null;
   modoAquisicao?: ModoAquisicao | null;
   observacoes?: string | null;

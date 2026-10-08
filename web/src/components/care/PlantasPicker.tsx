@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { Check, Search } from 'lucide-react';
 import { Sheet } from '@/components/Sheet';
 import { Button, PlantThumb } from '@/components/ui';
-import { especieNome, plantaTitulo } from '@/lib/format';
+import { especieNome, plantaCodigoNome } from '@/lib/format';
 import { usePlantas } from '@/lib/queries';
 import type { Planta } from '@/types';
 
@@ -32,7 +32,7 @@ export function PlantasLista({ selecionadas, onChange }: { selecionadas: string[
   const termo = busca.trim().toLowerCase();
   const visiveis = termo
     ? todas.filter((p) =>
-        [p.identificador, p.nome, p.especie?.nomeComum, p.especie?.nomeCientifico]
+        [String(p.identificador), p.nome, p.especie?.nomeComum, p.especie?.nomeCientifico]
           .filter(Boolean)
           .some((v) => v!.toLowerCase().includes(termo)),
       )
@@ -106,8 +106,7 @@ export function PlantasLista({ selecionadas, onChange }: { selecionadas: string[
               <PlantThumb url={p.fotoCapaUrl} className="size-10 shrink-0 rounded-lg" />
               <span className="min-w-0 flex-1">
                 <span className="block truncate text-sm font-semibold">
-                  {p.identificador ? `#${p.identificador} · ` : ''}
-                  {plantaTitulo(p)}
+                  {plantaCodigoNome(p)}
                 </span>
                 <span className="block truncate text-xs text-muted">{especieNome(p.especie)}</span>
               </span>

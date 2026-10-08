@@ -19,7 +19,7 @@ import { useToast } from '@/context/ToastContext';
 import { errorMessage } from '@/lib/api';
 import { agendasApi } from '@/lib/endpoints';
 import { fluxoRegistrar, resumoMaisOpcoes } from '@/lib/fluxos';
-import { diasAte, fromDateInput, plantaRotulo, plantaTitulo, toDateInput } from '@/lib/format';
+import { diasAte, fromDateInput, plantaCodigoNome, plantaRotulo, plantaTitulo, toDateInput } from '@/lib/format';
 import { ehNova, useLoteFotos } from '@/lib/loteFotos';
 import { keys, useAgendas, useAtividades, useLembrarMover, useMoverRecemTransplantada, usePlantas } from '@/lib/queries';
 import { ATIVIDADE_TRANSPLANTE } from '@/types';
@@ -114,7 +114,7 @@ export function RegistrarPage() {
 
   const tituloDe = (pid: string) => {
     const alvo = lote.porId.get(pid);
-    return `${alvo?.identificador ? `#${alvo.identificador} · ` : ''}${alvo?.nova ? 'Planta nova' : plantaTitulo(alvo)}`;
+    return alvo?.nova ? `#${alvo.identificador} · Planta nova` : plantaCodigoNome(alvo);
   };
   const thumbDe = (pid: string) => {
     const foto = fotosDe(pid)[0];

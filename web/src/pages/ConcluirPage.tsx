@@ -16,7 +16,7 @@ import { useToast } from '@/context/ToastContext';
 import { errorMessage } from '@/lib/api';
 import { agendasApi } from '@/lib/endpoints';
 import { fluxoConcluir, resumoMaisOpcoes } from '@/lib/fluxos';
-import { fromDateInput, plantaRotulo, toDateInput } from '@/lib/format';
+import { fromDateInput, plantaNome, plantaRotulo, toDateInput } from '@/lib/format';
 import { detalhesFinais, dicaDescricao, preencherInstrucoes, textoEditado } from '@/lib/instrucao';
 import { keys, useAgendas, useAtividadesOrdenadas, useLembrarMover, useMoverRecemTransplantada } from '@/lib/queries';
 import { ATIVIDADE_TRANSPLANTE } from '@/types';
@@ -168,7 +168,7 @@ export function ConcluirPage() {
             thumb: <PlantThumb url={t.planta?.fotoCapaUrl} className="size-14 shrink-0 rounded-xl" />,
             titulo: plantaRotulo(t.planta),
             subtitulo:
-              [t.planta?.identificador && t.planta?.nome ? t.planta.nome : null, t.atividade?.nome].filter(Boolean).join(' · ') ||
+              [plantaNome(t.planta), t.atividade?.nome].filter(Boolean).join(' · ') ||
               undefined,
             ajustado: temAjuste(ajuste(t.id)),
           }))}
@@ -274,7 +274,7 @@ export function ConcluirPage() {
                 <PlantThumb url={t.planta?.fotoCapaUrl} className="size-14 shrink-0 rounded-xl" />
                 <div className="min-w-0 flex-1">
                   <p className="truncate font-semibold">{plantaRotulo(t.planta)}</p>
-                  {t.planta?.identificador && t.planta?.nome && <p className="truncate text-sm text-muted">{t.planta.nome}</p>}
+                  {plantaNome(t.planta) && <p className="truncate text-sm text-muted">{plantaNome(t.planta)}</p>}
                   {t.detalhes && (
                     <p className="truncate text-xs text-primary-dark" title={t.detalhes}>
                       Obs.: {t.detalhes}

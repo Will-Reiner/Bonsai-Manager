@@ -24,7 +24,7 @@ export function TriagemFotos({
   const [indice, setIndice] = useState(inicio);
   const [digitado, setDigitado] = useState(() => {
     const pid = items[inicio]?.plantaId;
-    return pid ? (porId.get(pid)?.identificador ?? '') : '';
+    return pid ? (String(porId.get(pid)?.identificador ?? '')) : '';
   });
   const [anterior, setAnterior] = useState<string | null>(null);
   const [confirmarSaida, setConfirmarSaida] = useState(false);
@@ -37,12 +37,12 @@ export function TriagemFotos({
   function irPara(i: number) {
     setIndice(i);
     const pid = items[i]?.plantaId;
-    setDigitado(pid ? (porId.get(pid)?.identificador ?? '') : '');
+    setDigitado(pid ? (String(porId.get(pid)?.identificador ?? '')) : '');
   }
 
   function atribuir(alvo: Alvo | null) {
     lote.atribuir(item.key, alvo ? alvo.id : null);
-    if (alvo?.identificador) setAnterior(alvo.identificador);
+    if (alvo) setAnterior(String(alvo.identificador));
     if (voltarDireto || indice + 1 >= items.length) onFim();
     else irPara(indice + 1);
   }
@@ -107,7 +107,7 @@ export function TriagemFotos({
                   <p className="truncate text-xs text-muted">{match.nova ? 'Será criada ao salvar' : especieNome(match.especie)}</p>
                 </div>
               </>
-            ) : digitado ? (
+            ) : Number(normalizarCodigo(digitado)) > 0 ? (
               <button
                 onClick={() => atribuir(lote.criarNova(digitado))}
                 className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-primary-light py-2 text-sm font-semibold text-primary-dark"

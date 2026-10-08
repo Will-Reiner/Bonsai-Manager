@@ -8,7 +8,7 @@ import { TriagemFotos } from '@/components/TriagemFotos';
 import { useToast } from '@/context/ToastContext';
 import { errorMessage } from '@/lib/api';
 import { fotosApi } from '@/lib/endpoints';
-import { plantaTitulo } from '@/lib/format';
+import { plantaCodigoNome } from '@/lib/format';
 import { ehNova, MAX_FOTOS_LOTE, useLoteFotos, type ItemFoto } from '@/lib/loteFotos';
 import { keys, usePlantas } from '@/lib/queries';
 
@@ -203,7 +203,7 @@ export function BatchPhotosPage() {
                   <PlantThumb url={p?.fotoCapaUrl} className="size-10 shrink-0 rounded-lg" />
                   <div className="min-w-0 flex-1">
                     <p className="flex items-center gap-2 truncate font-semibold">
-                      #{p?.identificador} · {plantaTitulo(p)}
+                      {plantaCodigoNome(p)}
                       {ehNova(pid) && <span className="chip py-0.5 text-xs">Nova</span>}
                     </p>
                     <p className="truncate text-xs text-muted">{fotos.length} foto(s)</p>

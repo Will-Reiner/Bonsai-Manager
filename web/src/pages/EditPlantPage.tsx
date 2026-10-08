@@ -34,7 +34,7 @@ function EditPlantForm({ planta: p }: { planta: Planta }) {
 
   const [especieId, setEspecieId] = useState(p.especieId ?? '');
   const [nome, setNome] = useState(p.nome ?? '');
-  const [identificador, setIdentificador] = useState(p.identificador ?? '');
+  const [identificador, setIdentificador] = useState(String(p.identificador));
   const [dataAquisicao, setDataAquisicao] = useState(p.dataAquisicao ? toDateInput(p.dataAquisicao) : '');
   const [modo, setModo] = useState<ModoAquisicao | ''>(p.modoAquisicao ?? '');
   const [grupo, setGrupo] = useState<GrupoPlanta | null>(p.grupo ?? null);
@@ -53,7 +53,7 @@ function EditPlantForm({ planta: p }: { planta: Planta }) {
       await plantasApi.update(id, {
         especieId: especieId || undefined,
         nome: nome.trim(),
-        identificador: identificador.trim() || null,
+        identificador: Number(identificador),
         dataAquisicao: dataAquisicao ? fromDateInput(dataAquisicao) : null,
         modoAquisicao: modo || null,
         observacoes: observacoes.trim(),
@@ -105,7 +105,13 @@ function EditPlantForm({ planta: p }: { planta: Planta }) {
           <input className="input" value={nome} onChange={(e) => setNome(e.target.value)} />
         </Field>
         <Field label="Código / etiqueta">
-          <input className="input" value={identificador} onChange={(e) => setIdentificador(e.target.value)} />
+          <input
+            className="input"
+            inputMode="numeric"
+            required
+            value={identificador}
+            onChange={(e) => setIdentificador(e.target.value.replace(/\D/g, ''))}
+          />
         </Field>
         <Field label="Data de aquisição">
           <input type="date" className="input" value={dataAquisicao} max={toDateInput()} onChange={(e) => setDataAquisicao(e.target.value)} />
@@ -143,7 +149,7 @@ function EditPlantForm({ planta: p }: { planta: Planta }) {
           <textarea className="input min-h-28" value={observacoes} onChange={(e) => setObservacoes(e.target.value)} />
         </Field>
 
-        <Button type="submit" block loading={salvando}>
+        <Button type="submit" block loading={salvando} disabled={!Number(identificador)}>
           Salvar alterações
         </Button>
         <Button type="button" variant="danger" block onClick={() => setConfirmarExclusao(true)}>

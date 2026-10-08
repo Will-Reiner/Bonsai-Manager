@@ -24,7 +24,7 @@ export interface ItemFoto {
 /** Planta que pode receber fotos: existente ou nova (pendente, criada no salvar). */
 export interface Alvo {
   id: string;
-  identificador?: string | null;
+  identificador: number;
   nome?: string | null;
   fotoCapaUrl?: string | null;
   especie?: Planta['especie'];
@@ -53,12 +53,12 @@ export function useLoteFotos(plantas: Planta[] | undefined, filesIniciais: File[
   const criadas = useRef(new Map<string, string>());
 
   const alvos = useMemo<Alvo[]>(
-    () => [...(plantas ?? []), ...novas.map((c) => ({ id: PREFIXO_NOVA + c, identificador: c, nova: true }))],
+    () => [...(plantas ?? []), ...novas.map((c) => ({ id: PREFIXO_NOVA + c, identificador: Number(c), nova: true }))],
     [plantas, novas],
   );
   const porCodigo = useMemo(() => {
     const mapa = new Map<string, Alvo>();
-    for (const a of alvos) if (a.identificador) mapa.set(normalizarCodigo(a.identificador), a);
+    for (const a of alvos) mapa.set(String(a.identificador), a);
     return mapa;
   }, [alvos]);
   const porId = useMemo(() => new Map(alvos.map((a) => [a.id, a])), [alvos]);
@@ -97,7 +97,7 @@ export function useLoteFotos(plantas: Planta[] | undefined, filesIniciais: File[
     criarNova(codigo: string): Alvo {
       const c = normalizarCodigo(codigo);
       setNovas((n) => (n.includes(c) ? n : [...n, c]));
-      return { id: PREFIXO_NOVA + c, identificador: c, nova: true };
+      return { id: PREFIXO_NOVA + c, identificador: Number(c), nova: true };
     },
     enviados: items.filter((i) => i.upload === 'ok').length,
     enviaveis: items.filter((i) => i.plantaId !== null).length,
@@ -119,7 +119,7 @@ export function useLoteFotos(plantas: Planta[] | undefined, filesIniciais: File[
         if (criadas.current.has(provisorio)) continue;
         const capa = items.find((i) => i.plantaId === provisorio && i.upload === 'ok' && i.url);
         if (!capa) continue;
-        const planta = await plantasApi.create({ identificador: codigo, fotoCapaUrl: capa.url });
+        const planta = await plantasApi.create({ identificador: Number(codigo), fotoCapaUrl: capa.url });
         criadas.current.set(provisorio, planta.id);
         criou = true;
       }

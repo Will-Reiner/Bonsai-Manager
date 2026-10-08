@@ -75,7 +75,7 @@ export function CollectionPage() {
       if (especie === 'sem' ? !!p.especieId : especie && p.especieId !== especie) return false;
       if (grupo === 'sem' ? !!p.grupo : grupo && p.grupo !== grupo) return false;
       if (!termo) return true;
-      return [p.nome, p.identificador, p.especie?.nomeComum, p.especie?.nomeCientifico]
+      return [p.nome, String(p.identificador), p.especie?.nomeComum, p.especie?.nomeCientifico]
         .filter(Boolean)
         .some((v) => v!.toLowerCase().includes(termo));
     });
@@ -189,6 +189,7 @@ export function CollectionPage() {
                       <p className="truncate font-semibold">{plantaTitulo(p)}</p>
                       <p className="truncate text-xs text-muted">
                         {p.especieId ? especieNome(p.especie) : <span className="font-medium text-danger">Sem espécie · completar</span>}
+                        {` · #${p.identificador}`}
                       </p>
                     </div>
                   </Link>
@@ -215,7 +216,7 @@ export function CollectionPage() {
                             Sem espécie · completar
                           </span>
                         )}
-                        {p.identificador && p.nome ? ` · ${p.identificador}` : ''}
+                        {` · #${p.identificador}`}
                       </p>
                       <GrupoBadge grupo={p.grupo} className="mt-1" />
                     </div>

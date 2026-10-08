@@ -34,7 +34,7 @@ export interface PlantaInput {
   grupo?: GrupoPlanta | null;
   especieId?: string;
   nome?: string;
-  identificador?: string | null;
+  identificador?: number;
   dataAquisicao?: string | null;
   modoAquisicao?: ModoAquisicao | null;
   observacoes?: string;
