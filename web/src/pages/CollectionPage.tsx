@@ -8,7 +8,7 @@ import { Sheet } from '@/components/Sheet';
 import { Button, EmptyState, ErrorState, PlantThumb, Spinner } from '@/components/ui';
 import { errorMessage } from '@/lib/api';
 import { useEscolha } from '@/lib/escolhas';
-import { especieNome, plantaTitulo, termoDeBusca } from '@/lib/format';
+import { especieNome, plantaTitulo, subtituloDaColecao, termoDeBusca } from '@/lib/format';
 import { useAgendas, usePlantas } from '@/lib/queries';
 import { GRUPOS_PLANTA, type GrupoPlanta, type Planta } from '@/types';
 
@@ -85,7 +85,7 @@ export function CollectionPage() {
       (a, b) =>
         semEspecieAntes(a, b) ||
         (ordem === 'alfabetica'
-          ? plantaTitulo(a).localeCompare(plantaTitulo(b), 'pt-BR')
+          ? plantaTitulo(a).localeCompare(plantaTitulo(b), 'pt-BR', { numeric: true })
           : ordem === 'tarefa'
             ? porTarefa(a).localeCompare(porTarefa(b))
             : b.createdAt.localeCompare(a.createdAt)),
@@ -188,8 +188,7 @@ export function CollectionPage() {
                     <div className="p-2.5">
                       <p className="truncate font-semibold">{plantaTitulo(p)}</p>
                       <p className="truncate text-xs text-muted">
-                        {p.especieId ? especieNome(p.especie) : <span className="font-medium text-danger">Sem espécie · completar</span>}
-                        {` · #${p.identificador}`}
+                        <SubtituloDaPlanta planta={p} />
                       </p>
                     </div>
                   </Link>
@@ -208,15 +207,10 @@ export function CollectionPage() {
                     <div className="min-w-0 flex-1">
                       <p className="truncate font-semibold">{plantaTitulo(p)}</p>
                       <p className="truncate text-sm text-muted">
-                        {p.especieId ? (
-                          especieNome(p.especie)
-                        ) : (
-                          <span className="font-medium text-danger">
-                            <span className="mr-1 inline-flex size-5 items-center justify-center rounded-full bg-danger text-xs font-bold text-white">!</span>
-                            Sem espécie · completar
-                          </span>
-                        )}
-                        {` · #${p.identificador}`}
+                        <SubtituloDaPlanta
+                          planta={p}
+                          icone={<span className="mr-1 inline-flex size-5 items-center justify-center rounded-full bg-danger text-xs font-bold text-white">!</span>}
+                        />
                       </p>
                       <GrupoBadge grupo={p.grupo} className="mt-1" />
                     </div>
@@ -270,6 +264,26 @@ export function CollectionPage() {
         <p className="whitespace-pre-line text-ink">{obs?.observacoes}</p>
       </Sheet>
     </div>
+  );
+}
+
+/** Espécie (ou aviso para completar) e #N, sem repetir o que o título já mostra. */
+function SubtituloDaPlanta({ planta, icone }: { planta: Planta; icone?: ReactNode }) {
+  const { especie, codigo } = subtituloDaColecao(planta);
+  return (
+    <>
+      {especie &&
+        (planta.especieId ? (
+          especieNome(planta.especie)
+        ) : (
+          <span className="font-medium text-danger">
+            {icone}
+            Sem espécie · completar
+          </span>
+        ))}
+      {especie && codigo && ' · '}
+      {codigo}
+    </>
   );
 }
 

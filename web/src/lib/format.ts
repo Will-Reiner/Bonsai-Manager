@@ -18,7 +18,18 @@ export const plantaNome = (p: PlantaRef) => p?.nome || p?.especie?.nomeComum || 
 export const plantaTitulo = (p: PlantaRef) =>
   plantaNome(p) || (p?.identificador != null ? `Planta #${p.identificador}` : 'Planta sem nome');
 
-export const especieNome = (e?: { nomeComum?: string | null; nomeCientifico?: string | null } | null) =>
+/**
+ * O que o subtítulo do card da Coleção mostra sem repetir o título:
+ * `especie` (nome da espécie ou o aviso "completar") e `codigo` (#N).
+ */
+export function subtituloDaColecao(p: NonNullable<PlantaRef> & { especieId?: string | null }) {
+  return {
+    especie: !!p.nome || !p.especieId,
+    codigo: plantaNome(p) && p.identificador != null ? `#${p.identificador}` : null,
+  };
+}
+
+export const especieNome =(e?: { nomeComum?: string | null; nomeCientifico?: string | null } | null) =>
   e?.nomeComum || e?.nomeCientifico || 'Espécie desconhecida';
 
 export const modoAquisicaoLabel = (m?: ModoAquisicao | null) =>

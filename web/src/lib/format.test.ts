@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { plantaCodigoNome, plantaNome, plantaRotulo, plantaTitulo, termoDeBusca } from './format';
+import { plantaCodigoNome, plantaNome, plantaRotulo, plantaTitulo, subtituloDaColecao, termoDeBusca } from './format';
 
 const ficus = { nomeComum: 'Ficus', nomeCientifico: 'Ficus microcarpa' };
 
@@ -63,5 +63,20 @@ describe('termoDeBusca', () => {
   it('"#14" busca pelo número (o ID aparece como #N nas telas)', () => {
     expect(termoDeBusca('#14')).toBe('14');
     expect(termoDeBusca(' # 14')).toBe('14');
+  });
+});
+
+describe('subtituloDaColecao', () => {
+  it('com nome: espécie e #N', () => {
+    expect(subtituloDaColecao({ nome: 'Vovó', identificador: 3, especieId: 'e1', especie: ficus })).toEqual({ especie: true, codigo: '#3' });
+    expect(subtituloDaColecao({ nome: 'Vovó', identificador: 3 })).toEqual({ especie: true, codigo: '#3' });
+  });
+
+  it('sem nome, com espécie: a espécie já é o título, fica só o #N', () => {
+    expect(subtituloDaColecao({ identificador: 3, especieId: 'e1', especie: ficus })).toEqual({ especie: false, codigo: '#3' });
+  });
+
+  it('sem nome nem espécie: o título já é "Planta #N", fica só o aviso da espécie', () => {
+    expect(subtituloDaColecao({ identificador: 14 })).toEqual({ especie: true, codigo: null });
   });
 });
