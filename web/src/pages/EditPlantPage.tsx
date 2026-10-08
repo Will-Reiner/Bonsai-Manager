@@ -110,7 +110,7 @@ function EditPlantForm({ planta: p }: { planta: Planta }) {
             inputMode="numeric"
             required
             value={identificador}
-            onChange={(e) => setIdentificador(e.target.value.replace(/\D/g, ''))}
+            onChange={(e) => setIdentificador(e.target.value.replace(/\D/g, '').slice(0, 9))}
           />
         </Field>
         <Field label="Data de aquisição">

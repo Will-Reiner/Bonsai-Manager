@@ -191,7 +191,7 @@ export function AddPlantPage() {
                 className="input"
                 inputMode="numeric"
                 value={identificador}
-                onChange={(e) => setIdentificador(e.target.value.replace(/\D/g, ''))}
+                onChange={(e) => setIdentificador(e.target.value.replace(/\D/g, '').slice(0, 9))}
                 placeholder="#"
               />
             </Field>
