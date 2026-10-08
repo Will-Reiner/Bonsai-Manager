@@ -8,6 +8,7 @@ import {
   GetAllGuiasDeTecnicasUseCase,
   GetGuiasDeTecnicasByEspecieUseCase,
 } from './use-cases';
+import { mensagemDoErro } from '../../utils/errors';
 
 export class GuiaDeTecnicasController {
   private repository: PrismaGuiaDeTecnicasRepository;
@@ -66,7 +67,7 @@ export class GuiaDeTecnicasController {
         if (error.message === 'Esta associação já existe') {
           return res.status(409).json({ message: error.message });
         }
-        return res.status(400).json({ message: error.message });
+        return res.status(400).json({ message: mensagemDoErro(error) });
       }
       return res.status(400).json({ error });
     }
@@ -89,7 +90,7 @@ export class GuiaDeTecnicasController {
         if (error.message === 'Associação não encontrada') {
           return res.status(404).json({ message: error.message });
         }
-        return res.status(400).json({ message: error.message });
+        return res.status(400).json({ message: mensagemDoErro(error) });
       }
       return res.status(400).json({ error });
     }
@@ -108,7 +109,7 @@ export class GuiaDeTecnicasController {
         if (error.message === 'Associação não encontrada') {
           return res.status(404).json({ message: error.message });
         }
-        return res.status(400).json({ message: error.message });
+        return res.status(400).json({ message: mensagemDoErro(error) });
       }
       return res.status(400).json({ error });
     }

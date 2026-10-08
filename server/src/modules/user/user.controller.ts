@@ -3,6 +3,7 @@ import { prisma } from '../../lib/prisma';
 import { userIdSchema } from './user.schema';
 import { GetAllPublicProfilesUseCase, GetProfileByIdUseCase } from './use-cases';
 import { PrismaUserRepository } from './repositories/prisma-user.repository';
+import { mensagemDoErro } from '../../utils/errors';
 
 // Inicialização dos repositórios e use cases
 const userRepository = new PrismaUserRepository();
@@ -16,7 +17,7 @@ export const userController = {
       const users = await getAllPublicProfilesUseCase.execute({});
       return res.status(200).json(users);
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Erro ao buscar utilizadores.';
+      const errorMessage = mensagemDoErro(error, 'Erro ao buscar utilizadores.');
       return res.status(500).json({ error: errorMessage });
     }
   },
@@ -30,7 +31,7 @@ export const userController = {
       if (error instanceof Error && error.message === 'Perfil não encontrado ou é privado.') {
         return res.status(404).json({ message: error.message });
       }
-      const errorMessage = error instanceof Error ? error.message : 'Erro interno do servidor.';
+      const errorMessage = mensagemDoErro(error, 'Erro interno do servidor.');
       return res.status(400).json({ error: errorMessage });
     }
   },

@@ -16,6 +16,7 @@ import {
 } from './use-cases';
 import { CreateAgendaDTO, CreateAgendasLoteDTO, UpdateAgendaDTO, ConcluirAgendasDTO, RegistrarCuidadosDTO } from './agenda.types';
 import '../../middlewares/auth.middleware'; // Import para garantir que a extensão da interface Request seja reconhecida
+import { mensagemDoErro } from '../../utils/errors';
 
 export class AgendaController {
   private createAgendaUseCase: CreateAgendaUseCase;
@@ -73,7 +74,7 @@ export class AgendaController {
       res.status(201).json(agenda);
     } catch (error) {
       if (error instanceof ZodError) {
-        return res.status(400).json({ error: error.errors[0]?.message ?? 'Dados inválidos' });
+        return res.status(400).json({ error: mensagemDoErro(error) });
       }
       console.error('Erro ao criar agendamento:', error);
 
@@ -98,7 +99,7 @@ export class AgendaController {
       res.status(201).json(agendas);
     } catch (error) {
       if (error instanceof ZodError) {
-        return res.status(400).json({ error: error.errors[0]?.message ?? 'Dados inválidos' });
+        return res.status(400).json({ error: mensagemDoErro(error) });
       }
       if (error instanceof Error && error.message === 'Acesso negado. A planta não pertence a si.') {
         return res.status(403).json({ error: error.message });
@@ -156,7 +157,7 @@ export class AgendaController {
       res.json(updatedAgenda);
     } catch (error) {
       if (error instanceof ZodError) {
-        return res.status(400).json({ error: error.errors[0]?.message ?? 'Dados inválidos' });
+        return res.status(400).json({ error: mensagemDoErro(error) });
       }
       console.error('Erro ao atualizar agendamento:', error);
 
@@ -204,7 +205,7 @@ export class AgendaController {
       res.json(resultado);
     } catch (error) {
       if (error instanceof ZodError) {
-        return res.status(400).json({ error: error.errors[0]?.message ?? 'Dados inválidos' });
+        return res.status(400).json({ error: mensagemDoErro(error) });
       }
       if (error instanceof Error && error.message === 'Acesso negado ou agendamento não encontrado.') {
         return res.status(404).json({ error: error.message });
@@ -231,7 +232,7 @@ export class AgendaController {
       res.status(201).json(resultado);
     } catch (error) {
       if (error instanceof ZodError) {
-        return res.status(400).json({ error: error.errors[0]?.message ?? 'Dados inválidos' });
+        return res.status(400).json({ error: mensagemDoErro(error) });
       }
       if (error instanceof Error && error.message === 'Acesso negado. A planta não pertence a si.') {
         return res.status(403).json({ error: error.message });

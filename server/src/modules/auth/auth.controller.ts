@@ -6,6 +6,7 @@ import { criarLimpezaDeMidia } from '../midia/limpeza-de-midia';
 import { PrismaAuthRepository } from './repositories/prisma-auth.repository';
 import { BcryptPasswordService } from './services/password.service';
 import { JwtTokenService } from './services/token.service';
+import { mensagemDoErro } from '../../utils/errors';
 
 // Initialize dependencies
 const authRepository = new PrismaAuthRepository();
@@ -37,7 +38,7 @@ export const authController = {
         if (error.message === 'Este email já está em uso.') {
           return res.status(409).json({ message: error.message });
         }
-        return res.status(400).json({ message: error.message });
+        return res.status(400).json({ message: mensagemDoErro(error) });
       }
       return res.status(400).json({ error });
     }
@@ -58,7 +59,7 @@ export const authController = {
         if (error.message === 'Email ou senha inválidos.') {
           return res.status(401).json({ message: error.message });
         }
-        return res.status(400).json({ message: error.message });
+        return res.status(400).json({ message: mensagemDoErro(error) });
       }
       return res.status(400).json({ error });
     }
@@ -77,7 +78,7 @@ export const authController = {
         if (error.message === 'Utilizador não encontrado.') {
           return res.status(404).json({ message: error.message });
         }
-        return res.status(500).json({ message: error.message });
+        return res.status(500).json({ message: mensagemDoErro(error) });
       }
       return res.status(500).json({ message: 'Erro ao buscar dados do utilizador.' });
     }
@@ -102,7 +103,7 @@ export const authController = {
         if (error.message === 'Utilizador não encontrado.') {
           return res.status(404).json({ message: error.message });
         }
-        return res.status(400).json({ message: error.message });
+        return res.status(400).json({ message: mensagemDoErro(error) });
       }
       return res.status(400).json({ error });
     }

@@ -1,3 +1,5 @@
+import { ZodError } from 'zod';
+
 export class AppError extends Error {
   statusCode: number;
 
@@ -36,4 +38,14 @@ export class UnauthorizedError extends AppError {
   constructor(message = 'Não autenticado.') {
     super(message, 401);
   }
+}
+
+/**
+ * Mensagem do erro para a resposta da API. No ZodError o `message` é o JSON de
+ * todos os problemas, então devolve só a mensagem do primeiro.
+ */
+export function mensagemDoErro(error: unknown, fallback = 'Dados inválidos.'): string {
+  if (error instanceof ZodError) return error.errors[0]?.message || fallback;
+  if (error instanceof Error) return error.message || fallback;
+  return fallback;
 }

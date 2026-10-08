@@ -11,6 +11,7 @@ import {
   ListarRotinasUseCase,
   PularTarefaUseCase,
 } from './use-cases';
+import { mensagemDoErro } from '../../utils/errors';
 
 const repo = new PrismaRotinaRepository();
 const criar = new CriarRotinasUseCase(repo);
@@ -24,7 +25,7 @@ const MENSAGENS_400 = ['Atividade não encontrada.', 'Máximo de 200 rotinas por
 
 /** Traduz erros de domínio/validação em status HTTP. */
 export function responderErroRotina(res: Response, error: unknown, contexto: string) {
-  if (error instanceof ZodError) return res.status(400).json({ error: error.errors[0]?.message ?? 'Dados inválidos' });
+  if (error instanceof ZodError) return res.status(400).json({ error: mensagemDoErro(error) });
   if (error instanceof Error) {
     if (['Rotina não encontrada.', 'Acesso negado ou agendamento não encontrado.'].includes(error.message)) {
       return res.status(404).json({ error: error.message });

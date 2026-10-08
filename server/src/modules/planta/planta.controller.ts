@@ -11,6 +11,7 @@ import {
 } from './use-cases';
 import { PrismaPlantaRepository, PrismaEspecieRepository } from './repositories';
 import { criarLimpezaDeMidia } from '../midia/limpeza-de-midia';
+import { mensagemDoErro } from '../../utils/errors';
 
 // Inicialização dos repositórios
 const plantaRepository = new PrismaPlantaRepository(prisma);
@@ -44,7 +45,7 @@ export const plantaController = {
       if (error?.code === 'P2002') {
         return res.status(409).json({ error: 'Já existe uma planta com esse código.' });
       }
-      return res.status(400).json({ error: error.message || 'Erro ao criar planta' });
+      return res.status(400).json({ error: mensagemDoErro(error, 'Erro ao criar planta') });
     }
   },
 
@@ -61,7 +62,7 @@ export const plantaController = {
 
       return res.status(200).json(plantas);
     } catch (error: any) {
-      return res.status(500).json({ error: error.message || 'Erro ao buscar plantas.' });
+      return res.status(500).json({ error: mensagemDoErro(error, 'Erro ao buscar plantas.') });
     }
   },
 
@@ -76,7 +77,7 @@ export const plantaController = {
       if (error.message === 'Planta não encontrada ou não pertence ao usuário') {
         return res.status(404).json({ message: error.message });
       }
-      return res.status(400).json({ error: error.message || 'Erro ao buscar planta' });
+      return res.status(400).json({ error: mensagemDoErro(error, 'Erro ao buscar planta') });
     }
   },
 
@@ -99,7 +100,7 @@ export const plantaController = {
       if (error?.code === 'P2002') {
         return res.status(409).json({ error: 'Já existe uma planta com esse código.' });
       }
-      return res.status(400).json({ error: error.message || 'Erro ao atualizar planta' });
+      return res.status(400).json({ error: mensagemDoErro(error, 'Erro ao atualizar planta') });
     }
   },
 
@@ -114,7 +115,7 @@ export const plantaController = {
       if (error.message === 'Planta não encontrada ou não pertence ao usuário') {
         return res.status(404).json({ message: error.message });
       }
-      return res.status(400).json({ error: error.message || 'Erro ao deletar planta' });
+      return res.status(400).json({ error: mensagemDoErro(error, 'Erro ao deletar planta') });
     }
   },
 };

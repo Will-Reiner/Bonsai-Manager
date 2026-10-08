@@ -8,6 +8,7 @@ import {
   GetAllGuiasSazonaisUseCase,
   GetGuiasSazonaisByEspecieUseCase,
 } from './use-cases';
+import { mensagemDoErro } from '../../utils/errors';
 
 export class GuiaSazonalController {
   private repository: PrismaGuiaSazonalRepository;
@@ -66,7 +67,7 @@ export class GuiaSazonalController {
         if (error.message === 'Esta associação já existe') {
           return res.status(409).json({ message: error.message });
         }
-        return res.status(400).json({ message: error.message });
+        return res.status(400).json({ message: mensagemDoErro(error) });
       }
       return res.status(400).json({ error });
     }
@@ -90,7 +91,7 @@ export class GuiaSazonalController {
         if (error.message === 'Associação não encontrada') {
           return res.status(404).json({ message: error.message });
         }
-        return res.status(400).json({ message: error.message });
+        return res.status(400).json({ message: mensagemDoErro(error) });
       }
       return res.status(400).json({ error });
     }
@@ -109,7 +110,7 @@ export class GuiaSazonalController {
         if (error.message === 'Associação não encontrada') {
           return res.status(404).json({ message: error.message });
         }
-        return res.status(400).json({ message: error.message });
+        return res.status(400).json({ message: mensagemDoErro(error) });
       }
       return res.status(400).json({ error });
     }
