@@ -37,7 +37,7 @@ export function TarefaPage() {
       </>
     );
   }
-  if (agenda.status === 'PENDENTE') return <PendentesDaPlanta agenda={agenda} agendas={agendas.data ?? []} />;
+  if (agenda.status === 'PENDENTE') return <PendentesDaPlanta key={agenda.id} agenda={agenda} agendas={agendas.data ?? []} />;
 
   const concluida = agenda.status === 'CONCLUIDO';
   const dataStatus = concluida ? (agenda.dataConcluida ?? agenda.dataAgendada) : agenda.dataAgendada;
