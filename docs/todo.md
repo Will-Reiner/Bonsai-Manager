@@ -10,7 +10,8 @@
 
 - [ ] imagem um pouco maior na hora que tiver selecao de planta(s) pois o usuario tende a pesquisar vendo as fotos
 
-- [ ] na bancada, ao clicar numa planta com tarefa pendente vai pra uma pagina de visualizacao do historico e opcoes para a tarefa, vamos refazer essa pagina para q seja possivel selecionar outros procedimentos pendentes dessa planta para completa-los ou apaga-los ou reagendalos. nessa página nao precisa ter o histórico, vamos colocar só a foto da arvore, ultima tarefa feita e as tarefas pendentes. mas com destaque na tarefa que o usuario clicou.
+- [x] na bancada, ao clicar numa planta com tarefa pendente vai pra uma pagina de visualizacao do historico e opcoes para a tarefa, vamos refazer essa pagina para q seja possivel selecionar outros procedimentos pendentes dessa planta para completa-los ou apaga-los ou reagendalos. nessa página nao precisa ter o histórico, vamos colocar só a foto da arvore, ultima tarefa feita e as tarefas pendentes. mas com destaque na tarefa que o usuario clicou.
+  > Feito em 2026-10-08 (spec em docs/superpowers/specs/2026-10-08-pendentes-da-planta-design.md): a tarefa pendente abre a planta com o último cuidado e todas as pendentes; a tocada vem marcada e destacada; dá para concluir, reagendar (nova data ou adiar N dias) e excluir várias de uma vez; cancelar/pular/editar rotina ficam em "Mais". A página da tarefa concluída não mudou.
 
 - [ ] no perfil temos varias preferencias das coisas do app, vamos criar um botao de preferencias dentro do perfil para colocar todas essas opcoes.
 
