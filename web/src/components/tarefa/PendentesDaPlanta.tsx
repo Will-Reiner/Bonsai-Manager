@@ -106,7 +106,7 @@ export function PendentesDaPlanta({ agenda, agendas }: { agenda: Agenda; agendas
   const algumaDeRotina = selecionadas.some((a) => a.rotinaId);
 
   return (
-    <div className="min-h-dvh pb-32">
+    <div className="min-h-dvh pb-40">
       <PageHeader title={plantaCodigoNome(agenda.planta)} back />
 
       <div className="mx-auto max-w-2xl px-4">
@@ -181,20 +181,21 @@ export function PendentesDaPlanta({ agenda, agendas }: { agenda: Agenda; agendas
       </div>
 
       <div className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-card/95 px-4 pb-safe pt-3 backdrop-blur">
-        <div className="mx-auto flex max-w-2xl gap-2 pb-3">
-          <Button className="flex-1" disabled={!n} onClick={() => navigate(`/concluir?ids=${selecionadas.map((a) => a.id).join(',')}`)}>
-            <Check size={18} /> Concluir{n > 1 ? ` (${n})` : ''}
+        <div className="mx-auto max-w-2xl space-y-2 pb-3">
+          <Button block disabled={!n} onClick={() => navigate(`/concluir?ids=${selecionadas.map((a) => a.id).join(',')}`)}>
+            <Check size={18} /> Concluir{n > 1 ? ` ${n} tarefas` : ''}
           </Button>
-          <Button variant="secondary" disabled={!n} onClick={() => reagendar(selecionadas)} aria-label="Reagendar">
-            <CalendarClock size={18} />
-            <span className="max-[359px]:hidden">Reagendar</span>
-          </Button>
-          <Button variant="danger" disabled={!n} onClick={() => setConfirmarExclusao(true)} aria-label="Excluir" className="px-3.5">
-            <Trash2 size={18} />
-          </Button>
-          <Button variant="secondary" disabled={!unica} onClick={() => setMaisAberto(true)} aria-label="Mais opções" className="px-3.5">
-            <MoreHorizontal size={18} />
-          </Button>
+          <div className="grid grid-cols-3 gap-2 [&>button:disabled]:opacity-50">
+            <Button variant="secondary" size="sm" disabled={!n} onClick={() => reagendar(selecionadas)}>
+              <CalendarClock size={16} /> Reagendar
+            </Button>
+            <Button variant="danger" size="sm" disabled={!n} onClick={() => setConfirmarExclusao(true)}>
+              <Trash2 size={16} /> Excluir
+            </Button>
+            <Button variant="secondary" size="sm" disabled={!unica} onClick={() => setMaisAberto(true)} aria-label="Mais opções">
+              <MoreHorizontal size={16} /> Mais
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -205,7 +206,7 @@ export function PendentesDaPlanta({ agenda, agendas }: { agenda: Agenda; agendas
         loading={salvando === 'excluir'}
         title={n > 1 ? `Excluir ${n} tarefas?` : 'Excluir tarefa?'}
         text={
-          'Some do histórico. Para manter o registro, use “Cancelar” em ⋯.' +
+          'Some do histórico. Para manter o registro, use “Cancelar” em Mais.' +
           (algumaDeRotina ? ' A rotina fica sem próxima tarefa — para só adiar, use “Pular esta vez”.' : '')
         }
       />
