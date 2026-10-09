@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { Link } from 'react-router';
 import { PartyPopper } from 'lucide-react';
 import { Button, EmptyState, ErrorState, Spinner } from '@/components/ui';
+import { AcessoRapido } from '@/components/bancada/AcessoRapido';
 import { CabecalhoTarefa } from '@/components/bancada/CabecalhoTarefa';
 import { FaixaGrupo } from '@/components/bancada/FaixaGrupo';
 import { FotoTarefa } from '@/components/bancada/FotoTarefa';
@@ -72,6 +73,8 @@ export function BancadaPage() {
         </div>
         {!semPlantas && <BotaoPreferencias ativos={0} onClick={() => setPrefs(true)} />}
       </header>
+
+      {!semPlantas && plantas.data && agendas.data && <AcessoRapido />}
 
       {agendas.isLoading || plantas.isLoading ? (
         <Spinner />
