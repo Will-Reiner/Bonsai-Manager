@@ -13,7 +13,8 @@
 - [x] na bancada, ao clicar numa planta com tarefa pendente vai pra uma pagina de visualizacao do historico e opcoes para a tarefa, vamos refazer essa pagina para q seja possivel selecionar outros procedimentos pendentes dessa planta para completa-los ou apaga-los ou reagendalos. nessa página nao precisa ter o histórico, vamos colocar só a foto da arvore, ultima tarefa feita e as tarefas pendentes. mas com destaque na tarefa que o usuario clicou.
   > Feito em 2026-10-08 (spec em docs/superpowers/specs/2026-10-08-pendentes-da-planta-design.md): a tarefa pendente abre a planta com o último cuidado e todas as pendentes; a tocada vem marcada e destacada; dá para concluir, reagendar (nova data ou adiar N dias) e excluir várias de uma vez; cancelar/pular/editar rotina ficam em "Mais". A página da tarefa concluída não mudou.
 
-- [ ] no perfil temos varias preferencias das coisas do app, vamos criar um botao de preferencias dentro do perfil para colocar todas essas opcoes.
+- [x] no perfil temos varias preferencias das coisas do app, vamos criar um botao de preferencias dentro do perfil para colocar todas essas opcoes.
+  > Feito em 2026-10-08: Perfil → Preferências (`/perfil/preferencias`) com as atividades favoritas (aparecem primeiro nos chips de Registrar/Agendar/Concluir) e as 3 de transplante.
 
 - [x] ID tem q comecar a ser obrigatorio visto que ao adicionar fotos, fazemos tudo pelo fluxo de ID. Logo, caso o usuario nao adicione ID, adicione automaticamente um ID para ele. (veja que o ID tem q sempre ser um numero)
   > Feito em 2026-10-08 (spec em docs/superpowers/specs/2026-10-08-id-obrigatorio-design.md): ID virou número obrigatório; sem ID o servidor gera o próximo livre; a migration numerou as plantas antigas (códigos com letras descartados).
