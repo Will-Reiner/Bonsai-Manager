@@ -85,7 +85,8 @@ export function PlantasLista({ selecionadas, onChange }: { selecionadas: string[
           ))}
         </div>
       )}
-      <div className="space-y-1.5">
+      {/* Grade de fotos: quem escolhe reconhece a planta pela foto */}
+      <div className="grid grid-cols-3 gap-x-2 gap-y-3 sm:grid-cols-4">
         {visiveis.map((p) => {
           const marcada = sel.has(p.id);
           return (
@@ -93,28 +94,26 @@ export function PlantasLista({ selecionadas, onChange }: { selecionadas: string[
               type="button"
               key={p.id}
               onClick={() => alternar(p.id)}
-              className="flex w-full items-center gap-3 rounded-xl p-1.5 text-left hover:bg-line/40"
+              className="min-w-0 text-left transition active:scale-[0.97]"
               aria-pressed={marcada}
             >
-              <span
-                className={`flex size-6 shrink-0 items-center justify-center rounded-md border-2 ${
-                  marcada ? 'border-primary bg-primary text-white' : 'border-line'
-                }`}
-              >
-                {marcada && <Check size={14} strokeWidth={3} />}
-              </span>
-              <PlantThumb url={p.fotoCapaUrl} className="size-10 shrink-0 rounded-lg" />
-              <span className="min-w-0 flex-1">
-                <span className="block truncate text-sm font-semibold">
-                  {plantaCodigoNome(p)}
+              <span className={`relative block overflow-hidden rounded-xl ring-offset-2 ring-offset-bg ${marcada ? 'ring-[3px] ring-primary' : ''}`}>
+                <PlantThumb url={p.fotoCapaUrl} className="aspect-square w-full" />
+                <span
+                  className={`absolute left-1.5 top-1.5 flex size-6 items-center justify-center rounded-full border-2 shadow-sm ${
+                    marcada ? 'border-primary bg-primary text-white' : 'border-white bg-white/70'
+                  }`}
+                >
+                  {marcada && <Check size={14} strokeWidth={3} />}
                 </span>
-                <span className="block truncate text-xs text-muted">{especieNome(p.especie)}</span>
               </span>
+              <span className="mt-1.5 block truncate text-xs font-semibold">{plantaCodigoNome(p)}</span>
+              <span className="block truncate text-[11px] text-muted">{especieNome(p.especie)}</span>
             </button>
           );
         })}
-        {!visiveis.length && <p className="py-6 text-center text-sm text-muted">Nenhuma planta encontrada.</p>}
       </div>
+      {!visiveis.length && <p className="py-6 text-center text-sm text-muted">Nenhuma planta encontrada.</p>}
     </div>
   );
 }
