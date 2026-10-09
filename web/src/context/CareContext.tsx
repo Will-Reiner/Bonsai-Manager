@@ -8,7 +8,7 @@ interface CareContextData {
   /** `repetir`: abre já em "Repetir" (ex.: + Nova rotina). */
   agendarCuidado: (plantaId?: string, opcoes?: { repetir?: boolean }) => void;
   abrirTarefa: (agenda: Agenda) => void;
-  reagendar: (agenda: Agenda) => void;
+  reagendar: (agendas: Agenda[]) => void;
 }
 
 const CareContext = createContext<CareContextData | null>(null);
@@ -16,8 +16,8 @@ const CareContext = createContext<CareContextData | null>(null);
 /** Ações de cuidado acessíveis de qualquer tela (Bancada, Coleção, Detalhe, botão +). */
 export function CareProvider({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
-  // Remonta o sheet a cada abertura para começar com a data da tarefa
-  const [reagendando, setReagendando] = useState<{ agenda: Agenda; versao: number } | null>(null);
+  // Remonta o sheet a cada abertura para começar com a data da (primeira) tarefa
+  const [reagendando, setReagendando] = useState<{ agendas: Agenda[]; versao: number } | null>(null);
   const fechar = useCallback(() => setReagendando(null), []);
 
   const value = useMemo(
@@ -31,7 +31,7 @@ export function CareProvider({ children }: { children: ReactNode }) {
         navigate(s ? `/agendar?${s}` : '/agendar');
       },
       abrirTarefa: (agenda: Agenda) => navigate(`/tarefas/${agenda.id}`),
-      reagendar: (agenda: Agenda) => setReagendando((r) => ({ agenda, versao: (r?.versao ?? 0) + 1 })),
+      reagendar: (agendas: Agenda[]) => setReagendando((r) => ({ agendas, versao: (r?.versao ?? 0) + 1 })),
     }),
     [navigate],
   );
@@ -39,7 +39,7 @@ export function CareProvider({ children }: { children: ReactNode }) {
   return (
     <CareContext.Provider value={value}>
       {children}
-      {reagendando && <ReagendarSheet key={reagendando.versao} agenda={reagendando.agenda} onClose={fechar} />}
+      {reagendando && <ReagendarSheet key={reagendando.versao} agendas={reagendando.agendas} onClose={fechar} />}
     </CareContext.Provider>
   );
 }

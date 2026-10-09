@@ -160,7 +160,7 @@ export function TarefaPage() {
               <Check size={18} /> Concluir
             </Button>
             <div className="grid grid-cols-3 gap-2">
-              <Button variant="secondary" size="sm" onClick={() => reagendar(agenda)}>
+              <Button variant="secondary" size="sm" onClick={() => reagendar([agenda])}>
                 <CalendarClock size={16} /> Reagendar
               </Button>
               <Button variant="secondary" size="sm" onClick={() => acao('cancelar')} loading={salvando === 'cancelar'}>
