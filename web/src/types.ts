@@ -149,6 +149,7 @@ export interface Preferencias {
   transplante_dias?: string;
   pre_transplante_dias?: string;
   mover_recem_transplantada?: string;
+  atalhos_bancada?: string;
   [chave: string]: string | undefined;
 }
 

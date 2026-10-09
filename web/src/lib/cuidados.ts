@@ -43,6 +43,7 @@ export function textoPrazo(iso: string): string {
 export function candidatasReconciliacao(
   agendas: Agenda[],
   cuidados: { plantaId: string; atividadeIds: string[] }[],
+  janelaDias = JANELA_RECONCILIACAO_DIAS,
 ): Agenda[] {
   const pares = new Set(cuidados.flatMap((c) => c.atividadeIds.map((a) => `${c.plantaId}|${a}`)));
   return agendas
@@ -50,7 +51,7 @@ export function candidatasReconciliacao(
       (a) =>
         a.status === 'PENDENTE' &&
         pares.has(`${a.plantaId}|${a.atividadeId}`) &&
-        diasAte(a.dataAgendada) <= JANELA_RECONCILIACAO_DIAS,
+        diasAte(a.dataAgendada) <= janelaDias,
     )
     .sort((a, b) => a.dataAgendada.localeCompare(b.dataAgendada));
 }
