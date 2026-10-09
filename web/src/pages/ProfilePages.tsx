@@ -1,7 +1,7 @@
-import { useState, type FormEvent, type ReactNode } from 'react';
+import { useRef, useState, type FormEvent, type ReactNode } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { ChevronRight, LogOut, MapPin, Pencil, ShieldCheck } from 'lucide-react';
+import { ChevronRight, LogOut, MapPin, Pencil, ShieldCheck, SlidersHorizontal } from 'lucide-react';
 import { Avatar, Button, Field, PageHeader } from '@/components/ui';
 import { PhotoInput } from '@/components/PhotoInput';
 import { MoverTransplanteCampo } from '@/components/fluxo/MoverTransplanteCampo';
@@ -9,7 +9,8 @@ import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/context/ToastContext';
 import { errorMessage } from '@/lib/api';
 import { authApi, preferenciasApi } from '@/lib/endpoints';
-import { keys, useAgendas, usePreferencias, useTransplanteDias, usePreTransplanteDias, usePlantas, useMoverRecemTransplantada } from '@/lib/queries';
+import { CHAVE_FAVORITAS, lerFavoritas } from '@/lib/favoritas';
+import { keys, useAgendas, useAtividades, usePreferencias, useTransplanteDias, usePreTransplanteDias, usePlantas, useMoverRecemTransplantada } from '@/lib/queries';
 import { uploadImage } from '@/lib/upload';
 
 const OPCOES_PRE_TRANSPLANTE = [
@@ -135,6 +136,80 @@ function MoverTransplantePreferencia() {
   );
 }
 
+/** Atividades favoritas: aparecem primeiro nos chips de Registrar/Agendar/Concluir. Salva a cada toque. */
+function AtividadesFavoritas() {
+  const queryClient = useQueryClient();
+  const toast = useToast();
+  const atividades = useAtividades();
+  const prefs = usePreferencias();
+  // Escolha local enquanto salva; null = o que está no servidor
+  const [marcadas, setMarcadas] = useState<string[] | null>(null);
+  // Mesma escolha, lida na hora (dois toques seguidos antes de re-renderizar não se perdem)
+  const ultima = useRef<string[] | null>(null);
+  // Um salvamento por vez, na ordem dos toques (o último toque é o que fica)
+  const fila = useRef(Promise.resolve());
+
+  const atuais = marcadas ?? lerFavoritas(prefs.data?.atividades_rastreadas);
+  // Ordem fixa: o chip não muda de lugar ao ser marcado
+  const ordenadas = [...(atividades.data ?? [])].sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
+
+  function tocar(id: string) {
+    const base = ultima.current ?? atuais;
+    const novas = base.includes(id) ? base.filter((a) => a !== id) : [...base, id];
+    ultima.current = novas;
+    setMarcadas(novas);
+    fila.current = fila.current.then(async () => {
+      try {
+        await preferenciasApi.set(CHAVE_FAVORITAS, JSON.stringify(novas));
+        await queryClient.invalidateQueries({ queryKey: keys.preferencias });
+      } catch (error) {
+        toast(errorMessage(error), 'error');
+        ultima.current = null;
+        setMarcadas(null);
+      }
+    });
+  }
+
+  return (
+    <section className="card mt-4 p-4">
+      <span className="label">Atividades favoritas</span>
+      <p className="mb-3 text-sm text-muted">Aparecem primeiro ao registrar, agendar e concluir.</p>
+      {atividades.isLoading || prefs.isLoading ? (
+        <p className="text-sm text-muted">Carregando…</p>
+      ) : (
+        <div className="flex flex-wrap gap-2">
+          {ordenadas.map((a) => (
+            <button
+              type="button"
+              key={a.id}
+              onClick={() => tocar(a.id)}
+              className={`chip ${atuais.includes(a.id) ? 'chip-active' : ''}`}
+              aria-pressed={atuais.includes(a.id)}
+            >
+              {a.nome}
+            </button>
+          ))}
+        </div>
+      )}
+    </section>
+  );
+}
+
+export function PreferenciasPage() {
+  return (
+    <div className="pb-10">
+      <PageHeader title="Preferências" back />
+      <div className="mx-auto max-w-2xl px-4">
+        <AtividadesFavoritas />
+        <h2 className="mt-8 text-xs font-semibold uppercase tracking-wider text-muted">Transplante</h2>
+        <TempoPreTransplante />
+        <TempoTransplante />
+        <MoverTransplantePreferencia />
+      </div>
+    </div>
+  );
+}
+
 export function ProfilePage() {
   const { user, isAdmin, logout } = useAuth();
   const me = useQuery({ queryKey: keys.me, queryFn: authApi.me });
@@ -171,11 +246,8 @@ export function ProfilePage() {
         </dl>
       </section>
 
-      <TempoPreTransplante />
-      <TempoTransplante />
-      <MoverTransplantePreferencia />
-
       <nav className="card mt-4 divide-y divide-line overflow-hidden">
+        <MenuItem to="/perfil/preferencias" icon={<SlidersHorizontal size={20} />} label="Preferências" />
         <MenuItem to="/perfil/editar" icon={<Pencil size={20} />} label="Editar perfil" />
         {isAdmin && <MenuItem to="/admin" icon={<ShieldCheck size={20} />} label="Painel admin" />}
         <button onClick={logout} className="flex w-full items-center gap-3 px-4 py-4 text-left font-medium text-danger">

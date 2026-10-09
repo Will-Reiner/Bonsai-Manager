@@ -16,7 +16,7 @@ import { RegistrarPage } from '@/pages/RegistrarPage';
 import { AgendarPage } from '@/pages/AgendarPage';
 import { ConcluirPage } from '@/pages/ConcluirPage';
 import { BatchPhotosPage } from '@/pages/BatchPhotosPage';
-import { EditProfilePage, ProfilePage } from '@/pages/ProfilePages';
+import { EditProfilePage, PreferenciasPage, ProfilePage } from '@/pages/ProfilePages';
 import { AdminPage } from '@/pages/AdminPage';
 import { deveRolarParaTopo } from '@/lib/rolagem';
 
@@ -71,6 +71,7 @@ export default function App() {
         <Route path="/agendar" element={<Privada><AgendarPage /></Privada>} />
         <Route path="/fotos/lote" element={<Privada><BatchPhotosPage /></Privada>} />
         <Route path="/perfil/editar" element={<Privada><EditProfilePage /></Privada>} />
+        <Route path="/perfil/preferencias" element={<Privada><PreferenciasPage /></Privada>} />
         <Route path="/admin" element={<Privada><SoAdmin><AdminPage /></SoAdmin></Privada>} />
 
         <Route path="*" element={<Navigate to="/" replace />} />

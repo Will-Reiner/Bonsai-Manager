@@ -9,6 +9,7 @@ import {
   rotinasApi,
   tiposRecursoApi,
 } from './endpoints';
+import { lerFavoritas } from './favoritas';
 
 export const keys = {
   plantas: ['plantas'] as const,
@@ -80,12 +81,7 @@ export function useLembrarMover() {
 export function useAtividadesOrdenadas() {
   const atividades = useAtividades();
   const prefs = usePreferencias();
-  let rastreadas: string[] = [];
-  try {
-    rastreadas = JSON.parse(prefs.data?.atividades_rastreadas || '[]');
-  } catch {
-    rastreadas = [];
-  }
+  const rastreadas = lerFavoritas(prefs.data?.atividades_rastreadas);
   const lista = [...(atividades.data ?? [])].sort((a, b) => {
     const ra = rastreadas.includes(a.id) ? 0 : 1;
     const rb = rastreadas.includes(b.id) ? 0 : 1;
