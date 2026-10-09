@@ -32,7 +32,7 @@ Preferência `atalhos_bancada` = `JSON.stringify(Atalho[])`. Leitura tolerante: 
 
 - `lerAtalhos(texto)` → `Atalho[]` (tolerante, como `lerFavoritas`).
 - `plantasDoAtalho(atalho, plantas)` → plantas que passam nos dois filtros: com grupos escolhidos, `planta.grupo` precisa estar entre eles (sem grupo → fora); com espécies escolhidas, `planta.especieId` precisa estar entre elas (sem espécie → fora). Ordem: `identificador` crescente.
-- `atividadesValidas(atalho, atividades)` → só os ids que ainda existem. Atalho sem nenhuma válida é **inválido**: não aparece na faixa da Bancada. Espécies apagadas são ignoradas no filtro e no rótulo.
+- `atividadesValidas(atalho, atividades)` → só os ids que ainda existem. Atalho sem nenhuma válida é **inválido**: o card aparece esmaecido com "Atividade removida" e o toque abre a edição (para consertar ou apagar). Espécie que ninguém mais tem continua no filtro (não pega planta — nunca vira "todas") e segue como chip marcado na edição, para poder desmarcar; o nome vem das plantas, depois do catálogo (`useEspecies`), senão "Espécie desconhecida".
 - `rotuloAlvo(atalho, especies)` → "Todas" · "Pré-transplante + Recém transplantada" · "Azaleia" · "Pré-transplante · Azaleia + Pinheiro negro".
 - Tarefas a concluir: `candidatasReconciliacao(agendas, cuidados, janelaDias)` ganha o parâmetro opcional `janelaDias` (padrão `JANELA_RECONCILIACAO_DIAS` = 90); o atalho usa `JANELA_ATALHO_DIAS = 7`.
 
