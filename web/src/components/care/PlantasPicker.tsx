@@ -85,35 +85,49 @@ export function PlantasLista({ selecionadas, onChange }: { selecionadas: string[
           ))}
         </div>
       )}
-      {/* Grade de fotos: quem escolhe reconhece a planta pela foto */}
-      <div className="grid grid-cols-3 gap-x-2 gap-y-3 sm:grid-cols-4">
-        {visiveis.map((p) => {
-          const marcada = sel.has(p.id);
-          return (
-            <button
-              type="button"
-              key={p.id}
-              onClick={() => alternar(p.id)}
-              className="min-w-0 text-left transition active:scale-[0.97]"
-              aria-pressed={marcada}
-            >
-              <span className={`relative block overflow-hidden rounded-xl ring-offset-2 ring-offset-bg ${marcada ? 'ring-[3px] ring-primary' : ''}`}>
-                <PlantThumb url={p.fotoCapaUrl} className="aspect-square w-full" />
-                <span
-                  className={`absolute left-1.5 top-1.5 flex size-6 items-center justify-center rounded-full border-2 shadow-sm ${
-                    marcada ? 'border-primary bg-primary text-white' : 'border-white bg-white/70'
-                  }`}
-                >
-                  {marcada && <Check size={14} strokeWidth={3} />}
-                </span>
-              </span>
-              <span className="mt-1.5 block truncate text-xs font-semibold">{plantaCodigoNome(p)}</span>
-              <span className="block truncate text-[11px] text-muted">{especieNome(p.especie)}</span>
-            </button>
-          );
-        })}
-      </div>
+      <GradePlantas plantas={visiveis} marcada={(id) => sel.has(id)} onAlternar={alternar} />
       {!visiveis.length && <p className="py-6 text-center text-sm text-muted">Nenhuma planta encontrada.</p>}
+    </div>
+  );
+}
+
+/** Grade de fotos com ✓ no canto: quem escolhe reconhece a planta pela foto. */
+export function GradePlantas({
+  plantas,
+  marcada,
+  onAlternar,
+}: {
+  plantas: Planta[];
+  marcada: (id: string) => boolean;
+  onAlternar: (id: string) => void;
+}) {
+  return (
+    <div className="grid grid-cols-3 gap-x-2 gap-y-3 sm:grid-cols-4">
+      {plantas.map((p) => {
+        const sim = marcada(p.id);
+        return (
+          <button
+            type="button"
+            key={p.id}
+            onClick={() => onAlternar(p.id)}
+            className="min-w-0 text-left transition active:scale-[0.97]"
+            aria-pressed={sim}
+          >
+            <span className={`relative block overflow-hidden rounded-xl ring-offset-2 ring-offset-bg ${sim ? 'ring-[3px] ring-primary' : ''}`}>
+              <PlantThumb url={p.fotoCapaUrl} className="aspect-square w-full" />
+              <span
+                className={`absolute left-1.5 top-1.5 flex size-6 items-center justify-center rounded-full border-2 shadow-sm ${
+                  sim ? 'border-primary bg-primary text-white' : 'border-white bg-white/70'
+                }`}
+              >
+                {sim && <Check size={14} strokeWidth={3} />}
+              </span>
+            </span>
+            <span className="mt-1.5 block truncate text-xs font-semibold">{plantaCodigoNome(p)}</span>
+            <span className="block truncate text-[11px] text-muted">{especieNome(p.especie)}</span>
+          </button>
+        );
+      })}
     </div>
   );
 }

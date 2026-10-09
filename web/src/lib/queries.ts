@@ -9,7 +9,9 @@ import {
   rotinasApi,
   tiposRecursoApi,
 } from './endpoints';
+import { CHAVE_ATALHOS, lerAtalhos, type Atalho } from './atalhos';
 import { lerFavoritas } from './favoritas';
+import type { Preferencias } from '@/types';
 
 export const keys = {
   plantas: ['plantas'] as const,
@@ -74,6 +76,24 @@ export function useLembrarMover() {
       .catch(() => {
         // falhou: só não lembra a escolha desta vez
       });
+  };
+}
+
+/** Atalhos do Acesso rápido (preferência `atalhos_bancada`). */
+export function useAtalhos() {
+  const prefs = usePreferencias();
+  return lerAtalhos(prefs.data?.atalhos_bancada);
+}
+
+/** Grava a lista de atalhos a partir da última do cache (duas edições seguidas não se perdem). */
+export function useSalvarAtalhos() {
+  const queryClient = useQueryClient();
+  return async (mudar: (atuais: Atalho[]) => Atalho[]) => {
+    const atuais = lerAtalhos(queryClient.getQueryData<Preferencias>(keys.preferencias)?.atalhos_bancada);
+    const valor = JSON.stringify(mudar(atuais));
+    await preferenciasApi.set(CHAVE_ATALHOS, valor);
+    queryClient.setQueryData<Preferencias>(keys.preferencias, (p) => ({ ...p, [CHAVE_ATALHOS]: valor }));
+    await queryClient.invalidateQueries({ queryKey: keys.preferencias });
   };
 }
 
