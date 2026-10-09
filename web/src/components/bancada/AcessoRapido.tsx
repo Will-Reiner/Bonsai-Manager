@@ -26,7 +26,7 @@ export function AcessoRapido() {
   return (
     <section className="pb-3">
       <h2 className="label">Acesso rápido</h2>
-      <div className="-mx-4 flex snap-x gap-2.5 overflow-x-auto px-4 pb-1 [scrollbar-width:none]">
+      <div className="-mx-4 flex snap-x scroll-px-4 gap-2.5 overflow-x-auto px-4 pb-1 [scrollbar-width:none]">
         {cards.map(({ atalho, validas, n }) => (
           <button
             key={atalho.id}
