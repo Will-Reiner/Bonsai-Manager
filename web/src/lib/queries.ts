@@ -89,7 +89,9 @@ export function useAtalhos() {
 export function useSalvarAtalhos() {
   const queryClient = useQueryClient();
   return async (mudar: (atuais: Atalho[]) => Atalho[]) => {
-    const atuais = lerAtalhos(queryClient.getQueryData<Preferencias>(keys.preferencias)?.atalhos_bancada);
+    // Sem as preferências no cache, busca antes: partir de uma lista vazia apagaria os atalhos salvos
+    const prefs = await queryClient.ensureQueryData({ queryKey: keys.preferencias, queryFn: preferenciasApi.get });
+    const atuais = lerAtalhos(prefs.atalhos_bancada);
     const valor = JSON.stringify(mudar(atuais));
     await preferenciasApi.set(CHAVE_ATALHOS, valor);
     queryClient.setQueryData<Preferencias>(keys.preferencias, (p) => ({ ...p, [CHAVE_ATALHOS]: valor }));

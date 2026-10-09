@@ -2,18 +2,22 @@ import { useState } from 'react';
 import { Plus } from 'lucide-react';
 import { AtividadeIcone } from '@/components/AtividadeIcone';
 import { atividadesValidas, nomesDeEspecies, plantasDoAtalho, rotuloAlvo, type Atalho } from '@/lib/atalhos';
-import { useAtalhos, useAtividades, useEspecies, usePlantas } from '@/lib/queries';
+import { useAtalhos, useAtividades, useEspecies, usePlantas, usePreferencias } from '@/lib/queries';
 import { ConfirmarAtalho } from './ConfirmarAtalho';
 import { EditarAtalho } from './EditarAtalho';
 
 /** Faixa de atalhos da Bancada: tocar confirma e registra; "＋" cria. Atalho sem atividade válida abre a edição. */
 export function AcessoRapido() {
   const atalhos = useAtalhos();
+  const prefs = usePreferencias();
   const plantas = usePlantas();
   const atividades = useAtividades();
   const especies = useEspecies();
   const [confirmar, setConfirmar] = useState<Atalho | null>(null);
   const [editar, setEditar] = useState<{ atalho?: Atalho } | null>(null);
+
+  // Sem preferências e atividades a faixa mentiria ("Criar atalho", "Atividade removida"): espera as duas
+  if (!prefs.data || !atividades.data) return null;
 
   const todas = plantas.data ?? [];
   const nomeEspecie = nomesDeEspecies(todas, especies.data ?? []);
