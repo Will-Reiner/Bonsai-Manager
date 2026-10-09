@@ -9,7 +9,7 @@ import {
   rotinasApi,
   tiposRecursoApi,
 } from './endpoints';
-import { CHAVE_ATALHOS, lerAtalhos, type Atalho } from './atalhos';
+import { CHAVE_ATALHOS, lerAtalhos, nomesDeEspecies, temEspecieSemPlanta, type Atalho } from './atalhos';
 import { lerFavoritas } from './favoritas';
 import type { Preferencias } from '@/types';
 
@@ -35,8 +35,8 @@ export const useAgendas = () => useQuery({ queryKey: keys.agendas, queryFn: agen
 export const useRotinas = () => useQuery({ queryKey: keys.rotinas, queryFn: rotinasApi.list });
 export const useFotos = (plantaId: string) =>
   useQuery({ queryKey: keys.fotos(plantaId), queryFn: () => fotosApi.listByPlanta(plantaId) });
-export const useEspecies = () =>
-  useQuery({ queryKey: keys.especies, queryFn: especiesApi.list, staleTime: 5 * 60_000 });
+export const useEspecies = (enabled = true) =>
+  useQuery({ queryKey: keys.especies, queryFn: especiesApi.list, staleTime: 5 * 60_000, enabled });
 export const useAtividades = () =>
   useQuery({ queryKey: keys.atividades, queryFn: atividadesApi.list, staleTime: 5 * 60_000 });
 export const useTiposRecurso = () => useQuery({ queryKey: keys.tiposRecurso, queryFn: tiposRecursoApi.list });
@@ -83,6 +83,13 @@ export function useLembrarMover() {
 export function useAtalhos() {
   const prefs = usePreferencias();
   return lerAtalhos(prefs.data?.atalhos_bancada);
+}
+
+/** Nome da espécie pelo id para os atalhos; o catálogo só é baixado se algum marca espécie sem planta na coleção. */
+export function useNomeEspecie(atalhos: Atalho[]) {
+  const plantas = usePlantas();
+  const especies = useEspecies(temEspecieSemPlanta(atalhos, plantas.data ?? []));
+  return nomesDeEspecies(plantas.data ?? [], especies.data ?? []);
 }
 
 /** Grava a lista de atalhos a partir da última do cache (duas edições seguidas não se perdem). */

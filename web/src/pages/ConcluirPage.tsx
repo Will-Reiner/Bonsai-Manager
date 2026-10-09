@@ -118,6 +118,7 @@ export function ConcluirPage() {
       const principalId = atividadeId || atividadeAtual?.id;
       const extrasFinais = extras.filter((e) => e !== principalId);
       await agendasApi.concluir({
+        // eslint-disable-next-line react/purity -- roda no handler (depois do toque), não no render
         dataConcluida: hoje ? new Date().toISOString() : fromDateInput(data),
         atividadeId: atividadeId || undefined,
         detalhes: textoEditado(valorDetalhes, instrucoes.geral),

@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { Plus } from 'lucide-react';
 import { AtividadeIcone } from '@/components/AtividadeIcone';
-import { atividadesValidas, nomesDeEspecies, plantasDoAtalho, rotuloAlvo, type Atalho } from '@/lib/atalhos';
-import { useAtalhos, useAtividades, useEspecies, usePlantas, usePreferencias } from '@/lib/queries';
+import { atividadesValidas, plantasDoAtalho, rotuloAlvo, type Atalho } from '@/lib/atalhos';
+import { useAtalhos, useAtividades, useNomeEspecie, usePlantas, usePreferencias } from '@/lib/queries';
 import { ConfirmarAtalho } from './ConfirmarAtalho';
 import { EditarAtalho } from './EditarAtalho';
 
@@ -12,7 +12,7 @@ export function AcessoRapido() {
   const prefs = usePreferencias();
   const plantas = usePlantas();
   const atividades = useAtividades();
-  const especies = useEspecies();
+  const nomeEspecie = useNomeEspecie(atalhos);
   const [confirmar, setConfirmar] = useState<Atalho | null>(null);
   const [editar, setEditar] = useState<{ atalho?: Atalho } | null>(null);
 
@@ -20,7 +20,6 @@ export function AcessoRapido() {
   if (!prefs.data || !atividades.data) return null;
 
   const todas = plantas.data ?? [];
-  const nomeEspecie = nomesDeEspecies(todas, especies.data ?? []);
   const cards = atalhos.map((a) => ({
     atalho: a,
     validas: atividadesValidas(a, atividades.data ?? []),

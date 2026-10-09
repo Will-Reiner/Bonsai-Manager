@@ -84,6 +84,12 @@ export function nomesDeEspecies(plantas: Planta[], especies: Especie[]): (id: st
   return (id) => mapa.get(id) ?? especieNome(null);
 }
 
+/** Algum atalho marca espécie que nenhuma planta tem? Só então o catálogo é preciso (para o nome). */
+export function temEspecieSemPlanta(atalhos: Atalho[], plantas: Planta[]): boolean {
+  const naColecao = new Set(plantas.map((p) => p.especieId));
+  return atalhos.some((a) => a.especieIds.some((id) => !naColecao.has(id)));
+}
+
 /** Chips de espécie: as da coleção mais as já marcadas (para poder desmarcar), em ordem alfabética. */
 export function opcoesEspecies(plantas: Planta[], selecionadas: string[], nomeEspecie: (id: string) => string) {
   const ids = new Set([...plantas.flatMap((p) => (p.especieId ? [p.especieId] : [])), ...selecionadas]);

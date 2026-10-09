@@ -8,14 +8,13 @@ import { errorMessage } from '@/lib/api';
 import {
   JANELA_ATALHO_DIAS,
   atividadesValidas,
-  nomesDeEspecies,
   plantasDoAtalho,
   rotuloAlvo,
   tarefasDoAtalho,
   type Atalho,
 } from '@/lib/atalhos';
 import { agendasApi } from '@/lib/endpoints';
-import { keys, useAgendas, useAtividades, useEspecies, useMoverRecemTransplantada, usePlantas } from '@/lib/queries';
+import { keys, useAgendas, useAtividades, useMoverRecemTransplantada, useNomeEspecie, usePlantas } from '@/lib/queries';
 import { ATIVIDADE_TRANSPLANTE } from '@/types';
 
 /** Confirmação do atalho: plantas do alvo marcadas (toque desmarca), tarefas próximas a concluir e Registrar. */
@@ -25,7 +24,7 @@ export function ConfirmarAtalho({ atalho, onClose, onEditar }: { atalho: Atalho;
   const plantas = usePlantas();
   const agendas = useAgendas();
   const atividades = useAtividades();
-  const especies = useEspecies();
+  const nomeEspecie = useNomeEspecie([atalho]);
   const mover = useMoverRecemTransplantada();
   const [desmarcadas, setDesmarcadas] = useState<string[]>([]);
   const [concluir, setConcluir] = useState(true);
@@ -44,6 +43,7 @@ export function ConfirmarAtalho({ atalho, onClose, onEditar }: { atalho: Atalho;
     const concluirIds = concluir ? tarefas.map((a) => a.id) : [];
     try {
       await agendasApi.registrar({
+        // eslint-disable-next-line react/purity -- roda no handler (depois do toque), não no render
         data: new Date().toISOString(),
         plantas: marcadas.map((p) => ({ plantaId: p.id, atividadeIds: ids })),
         concluirAgendaIds: concluirIds.length ? concluirIds : undefined,
@@ -81,7 +81,7 @@ export function ConfirmarAtalho({ atalho, onClose, onEditar }: { atalho: Atalho;
       }
     >
       <p className="-mt-1 mb-3 text-sm text-muted">
-        {rotuloAlvo(atalho, nomesDeEspecies(plantas.data ?? [], especies.data ?? []))} · hoje
+        {rotuloAlvo(atalho, nomeEspecie)} · hoje
       </p>
       {alvo.length ? (
         <GradePlantas

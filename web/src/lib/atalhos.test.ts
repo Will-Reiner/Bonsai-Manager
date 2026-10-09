@@ -10,6 +10,7 @@ import {
   rotuloAlvo,
   salvarAtalho,
   tarefasDoAtalho,
+  temEspecieSemPlanta,
   type Atalho,
 } from './atalhos';
 
@@ -148,6 +149,17 @@ describe('espécies', () => {
       { id: 'sumiu', nome: 'Espécie desconhecida' },
       { id: 'pinheiro', nome: 'Pinheiro negro' },
     ]);
+  });
+});
+
+describe('temEspecieSemPlanta', () => {
+  it('alguma espécie marcada que nenhuma planta tem: precisa do catálogo', () => {
+    expect(temEspecieSemPlanta([atalho({ especieIds: ['azaleia', 'sumiu'] })], plantas)).toBe(true);
+  });
+
+  it('todas as marcadas estão na coleção, ou nenhum filtro de espécie: não precisa', () => {
+    expect(temEspecieSemPlanta([atalho({ especieIds: ['azaleia', 'pinheiro'] }), atalho()], plantas)).toBe(false);
+    expect(temEspecieSemPlanta([], plantas)).toBe(false);
   });
 });
 

@@ -4,8 +4,8 @@ import { ConfirmSheet, Sheet } from '@/components/Sheet';
 import { AtividadeChips } from '@/components/care/AtividadeChips';
 import { useToast } from '@/context/ToastContext';
 import { errorMessage } from '@/lib/api';
-import { apagarAtalho, nomesDeEspecies, opcoesEspecies, plantasDoAtalho, salvarAtalho, type Atalho } from '@/lib/atalhos';
-import { useEspecies, usePlantas, useSalvarAtalhos } from '@/lib/queries';
+import { apagarAtalho, opcoesEspecies, plantasDoAtalho, salvarAtalho, type Atalho } from '@/lib/atalhos';
+import { useNomeEspecie, usePlantas, useSalvarAtalhos } from '@/lib/queries';
 import { GRUPOS_PLANTA, type GrupoPlanta } from '@/types';
 
 const alternar = <T,>(lista: T[], v: T) => (lista.includes(v) ? lista.filter((x) => x !== v) : [...lista, v]);
@@ -14,7 +14,6 @@ const alternar = <T,>(lista: T[], v: T) => (lista.includes(v) ? lista.filter((x)
 export function EditarAtalho({ open, atalho, onClose }: { open: boolean; atalho?: Atalho; onClose: () => void }) {
   const toast = useToast();
   const plantas = usePlantas();
-  const especies = useEspecies();
   const salvarLista = useSalvarAtalhos();
   const [novoId] = useState(() => crypto.randomUUID());
   const [atividadeIds, setAtividadeIds] = useState(atalho?.atividadeIds ?? []);
@@ -24,8 +23,8 @@ export function EditarAtalho({ open, atalho, onClose }: { open: boolean; atalho?
   const [apagar, setApagar] = useState(false);
 
   const todas = plantas.data ?? [];
-  const nomeEspecie = nomesDeEspecies(todas, especies.data ?? []);
   const rascunho: Atalho = { id: atalho?.id ?? novoId, atividadeIds, grupos, especieIds };
+  const nomeEspecie = useNomeEspecie([rascunho]);
   const quantas = plantasDoAtalho(rascunho, todas).length;
 
   async function gravar(mudar: (lista: Atalho[]) => Atalho[], msg: string) {
