@@ -58,7 +58,7 @@ describe('DeleteAgendaUseCase', () => {
     await deleteAgendaUseCase.execute('agenda-1', 'user-1');
 
     expect(mockAgendaRepository.delete).toHaveBeenCalledWith('agenda-1');
-    expect(reavaliar.execute).toHaveBeenCalledWith(['planta-1'], 'user-1');
+    expect(reavaliar.execute).toHaveBeenCalledWith({ plantaIds: ['planta-1'], agendaIds: ['agenda-1'] }, 'user-1');
   });
 
   it('tarefa de outro usuário: nada apagado nem reavaliado', async () => {

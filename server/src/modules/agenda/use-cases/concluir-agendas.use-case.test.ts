@@ -22,7 +22,7 @@ describe('ConcluirAgendasUseCase', () => {
       findPendentesParaReconciliar: jest.fn(),
       atividadesExistem: jest.fn().mockResolvedValue(true),
       estadoRotinas: jest.fn().mockResolvedValue([]),
-      executar: jest.fn().mockResolvedValue({ concluidas: [], criadas: [] }),
+      executar: jest.fn().mockResolvedValue({ concluidas: [{ id: 'ag-1' }], criadas: [] }),
       contarPlantasDoUsuario: jest.fn(),
       registrar: jest.fn(),
       transplanteDasPlantas: jest.fn().mockResolvedValue({ atividadeId: null, dias: 15, plantas: [] }),
@@ -34,7 +34,7 @@ describe('ConcluirAgendasUseCase', () => {
   it('reavalia o grupo das plantas tocadas depois de gravar', async () => {
     await useCase.execute(base, 'user-1');
     expect(repo.executar).toHaveBeenCalled();
-    expect(reavaliar.execute).toHaveBeenCalledWith(['pl-1'], 'user-1');
+    expect(reavaliar.execute).toHaveBeenCalledWith({ plantaIds: ['pl-1'], agendaIds: ['ag-1'] }, 'user-1');
   });
 
   afterEach(() => jest.useRealTimers());

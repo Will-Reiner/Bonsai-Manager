@@ -214,9 +214,9 @@ describe('RegistrarCuidadosUseCase', () => {
     });
 
     it('reavalia o grupo das plantas tocadas depois de gravar', async () => {
+      repo.registrar.mockResolvedValueOnce({ concluidas: [{ id: 'c1' }, { id: 'c2' }], criadas: [] });
       await useCase.execute(dto(undefined), 'user-1');
-      expect(repo.registrar).toHaveBeenCalled();
-      expect(reavaliar.execute).toHaveBeenCalledWith(['p1', 'p2'], 'user-1');
+      expect(reavaliar.execute).toHaveBeenCalledWith({ plantaIds: ['p1', 'p2'], agendaIds: ['c1', 'c2'] }, 'user-1');
     });
 
     it('sem a opção, não mexe em grupos', async () => {

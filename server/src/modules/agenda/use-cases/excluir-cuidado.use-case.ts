@@ -12,6 +12,6 @@ export class ExcluirCuidadoUseCase {
   async execute(agendaIds: string[], usuarioId: string): Promise<void> {
     const ids = [...new Set(agendaIds)];
     const plantaId = await plantaDoCuidado(this.repo, ids, usuarioId);
-    await this.repo.excluir(ids, (db) => this.reavaliar.execute([plantaId], usuarioId, db));
+    await this.repo.excluir(ids, (db) => this.reavaliar.execute({ plantaIds: [plantaId], agendaIds: ids }, usuarioId, db));
   }
 }

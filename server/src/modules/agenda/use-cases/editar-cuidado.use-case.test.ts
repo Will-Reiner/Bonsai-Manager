@@ -41,7 +41,7 @@ describe('EditarCuidadoUseCase', () => {
       },
       expect.any(Function),
     );
-    expect(reavaliar.execute).toHaveBeenCalledWith(['p1'], 'u1', 'tx');
+    expect(reavaliar.execute).toHaveBeenCalledWith({ plantaIds: ['p1'], agendaIds: ['a1', 'a2'] }, 'u1', 'tx');
   });
 
   it('tarefa que não é do usuário: 404 e nada gravado', async () => {

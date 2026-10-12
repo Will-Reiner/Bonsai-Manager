@@ -16,6 +16,6 @@ export class DeleteAgendaUseCase {
 
     await this.agendaRepository.delete(id);
     // Apagar o Transplante que pôs a planta em Recém transplantada a tira de lá
-    await this.reavaliar.execute([agenda.plantaId], usuarioId);
+    await this.reavaliar.execute({ plantaIds: [agenda.plantaId], agendaIds: [id] }, usuarioId);
   }
 }

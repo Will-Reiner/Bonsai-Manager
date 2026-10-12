@@ -93,6 +93,6 @@ describe('UpdateAgendaUseCase', () => {
 
     await updateAgendaUseCase.execute('agenda-1', { detalhes: 'x' }, 'user-1');
 
-    expect(reavaliar.execute).toHaveBeenCalledWith(['planta-1'], 'user-1');
+    expect(reavaliar.execute).toHaveBeenCalledWith({ plantaIds: ['planta-1'], agendaIds: ['agenda-1'] }, 'user-1');
   });
 });

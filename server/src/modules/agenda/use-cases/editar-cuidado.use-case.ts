@@ -31,7 +31,7 @@ export class EditarCuidadoUseCase {
         dataConcluida: dto.dataConcluida ? new Date(dto.dataConcluida) : undefined,
         textos,
       },
-      (db) => this.reavaliar.execute([plantaId], usuarioId, db),
+      (db) => this.reavaliar.execute({ plantaIds: [plantaId], agendaIds: ids }, usuarioId, db),
     );
   }
 }

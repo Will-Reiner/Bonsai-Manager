@@ -22,7 +22,7 @@ describe('ExcluirCuidadoUseCase', () => {
   it('apaga as tarefas e reavalia a planta na transação', async () => {
     await useCase.execute(['a1', 'a2', 'a1'], 'u1');
     expect(repo.excluir).toHaveBeenCalledWith(['a1', 'a2'], expect.any(Function));
-    expect(reavaliar.execute).toHaveBeenCalledWith(['p1'], 'u1', 'tx');
+    expect(reavaliar.execute).toHaveBeenCalledWith({ plantaIds: ['p1'], agendaIds: ['a1', 'a2'] }, 'u1', 'tx');
   });
 
   it('tarefa de outro usuário: nada apagado', async () => {

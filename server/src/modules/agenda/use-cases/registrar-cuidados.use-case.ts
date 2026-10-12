@@ -62,7 +62,7 @@ export class RegistrarCuidadosUseCase {
       criarPendentes: [...seguimento.criarPendentes, ...rotinas],
       atualizarGrupos,
     });
-    await this.reavaliar.execute(plantas, usuarioId);
+    await this.reavaliar.execute({ plantaIds: plantas, agendaIds: resultado.concluidas.map((a) => a.id) }, usuarioId);
     return resultado;
   }
 }

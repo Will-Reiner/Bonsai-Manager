@@ -22,7 +22,7 @@ export class UpdateAgendaUseCase {
         : await this.agendaRepository.update(id, updateData);
 
     // Mudar data/status de um Transplante pode mexer no grupo da planta
-    await this.reavaliar.execute([agenda.plantaId], usuarioId);
+    await this.reavaliar.execute({ plantaIds: [agenda.plantaId], agendaIds: [id] }, usuarioId);
     return atualizada;
   }
 }
