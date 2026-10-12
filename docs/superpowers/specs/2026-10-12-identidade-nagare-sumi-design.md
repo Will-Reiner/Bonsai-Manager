@@ -34,7 +34,7 @@ PNGs de tinta usados como `mask-image` e tingidos por `background-color` (uma pe
 Componente `Hanko`: quadrado `hanko` 34px, `rotate(-4deg)`, borda irregular por filtro SVG (`feTurbulence` + `feDisplacementMap`), caractere 流 com a fonte Noto Serif JP carregada só para esse caractere (`&text=流` no Google Fonts). Aparece no topo da Bancada e na abertura. Nunca gerado pela IA.
 
 ### Mancha de tinta
-Estado selecionado de tudo **fora da barra de baixo** (chips de atividade, filtros, seleções): fundo `ink` com `border-radius` irregular + filtro SVG de borda, conteúdo em `bg`. Entra com `scale(.3→1)` em 0,28s. Os filtros SVG (`#aspero`, `#mancha`) ficam definidos uma vez no `Layout`.
+Estado selecionado de tudo **fora da barra de baixo** (chips de atividade, filtros, seleções): fundo `ink` com `border-radius` irregular + filtro SVG de borda, conteúdo em `bg`. Entra com `scale(.3→1)` em 0,28s. Os filtros SVG (`#tinta-aspera`, `#tinta-mancha`) ficam definidos uma vez na raiz do `App` (`components/FiltrosTinta.tsx`), para valer também nas telas fora do `Layout`.
 
 ## 3. Ícones
 

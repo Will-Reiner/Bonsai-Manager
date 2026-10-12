@@ -54,7 +54,7 @@ function Linhas({ itens, rotuloNova, notaNova, data }: { itens: ItemAgenda[]; da
         const nome = agenda.atividade?.nome ?? 'Cuidado';
         return (
           <li key={agenda.id} className="relative flex items-center gap-3 py-1.5 pr-3">
-            <AtividadeIcone nome={nome} size={14} className={`relative z-10 size-8 ${atrasada ? 'bg-late-light! text-late!' : ''}`} />
+            <AtividadeIcone nome={nome} size={16} className={`relative z-10 size-8 rounded-full ${atrasada ? 'bg-late-light text-late!' : 'bg-primary-light'}`} />
             <span className="min-w-0 flex-1">
               <span className="flex items-center gap-1.5 text-sm font-semibold">
                 <span className="truncate">{nome}</span>
