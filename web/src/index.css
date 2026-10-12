@@ -84,14 +84,23 @@
     -webkit-mask: url('/arte/pincel-fino.webp') no-repeat center / 100% 100%;
     mask: url('/arte/pincel-fino.webp') no-repeat center / 100% 100%;
   }
-  /* Faixa de grupo: cor cheia à esquerda, dissolvendo no fundo (cor em --faixa, via estiloFaixa) */
+  /* Faixa de grupo: pincelada grossa na cor do grupo (--faixa, via estiloFaixa), do tamanho do texto */
   .faixa {
-    background: linear-gradient(
-      90deg,
-      var(--faixa) 0%,
-      var(--faixa) 35%,
-      color-mix(in srgb, var(--faixa) 18%, var(--color-bg)) 100%
-    );
+    position: relative;
+    isolation: isolate;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.45rem 1.6rem 0.45rem 0.75rem;
+  }
+  .faixa::before {
+    content: '';
+    position: absolute;
+    inset: 0 0 0 -0.25rem;
+    z-index: -1;
+    background-color: var(--faixa);
+    -webkit-mask: url('/arte/pincel-curto.webp') no-repeat left center / 100% 100%;
+    mask: url('/arte/pincel-curto.webp') no-repeat left center / 100% 100%;
   }
   .selo {
     background: linear-gradient(90deg, var(--faixa) 85%, color-mix(in srgb, var(--faixa) 60%, var(--color-bg)) 100%);
