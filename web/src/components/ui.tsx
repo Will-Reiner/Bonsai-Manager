@@ -1,5 +1,5 @@
 import type { ButtonHTMLAttributes, ReactNode } from 'react';
-import { useNavigate } from 'react-router';
+import { Link, useNavigate } from 'react-router';
 import { ArrowLeft, Loader2, Sprout } from 'lucide-react';
 
 type Variant = 'primary' | 'secondary' | 'ghost' | 'danger';
@@ -98,7 +98,7 @@ export function EmptyState({
 }
 
 /** Cabeçalho de tela. `back` mostra a seta de voltar. */
-export function PageHeader({ title, back, right }: { title: string; back?: boolean; right?: ReactNode }) {
+export function PageHeader({ title, back, right, titleTo }: { title: string; back?: boolean; right?: ReactNode; titleTo?: string }) {
   const navigate = useNavigate();
   return (
     <header className="sticky top-0 z-30 border-b border-line/70 bg-bg/90 pt-safe backdrop-blur">
@@ -112,7 +112,15 @@ export function PageHeader({ title, back, right }: { title: string; back?: boole
             <ArrowLeft size={22} />
           </button>
         )}
-        <h1 className="flex-1 truncate text-xl font-semibold">{title}</h1>
+        <h1 className="flex-1 truncate text-xl font-semibold">
+          {titleTo ? (
+            <Link to={titleTo} className="hover:underline">
+              {title}
+            </Link>
+          ) : (
+            title
+          )}
+        </h1>
         {right}
       </div>
     </header>
