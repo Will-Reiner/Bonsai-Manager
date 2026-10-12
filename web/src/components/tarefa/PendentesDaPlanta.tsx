@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { useQueryClient } from '@tanstack/react-query';
-import { Ban, CalendarClock, Check, MoreHorizontal, Repeat, Settings2, SkipForward, Trash2 } from 'lucide-react';
+import { CalendarClock, Check, MoreHorizontal, Repeat, Settings2, SkipForward, Trash2 } from 'lucide-react';
 import { AtividadeIcone } from '@/components/AtividadeIcone';
 import { ConfirmSheet, Sheet } from '@/components/Sheet';
 import { RotinaSheet } from '@/components/care/RotinaSheet';
@@ -25,7 +25,7 @@ export function PendentesDaPlanta({ agenda, agendas }: { agenda: Agenda; agendas
   const toast = useToast();
   const { reagendar } = useCare();
   const [marcadas, setMarcadas] = useState(() => new Set([agenda.id]));
-  const [salvando, setSalvando] = useState<'excluir' | 'cancelar' | 'pular' | null>(null);
+  const [salvando, setSalvando] = useState<'excluir' | 'pular' | null>(null);
   const [confirmarExclusao, setConfirmarExclusao] = useState(false);
   const [maisAberto, setMaisAberto] = useState(false);
   const [rotinaAberta, setRotinaAberta] = useState<string | null>(null);
@@ -70,22 +70,6 @@ export function PendentesDaPlanta({ agenda, agendas }: { agenda: Agenda; agendas
     if (r.feitos.length) depois(r.feitos);
   }
 
-  async function cancelar() {
-    if (!unica) return;
-    setSalvando('cancelar');
-    try {
-      await agendasApi.update(unica.id, { status: 'CANCELADO' });
-      invalidar();
-      toast(unica.rotinaId ? 'Tarefa cancelada · rotina sem próxima' : 'Tarefa cancelada');
-      setMaisAberto(false);
-      depois([unica]);
-    } catch (error) {
-      toast(errorMessage(error), 'error');
-    } finally {
-      setSalvando(null);
-    }
-  }
-
   async function pular() {
     if (!unica) return;
     setSalvando('pular');
@@ -104,6 +88,8 @@ export function PendentesDaPlanta({ agenda, agendas }: { agenda: Agenda; agendas
 
   const n = selecionadas.length;
   const algumaDeRotina = selecionadas.some((a) => a.rotinaId);
+  // "Mais" só tem opções de rotina (pular, editar)
+  const comMais = pendentes.some((a) => a.rotinaId);
 
   return (
     <div className="min-h-dvh pb-40">
@@ -185,16 +171,18 @@ export function PendentesDaPlanta({ agenda, agendas }: { agenda: Agenda; agendas
           <Button block disabled={!n} onClick={() => navigate(`/concluir?ids=${selecionadas.map((a) => a.id).join(',')}`)}>
             <Check size={18} /> Concluir{n > 1 ? ` ${n} tarefas` : ''}
           </Button>
-          <div className="grid grid-cols-3 gap-2 [&>button:disabled]:opacity-50">
+          <div className={`grid gap-2 [&>button:disabled]:opacity-50 ${comMais ? 'grid-cols-3' : 'grid-cols-2'}`}>
             <Button variant="secondary" size="sm" disabled={!n} onClick={() => reagendar(selecionadas)}>
               <CalendarClock size={16} /> Reagendar
             </Button>
             <Button variant="danger" size="sm" disabled={!n} onClick={() => setConfirmarExclusao(true)}>
               <Trash2 size={16} /> Excluir
             </Button>
-            <Button variant="secondary" size="sm" disabled={!unica} onClick={() => setMaisAberto(true)} aria-label="Mais opções">
-              <MoreHorizontal size={16} /> Mais
-            </Button>
+            {comMais && (
+              <Button variant="secondary" size="sm" disabled={!unica?.rotinaId} onClick={() => setMaisAberto(true)} aria-label="Mais opções">
+                <MoreHorizontal size={16} /> Mais
+              </Button>
+            )}
           </div>
         </div>
       </div>
@@ -206,16 +194,13 @@ export function PendentesDaPlanta({ agenda, agendas }: { agenda: Agenda; agendas
         loading={salvando === 'excluir'}
         title={n > 1 ? `Excluir ${n} tarefas?` : 'Excluir tarefa?'}
         text={
-          'Some do histórico. Para manter o registro, use “Cancelar” em Mais.' +
+          'Some da agenda e do histórico.' +
           (algumaDeRotina ? ' A rotina fica sem próxima tarefa — para só adiar, use “Pular esta vez”.' : '')
         }
       />
 
-      <Sheet open={maisAberto && !!unica} onClose={() => setMaisAberto(false)} title={unica?.atividade?.nome ?? 'Tarefa'}>
+      <Sheet open={maisAberto && !!unica?.rotinaId} onClose={() => setMaisAberto(false)} title={unica?.atividade?.nome ?? 'Tarefa'}>
         <div className="space-y-2 pb-safe">
-          <Button block variant="secondary" onClick={cancelar} loading={salvando === 'cancelar'}>
-            <Ban size={18} /> Cancelar tarefa
-          </Button>
           {unica?.rotinaId && (
             <>
               <Button block variant="secondary" onClick={pular} loading={salvando === 'pular'}>
