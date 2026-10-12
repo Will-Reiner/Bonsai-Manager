@@ -7,7 +7,7 @@ export function CabecalhoTarefa({ grupo: g }: { grupo: GrupoAtividade }) {
   const navigate = useNavigate();
   return (
     <div className="flex items-center gap-2 pb-0.5 pt-3">
-      <AtividadeIcone nome={g.nome} size={14} className="size-6" />
+      <AtividadeIcone nome={g.nome} size={20} className="size-6" />
       <h4 className="min-w-0 flex-1 truncate font-sans text-sm font-bold text-ink">
         {g.nome} <span className="font-medium text-muted">· {g.agendas.length}</span>
       </h4>

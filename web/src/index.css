@@ -94,6 +94,14 @@
     transform: rotate(-4deg);
     filter: url(#tinta-aspera);
   }
+  /* Ícone próprio: o SVG é a máscara, a cor vem de currentColor; URL em --icone */
+  .icone {
+    display: inline-block;
+    flex-shrink: 0;
+    background-color: currentColor;
+    -webkit-mask: var(--icone) no-repeat center / contain;
+    mask: var(--icone) no-repeat center / contain;
+  }
   /* Divisória em pincelada fina, tingida pela tinta */
   .divisoria {
     display: block;
