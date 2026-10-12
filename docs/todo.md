@@ -36,7 +36,50 @@
 - [x] erro de validação da API (Zod) chega no toast como JSON cru (ex.: código da planta inválido). Controllers devem devolver só a mensagem do primeiro erro do Zod — vale para todos os schemas, não só planta.
   > Feito em 2026-10-08: `mensagemDoErro` (`server/src/utils/errors.ts`) devolve só a mensagem do primeiro erro do Zod; usado nas respostas genéricas de erro dos controllers.
 
+- [x] adicionar funcionalidade de foto de inspiracao nas plantas, vai ser uma foto que o usuario pode escolher das proprias fotos dele ou adicionar foto nova, do mesmo jeito que a foto de capa
+  > Feito em 2026-10-12: na página da planta a capa desliza para a inspiração (2 pontinhos embaixo); sem inspiração, o 2º slide oferece "Das fotos dela" (galeria em modo escolher) ou "Foto nova" (sobe sem planta, fora da galeria e do histórico). Tocar na inspiração troca/remove; o visualizador de fotos ganhou "Usar como inspiração". Uma por planta no app (o banco aceita várias); excluir a planta apaga a foto avulsa de inspiração.
+
+- [x] mostrar em qual estacao estamos na tela de bancada com o progresso da estacao sendo visivel com um "x dias para prox estacao". para o acesso rapido, vamos transforma-lo em um botao que ficara ao lado do botao de preferencias
+  > Estação feita em 2026-10-12: cartão na Bancada com a estação, barra de progresso e "N dias para o verão" (`estacaoAtual` em `web/src/lib/estacoes.ts`). Acesso rápido como botão: ainda não.
+
+- [x] ao registrar, quando aparece a tela de tarefas agendadas que serao concluidas, hoje aparece apenas "Tarefa - #ID", faca com que apareca a foto da planta em questao tambem
+  > Feito em 2026-10-12: miniatura da capa ao lado de cada tarefa.
+
+- na tela de detalhes de procedimento feito, vamos alterar algumas coisas:
+  - a primeira coisa q aparece é a foto de capa da planta com o id e especie, nao precisamos disso pode tirar
+  - a primeira coisa passa a ser o titulo (decidir se vamos fazer um titulo para a pagina ou usar o do header da pagina) com as informacoes de concluido, data e obs e descricao
+  - abaixo temos o historico, vamos retirar ele tambem
+  - a baixo das informacoes vamos colocar as fotos adicionadas nesse procedimento, caso seja mais de uma fazemos a mesma dinamica de scroll lateral em roda das fotos
+  - no canto superior direito, vamos colocar um botao de edicao, para o usuario poder editar as informacoes do procedimento caso ache necessario e/ou poder excluir o procedimento feito (veja que caso isso altere alguma outra funcionalidade externa como exemplo, excluiu transplante > a planta deve sair de recem transplantada, caso esteja, e ir para o grupo que ela estava antes)
+  - vamos fazer com que os procedimentos do historico sejam scrolaveis... caso a pessoa esteja nos detalhes de um, se ela scrolar para o lado vai para o seguinte ou volta para o anterior
+
+- [x] na tela de detalhes da planta, retire a sessao "ultimos cuidados", e nos cards de procedimentos da roda de historico e cuidados, vamos fazer com que mostre ao inves do dia, mostre "daqui 10 dias" ou "1 mes atras"
+  > Feito em 2026-10-12: "Últimos cuidados" saiu; os cards mostram `distanciaRelativa` (`web/src/lib/format.ts`).
+
+- [x] na tela de fotos, vamos separar as fotos em anos e meses e fazer uma lista na vertical, em ordem do mais novo para o mais velho, como:
+  fotos
+    2026
+      abril
+       "foto"
+       "foto"
+      janeiro
+       "foto"
+    2024
+      maio
+        "foto"
+        "foto"
+  > Feito em 2026-10-12: galeria agrupada por ano e mês (`fotosPorMes` em `web/src/lib/linhaDoTempo.ts`).
+
+- [x] nao tem pq ter botao de excluir e cancelar ao mesmo tempo nas tarefas agendadas, vamos deixar apenas botao de excluir.
+  > Feito em 2026-10-12: "Cancelar tarefa" saiu; "Mais" só aparece quando há tarefa de rotina (pular / editar rotina).
+
+- [x] vamos adicionar um botao de adicionar rotina no modal "+" onde temos varias outras coisas, onde a pessoa pode adicionar rotinas e escolher entre diversas plantas e/ou uma só
+  > Feito em 2026-10-12: "Criar rotina" no "+" abre o Agendar já em Repetir (`/agendar?repetir=1`).
+
+- MUDAR DINAMICA PARA CABER ADUBACAO LIQUIDA SEM INTERFERIR OUTRAS FUNCIONALIDADES
+
 # ideias para o futuro:
+- espaco do bonsai em 3d?
 - alguma animacao ou icone especial para plantas fazendo aniversario
 - animacoes gerais ao completar alguns objetivos como 100 plantas adicionadas, 1000 cuidados feitos etc
 - investigar codigo para possiveis erros q possam ter em endpoints e outras coisas, e otimizar as coisas e melhorar logs de erros e outras coisas
