@@ -18,7 +18,7 @@ Aprovado em 2026-10-12 (brainstorming com mockups no navegador; prévia geral ap
 | `ink` | `#2B1F17` | texto, traços, mancha de tinta, botão principal |
 | `muted` | `#7A6A5E` | texto secundário, ícone inativo |
 | `hanko` (novo) | `#B23A2A` | carimbo 流, pincelada da aba ativa, selo de atraso |
-| `card` | `#EBE4D9` | fundo do card sem foto (placeholder com vaso) |
+| `vazio` (novo) | `#EBE4D9` | fundo do card sem foto (placeholder com vaso); `card` continua `#F8F6F5` |
 | demais | mantidos do Tema Argila | `late`, cores de grupo, `danger`… |
 
 O `body` ganha a textura do papel. Sheets e inputs continuam em `card`/`surface`.
@@ -27,7 +27,7 @@ O `body` ganha a textura do papel. Sheets e inputs continuam em `card`/`surface`
 PNGs de tinta usados como `mask-image` e tingidos por `background-color` (uma peça serve qualquer cor):
 - **Divisórias** entre seções: pincelada fina (`pincel-fino-*`).
 - **Linha superior da barra de baixo**: pincelada fina, 55% de opacidade.
-- **Faixa de grupo** (`FaixaGrupo`): a faixa degradê vira uma pincelada grossa na cor do grupo (`estiloFaixa` continua dando a cor), texto por cima.
+- **Faixa de grupo** (`FaixaGrupo`): a faixa degradê vira uma pincelada grossa na cor do grupo, **do tamanho do texto** (`estiloFaixa` continua dando a cor), texto por cima; "Concluir todas" fica fora da pincelada, em `primary`.
 - **Barra de progresso da estação**: pincelada fina de fundo claro + a mesma pincelada recortada (`clip-path`) em `accent`.
 
 ### Carimbo 流
@@ -38,14 +38,14 @@ Estado selecionado de tudo **fora da barra de baixo** (chips de atividade, filtr
 
 ## 3. Ícones
 
-- 30 ícones próprios em SVG 24×24 com `fill="currentColor"`, traço igualado (skill, `--alvo 14`), de `test-assets/estilo/icons/svg/` para `web/src/assets/icones/`.
-- Componente `Icone` (`components/Icone.tsx`): `<span>` com `mask-image` do SVG e `background: currentColor` (sem dependência nova). Os nomes vêm de `import.meta.glob('../assets/icones/*.svg', { eager: true, query: '?url' })`.
+- 30 ícones próprios em SVG 24×24 com `fill="currentColor"`, traço igualado (skill, `--alvo 14`), de `test-assets/estilo/icons/svg/` para `web/public/icones/` (fora do bundle; URL `/icones/<nome>.svg`).
+- Componente `Icone` (`components/Icone.tsx`): `<span>` com `mask-image` do SVG e `background: currentColor` (sem dependência nova). Nomes e URLs em `src/lib/icones.ts` (tipo `NomeIcone`, `urlIcone`, `iconeDaAtividade`).
 - Utilitários continuam no Lucide (✓, X, setas, lixeira, lápis, busca, "…", carregando em botão).
 
 | Grupo | Ícones | Onde |
 |---|---|---|
 | Navegação | bancada, colecao, perfil, mais (+ `-ativo` dos três primeiros) | `Layout` |
-| Ações | registrar, agendar, rotina, adicionar-planta, fotos-lote, preferencias, acesso-rapido, historico, reagendar | sheet do "+", topo da Bancada, `TarefaPage`, `ReagendarSheet` |
+| Ações | registrar, agendar, rotina, adicionar-planta, fotos-lote, preferencias, acesso-rapido, historico, reagendar | sheet do "+", topo da Bancada, ações da planta (`PlantDetailPage`), tarefa (`PendentesDaPlanta`); `historico` fica reservado (sem lugar ainda) |
 | Atividades | rega, adubacao, adubacao-liquida, poda, poda-estrutural, desfolha, aramacao, desaramacao, transplante, fitossanitario, revisao, generico, atrasada | `AtividadeIcone`, `AtividadeChips` |
 | Estações | primavera, verao, outono (ginkgo), inverno | `EstacaoDoAno`, tela da estação |
 
@@ -61,7 +61,7 @@ Viram uma grade de 4 colunas: ícone 22px dentro de um alvo de 46px + nome embai
 
 ## 4. Ilustrações e estados
 
-Peças em WebP (qualidade 85, maior lado ≤ 800px; vasos ≤ 400px), em `web/src/assets/arte/`, sempre com `alt=""` (decorativas).
+Peças em WebP (qualidade 85, maior lado ≤ 800px; vasos ≤ 400px), em `web/public/arte/`, sempre com `alt=""` (decorativas).
 
 | Peça | Uso |
 |---|---|
@@ -75,7 +75,7 @@ Peças em WebP (qualidade 85, maior lado ≤ 800px; vasos ≤ 400px), em `web/sr
 | `enso` | carregando, estação, celebração |
 
 - **`EmptyState`** ganha a prop `ilustracao` (imagem grande, título em Newsreader itálico). O círculo com ícone continua para os casos sem ilustração.
-- **`PlantThumb` sem foto**: fundo `card`, vaso apoiado embaixo (84% da largura). O vaso é escolhido de forma estável pela planta: `vasoDaPlanta(id)` faz um hash simples do id e escolhe um dos 7 vasos (`src/lib/arte.ts`). A mesma planta mostra sempre o mesmo vaso. Os cards ficam como quadrado arredondado simples, sem moldura.
+- **`PlantThumb` sem foto**: fundo `vazio`, vaso apoiado embaixo (84% da largura). O vaso é escolhido de forma estável pela planta: `vasoDaPlanta(id)` faz um hash simples do id e escolhe um dos 7 vasos (`src/lib/arte.ts`). A mesma planta mostra sempre o mesmo vaso. Os cards ficam como quadrado arredondado simples, sem moldura.
 - **`ErrorState`**: quando o erro é de rede (erro do axios sem `response`, detectado por `ehErroDeRede(error)` em `src/lib/api.ts`, ao lado de `errorMessage`), mostra a árvore com o galho quebrando. Os demais erros continuam em texto. A animação: árvore inteira por 0,9s → troca para tronco + galho → o galho gira em torno do toco (`transform-origin` 57,8% 72,1%) com estalo (6°), balanço e queda (translação + 62° + fade em 2,2s), e 5 pontinhos de tinta caem. "Tentar de novo" repete.
 - **`Spinner`** (carregando de tela): o ensō se desenha (máscara `conic-gradient` animando `--a` com `@property`, 1,1s, em loop enquanto carrega). O `Loader2` continua só dentro de botões.
 - **Celebração**: depois de Registrar/Concluir com sucesso, uma sobreposição breve (≈1,4s, toque fecha) com o ensō se desenhando, o ícone `registrar` e "Cuidado registrado" + resumo. Depois segue o fluxo atual (navegação de volta).
