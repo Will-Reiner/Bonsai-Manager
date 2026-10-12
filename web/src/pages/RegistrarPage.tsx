@@ -394,6 +394,7 @@ export function RegistrarPage() {
                     checked={marcada}
                     onChange={() => setDesmarcadas((d) => (marcada ? [...d, a.id] : d.filter((x) => x !== a.id)))}
                   />
+                  <PlantThumb url={a.planta?.fotoCapaUrl} className="size-12 shrink-0 rounded-xl" />
                   <span className="min-w-0 flex-1">
                     <span className="block truncate font-semibold">
                       {a.atividade?.nome ?? 'Cuidado'} · {plantaRotulo(a.planta)}
