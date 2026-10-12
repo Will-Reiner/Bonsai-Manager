@@ -3,9 +3,11 @@ import {
   diasDePreTransplante,
   diasDeTransplante,
   planejarPreTransplante,
+  reavaliarRecemTransplantada,
   trocaManual,
   PRE_TRANSPLANTE_PADRAO_DIAS,
   TRANSPLANTE_PADRAO_DIAS,
+  type EstadoRecem,
   type PlantaPre,
 } from './grupo';
 
@@ -144,5 +146,49 @@ describe('planejarPreTransplante', () => {
 
   it('pendentes de outras plantas não contam', () => {
     expect(planejarPreTransplante([planta()], [pendente(5, 'ag-x', 'p2')], DATA, 30)).toEqual([]);
+  });
+});
+
+describe('reavaliarRecemTransplantada', () => {
+  const AGORA = new Date('2026-10-12T12:00:00.000Z');
+  const recem = (extra: Partial<EstadoRecem> = {}): EstadoRecem => ({
+    grupo: 'RECEM_TRANSPLANTADA',
+    grupoAnterior: 'EM_CRESCIMENTO',
+    grupoExpiraEm: new Date('2026-10-20T12:00:00.000Z'),
+    transplanteAgendaId: 'ag-t',
+    ...extra,
+  });
+  const voltou = { grupo: 'EM_CRESCIMENTO', grupoAnterior: null, grupoExpiraEm: null, transplanteAgendaId: null };
+
+  it('fora de Recém transplantada não muda', () => {
+    expect(reavaliarRecemTransplantada(recem({ grupo: 'REFINAMENTO' }), null, 15, AGORA)).toBeNull();
+  });
+
+  it('sem o Transplante de origem guardado não muda', () => {
+    expect(reavaliarRecemTransplantada(recem({ transplanteAgendaId: null }), null, 15, AGORA)).toBeNull();
+  });
+
+  it('Transplante apagado: volta ao grupo anterior', () => {
+    expect(reavaliarRecemTransplantada(recem(), null, 15, AGORA)).toEqual(voltou);
+  });
+
+  it('sem grupo anterior: fica sem grupo', () => {
+    expect(reavaliarRecemTransplantada(recem({ grupoAnterior: null }), null, 15, AGORA)).toEqual({ ...voltou, grupo: null });
+  });
+
+  it('data do Transplante mudou: recalcula o fim do prazo', () => {
+    const data = new Date('2026-10-08T12:00:00.000Z');
+    expect(reavaliarRecemTransplantada(recem(), { data }, 15, AGORA)).toEqual(
+      recem({ grupoExpiraEm: new Date(data.getTime() + 15 * DIA) }),
+    );
+  });
+
+  it('nova data já com o prazo vencido: volta ao grupo anterior', () => {
+    expect(reavaliarRecemTransplantada(recem(), { data: new Date('2026-09-01T12:00:00.000Z') }, 15, AGORA)).toEqual(voltou);
+  });
+
+  it('mesmo prazo: não muda', () => {
+    const data = new Date('2026-10-05T12:00:00.000Z');
+    expect(reavaliarRecemTransplantada(recem(), { data }, 15, AGORA)).toBeNull();
   });
 });

@@ -40,6 +40,36 @@ export function trocaManual(grupo: GrupoPlanta | null): EstadoGrupo {
   return { grupo, grupoAnterior: null, grupoExpiraEm: null };
 }
 
+/** Estado do grupo + o Transplante concluído que pôs a planta em Recém transplantada. */
+export interface EstadoRecem extends EstadoGrupo {
+  transplanteAgendaId: string | null;
+}
+
+const voltarAoAnterior = (e: EstadoRecem): EstadoRecem => ({
+  grupo: e.grupoAnterior,
+  grupoAnterior: null,
+  grupoExpiraEm: null,
+  transplanteAgendaId: null,
+});
+
+/**
+ * Recém transplantada depois que o Transplante que a colocou lá mudou. `transplante` null = apagado ou não
+ * está mais concluído. Devolve o estado novo, ou null se nada muda. Nunca coloca uma planta no grupo.
+ */
+export function reavaliarRecemTransplantada(
+  estado: EstadoRecem,
+  transplante: { data: Date } | null,
+  dias: number,
+  agora: Date,
+): EstadoRecem | null {
+  if (estado.grupo !== RECEM_TRANSPLANTADA || !estado.transplanteAgendaId) return null;
+  if (!transplante) return voltarAoAnterior(estado);
+  const expira = new Date(transplante.data.getTime() + dias * DIA_MS);
+  if (expira <= agora) return voltarAoAnterior(estado);
+  if (estado.grupoExpiraEm?.getTime() === expira.getTime()) return null;
+  return { ...estado, grupoExpiraEm: expira };
+}
+
 export interface PlantaPre {
   plantaId: string;
   grupo: GrupoPlanta | null;
