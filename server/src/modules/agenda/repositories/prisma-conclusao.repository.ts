@@ -49,12 +49,23 @@ export class PrismaConclusaoRepository implements ConclusaoRepository {
     return total === ids.length;
   }
 
-  /** Aplica mudanças de grupo (Transplante → Recém transplantada). */
-  private async atualizarGrupos(tx: Prisma.TransactionClient, itens: AtualizacaoGrupo[]) {
+  /** Aplica mudanças de grupo (Transplante → Recém transplantada) e guarda qual tarefa de Transplante foi. */
+  private async atualizarGrupos(tx: Prisma.TransactionClient, itens: AtualizacaoGrupo[], data: Date) {
     for (const g of itens) {
+      const transplante = g.transplanteAtividadeId
+        ? await tx.agenda.findFirst({
+            where: { plantaId: g.plantaId, atividadeId: g.transplanteAtividadeId, status: 'CONCLUIDO', dataConcluida: data },
+            select: { id: true },
+          })
+        : null;
       await tx.planta.update({
         where: { id: g.plantaId },
-        data: { grupo: g.grupo, grupoAnterior: g.grupoAnterior, grupoExpiraEm: g.grupoExpiraEm },
+        data: {
+          grupo: g.grupo,
+          grupoAnterior: g.grupoAnterior,
+          grupoExpiraEm: g.grupoExpiraEm,
+          transplanteAgendaId: transplante?.id ?? null,
+        },
       });
     }
   }
@@ -200,7 +211,7 @@ export class PrismaConclusaoRepository implements ConclusaoRepository {
           ...(plano.criarPendentes.length ? await tx.agenda.createManyAndReturn({ data: plano.criarPendentes }) : []),
           ...(await this.criarComRotinas(tx, plano.criarRotinas)),
         ];
-        await this.atualizarGrupos(tx, plano.atualizarGrupos);
+        await this.atualizarGrupos(tx, plano.atualizarGrupos, plano.data);
         return { concluidas, criadas };
       },
       { timeout: 20_000 },
@@ -266,7 +277,7 @@ export class PrismaConclusaoRepository implements ConclusaoRepository {
         }
         criadas.push(...(await this.criarComRotinas(tx, plano.criarRotinas)));
 
-        await this.atualizarGrupos(tx, plano.atualizarGrupos);
+        await this.atualizarGrupos(tx, plano.atualizarGrupos, plano.dataConcluida);
         return { concluidas, criadas };
       },
       { timeout: 20_000 },

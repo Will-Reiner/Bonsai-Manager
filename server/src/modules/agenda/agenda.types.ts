@@ -53,7 +53,8 @@ export const ATIVIDADE_TRANSPLANTE = 'Transplante';
 export const PREF_TRANSPLANTE_DIAS = 'transplante_dias';
 export const PREF_PRE_TRANSPLANTE_DIAS = 'pre_transplante_dias';
 
-export type AtualizacaoGrupo = { plantaId: string } & EstadoGrupo;
+/** Mudança de grupo; `transplanteAtividadeId` = a planta foi por um Transplante (o repositório acha a tarefa e guarda o id). */
+export type AtualizacaoGrupo = { plantaId: string; transplanteAtividadeId?: string } & EstadoGrupo;
 
 /** Próximo passo; com `repetir`, vira (ou usa) a rotina da planta+atividade. */
 export interface Proximo {

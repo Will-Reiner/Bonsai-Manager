@@ -3,13 +3,17 @@ import { reconciliar } from '../dominio/reconciliar';
 import { planejarGruposDoTransplante } from './planejar-grupos-transplante';
 import { planejarRotinas } from './planejar-rotinas';
 import { planejarSeguimento } from './planejar-seguimento';
+import { ReavaliadorDeGrupos } from '../../planta/use-cases/reavaliar-grupos';
 
 /** Folga para o fuso do aparelho: registra o que já foi feito, não o futuro. */
 const FOLGA_FUTURO_MS = 86_400_000;
 
 /** Registra cuidados já feitos (com fotos) em várias plantas, conclui as pendentes escolhidas e agenda o que vem depois. */
 export class RegistrarCuidadosUseCase {
-  constructor(private repo: ConclusaoRepository) {}
+  constructor(
+    private repo: ConclusaoRepository,
+    private reavaliar: ReavaliadorDeGrupos,
+  ) {}
 
   async execute(dto: RegistrarCuidadosDTO, usuarioId: string) {
     const plantas = dto.plantas.map((p) => p.plantaId);
@@ -48,7 +52,7 @@ export class RegistrarCuidadosUseCase {
 
     const atualizarGrupos = dto.moverRecemTransplantada ? await planejarGruposDoTransplante(this.repo, cuidados, usuarioId, data) : [];
 
-    return this.repo.registrar({
+    const resultado = await this.repo.registrar({
       usuarioId,
       data,
       cuidados,
@@ -58,5 +62,7 @@ export class RegistrarCuidadosUseCase {
       criarPendentes: [...seguimento.criarPendentes, ...rotinas],
       atualizarGrupos,
     });
+    await this.reavaliar.execute(plantas, usuarioId);
+    return resultado;
   }
 }

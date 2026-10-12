@@ -7,6 +7,7 @@ const AGORA = new Date('2026-10-05T12:00:00.000Z');
 describe('RegistrarCuidadosUseCase', () => {
   let repo: jest.Mocked<ConclusaoRepository>;
   let useCase: RegistrarCuidadosUseCase;
+  let reavaliar: { execute: jest.Mock };
 
   const base: RegistrarCuidadosDTO = {
     data: AGORA.toISOString(),
@@ -25,7 +26,8 @@ describe('RegistrarCuidadosUseCase', () => {
       registrar: jest.fn().mockResolvedValue({ concluidas: [], criadas: [] }),
       transplanteDasPlantas: jest.fn().mockResolvedValue({ atividadeId: null, dias: 15, plantas: [] }),
     };
-    useCase = new RegistrarCuidadosUseCase(repo);
+    reavaliar = { execute: jest.fn().mockResolvedValue(undefined) };
+    useCase = new RegistrarCuidadosUseCase(repo, reavaliar);
   });
   afterEach(() => jest.useRealTimers());
 
@@ -206,8 +208,15 @@ describe('RegistrarCuidadosUseCase', () => {
           grupo: 'RECEM_TRANSPLANTADA',
           grupoAnterior: 'REFINAMENTO',
           grupoExpiraEm: new Date(AGORA.getTime() + 15 * DIA),
+          transplanteAtividadeId: 'at-transplante',
         },
       ]);
+    });
+
+    it('reavalia o grupo das plantas tocadas depois de gravar', async () => {
+      await useCase.execute(dto(undefined), 'user-1');
+      expect(repo.registrar).toHaveBeenCalled();
+      expect(reavaliar.execute).toHaveBeenCalledWith(['p1', 'p2'], 'user-1');
     });
 
     it('sem a opção, não mexe em grupos', async () => {

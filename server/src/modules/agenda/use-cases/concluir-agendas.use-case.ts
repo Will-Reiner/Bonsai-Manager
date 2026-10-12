@@ -2,10 +2,14 @@ import { ConclusaoRepository, ConcluirAgendasDTO, PlanoConclusao } from '../agen
 import { planejarGruposDoTransplante } from './planejar-grupos-transplante';
 import { planejarRotinas } from './planejar-rotinas';
 import { planejarSeguimento } from './planejar-seguimento';
+import { ReavaliadorDeGrupos } from '../../planta/use-cases/reavaliar-grupos';
 
 /** Conclui uma ou várias tarefas, avança rotinas e agenda os próximos passos. */
 export class ConcluirAgendasUseCase {
-  constructor(private repo: ConclusaoRepository) {}
+  constructor(
+    private repo: ConclusaoRepository,
+    private reavaliar: ReavaliadorDeGrupos,
+  ) {}
 
   async execute(dto: ConcluirAgendasDTO, usuarioId: string) {
     const ids = [...new Set(dto.itens.map((i) => i.agendaId))];
@@ -78,6 +82,8 @@ export class ConcluirAgendasUseCase {
       atualizarGrupos,
     };
 
-    return this.repo.executar(plano);
+    const resultado = await this.repo.executar(plano);
+    await this.reavaliar.execute(plantas, usuarioId);
+    return resultado;
   }
 }

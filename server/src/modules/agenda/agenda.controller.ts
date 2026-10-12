@@ -17,6 +17,8 @@ import {
 import { CreateAgendaDTO, CreateAgendasLoteDTO, UpdateAgendaDTO, ConcluirAgendasDTO, RegistrarCuidadosDTO } from './agenda.types';
 import '../../middlewares/auth.middleware'; // Import para garantir que a extensão da interface Request seja reconhecida
 import { mensagemDoErro } from '../../utils/errors';
+import { ReavaliarGruposUseCase } from '../planta/use-cases/reavaliar-grupos';
+import { PrismaReavaliacaoRepository } from '../planta/repositories/prisma-reavaliacao.repository';
 
 export class AgendaController {
   private createAgendaUseCase: CreateAgendaUseCase;
@@ -29,6 +31,7 @@ export class AgendaController {
   private registrarCuidadosUseCase: RegistrarCuidadosUseCase;
 
   constructor() {
+    const reavaliar = new ReavaliarGruposUseCase(new PrismaReavaliacaoRepository());
     const agendaRepository = new PrismaAgendaRepository();
     this.createAgendaUseCase = new CreateAgendaUseCase(agendaRepository);
     this.createAgendasLoteUseCase = new CreateAgendasLoteUseCase(agendaRepository);
@@ -37,8 +40,8 @@ export class AgendaController {
     this.updateAgendaUseCase = new UpdateAgendaUseCase(agendaRepository);
     this.deleteAgendaUseCase = new DeleteAgendaUseCase(agendaRepository);
     const conclusaoRepository = new PrismaConclusaoRepository();
-    this.concluirAgendasUseCase = new ConcluirAgendasUseCase(conclusaoRepository);
-    this.registrarCuidadosUseCase = new RegistrarCuidadosUseCase(conclusaoRepository);
+    this.concluirAgendasUseCase = new ConcluirAgendasUseCase(conclusaoRepository, reavaliar);
+    this.registrarCuidadosUseCase = new RegistrarCuidadosUseCase(conclusaoRepository, reavaliar);
   }
 
   async getById(req: Request, res: Response) {

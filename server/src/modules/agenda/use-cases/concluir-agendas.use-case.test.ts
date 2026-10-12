@@ -8,6 +8,7 @@ const emDias = (d: number) => new Date(AGORA.getTime() + d * DIA);
 describe('ConcluirAgendasUseCase', () => {
   let repo: jest.Mocked<ConclusaoRepository>;
   let useCase: ConcluirAgendasUseCase;
+  let reavaliar: { execute: jest.Mock };
 
   const base: ConcluirAgendasDTO = {
     dataConcluida: AGORA.toISOString(),
@@ -26,7 +27,14 @@ describe('ConcluirAgendasUseCase', () => {
       registrar: jest.fn(),
       transplanteDasPlantas: jest.fn().mockResolvedValue({ atividadeId: null, dias: 15, plantas: [] }),
     };
-    useCase = new ConcluirAgendasUseCase(repo);
+    reavaliar = { execute: jest.fn().mockResolvedValue(undefined) };
+    useCase = new ConcluirAgendasUseCase(repo, reavaliar);
+  });
+
+  it('reavalia o grupo das plantas tocadas depois de gravar', async () => {
+    await useCase.execute(base, 'user-1');
+    expect(repo.executar).toHaveBeenCalled();
+    expect(reavaliar.execute).toHaveBeenCalledWith(['pl-1'], 'user-1');
   });
 
   afterEach(() => jest.useRealTimers());
@@ -155,7 +163,13 @@ describe('ConcluirAgendasUseCase', () => {
     });
 
     const esperado = [
-      { plantaId: 'pl-1', grupo: 'RECEM_TRANSPLANTADA', grupoAnterior: 'REFINAMENTO', grupoExpiraEm: emDias(15) },
+      {
+        plantaId: 'pl-1',
+        grupo: 'RECEM_TRANSPLANTADA',
+        grupoAnterior: 'REFINAMENTO',
+        grupoExpiraEm: emDias(15),
+        transplanteAtividadeId: 'at-transplante',
+      },
     ];
 
     it('tarefa de Transplante concluída com a opção move a planta', async () => {

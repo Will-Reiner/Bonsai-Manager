@@ -16,5 +16,5 @@ export async function planejarGruposDoTransplante(
   const transplantadas = new Set(cuidados.filter((c) => c.atividadeIds.includes(atividadeId)).map((c) => c.plantaId));
   return plantas
     .filter((p) => transplantadas.has(p.plantaId))
-    .map((p) => ({ plantaId: p.plantaId, ...aplicarTransplante(p, data, dias) }));
+    .map((p) => ({ plantaId: p.plantaId, ...aplicarTransplante(p, data, dias), transplanteAtividadeId: atividadeId }));
 }
