@@ -1,6 +1,6 @@
 import { useRef, useState, type ReactNode } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router';
-import { CalendarCheck, CalendarPlus, ClipboardList, ImagePlus, Leaf, Plus, Sprout, User } from 'lucide-react';
+import { CalendarCheck, CalendarPlus, ClipboardList, ImagePlus, Leaf, Plus, Repeat, Sprout, User } from 'lucide-react';
 import { Sheet } from './Sheet';
 import { useCare } from '@/context/CareContext';
 
@@ -74,6 +74,12 @@ export function Layout() {
             onClick={acao(() => agendarCuidado())}
           />
           <AcaoItem
+            icon={<Repeat size={22} />}
+            title="Criar rotina"
+            text="Um cuidado que se repete, em uma ou mais"
+            onClick={acao(() => agendarCuidado(undefined, { repetir: true }))}
+          />
+          <AcaoItem
             icon={<Sprout size={22} />}
             title="Adicionar planta"
             text="Nova planta na coleção"
@@ -109,7 +115,7 @@ export function Layout() {
 function AcaoItem({ icon, title, text, onClick }: { icon: ReactNode; title: string; text: string; onClick: () => void }) {
   return (
     <button onClick={onClick} className="card flex items-center gap-4 p-4 text-left transition hover:border-primary/40 active:scale-[0.99]">
-      <span className="flex size-11 items-center justify-center rounded-xl bg-primary-light text-primary">{icon}</span>
+      <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-primary-light text-primary">{icon}</span>
       <span>
         <span className="block font-semibold">{title}</span>
         <span className="block text-sm text-muted">{text}</span>
