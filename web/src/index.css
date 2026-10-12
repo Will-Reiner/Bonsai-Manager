@@ -147,6 +147,27 @@
   .aba-ativa .aba-pincel {
     clip-path: inset(0 0 0 0);
   }
+  /* Alvo de ícone selecionável: marcado = mancha de tinta com o ícone claro */
+  .mancha {
+    position: relative;
+    isolation: isolate;
+  }
+  .mancha::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background-color: var(--color-ink);
+    border-radius: 48% 52% 50% 46% / 52% 47% 53% 48%;
+    filter: url(#tinta-mancha);
+    transform: scale(0.3);
+    opacity: 0;
+    transition: transform 0.28s cubic-bezier(0.3, 1.4, 0.5, 1), opacity 0.18s;
+  }
+  .mancha-on::before {
+    transform: scale(1);
+    opacity: 1;
+  }
   /* Divisória em pincelada fina, tingida pela tinta */
   .divisoria {
     display: block;
@@ -214,7 +235,8 @@
     animation: none;
   }
   .aba-nome,
-  .aba-pincel {
+  .aba-pincel,
+  .mancha::before {
     transition: none;
   }
 }

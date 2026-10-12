@@ -1,6 +1,8 @@
+import { Icone } from '@/components/Icone';
+import { iconeDaAtividade } from '@/lib/icones';
 import { useAtividadesOrdenadas } from '@/lib/queries';
 
-/** Chips de tipo de cuidado, múltipla escolha. */
+/** Atividades em grade de ícones sumi, múltipla escolha; marcada = mancha de tinta. */
 export function AtividadeChips({
   value,
   onChange,
@@ -26,19 +28,25 @@ export function AtividadeChips({
       ) : atividades.data.length === 0 ? (
         <p className="text-sm text-muted">Nenhum tipo de cuidado cadastrado ainda (o admin cadastra em Perfil → Admin).</p>
       ) : (
-        <div className="flex flex-wrap gap-2">
-          {atividades.data.map((a) => (
-            <button
-              type="button"
-              key={a.id}
-              onClick={() => tocar(a.id)}
-              className={`chip ${value.includes(a.id) ? 'chip-active' : ''}`}
-              aria-pressed={value.includes(a.id)}
-            >
-              {a.nome}
-              {dica?.(a.id) && <span className="ml-1 text-[11px] font-normal opacity-70">· {dica(a.id)}</span>}
-            </button>
-          ))}
+        <div className="grid grid-cols-4 gap-x-1.5 gap-y-3">
+          {atividades.data.map((a) => {
+            const marcado = value.includes(a.id);
+            return (
+              <button
+                type="button"
+                key={a.id}
+                onClick={() => tocar(a.id)}
+                aria-pressed={marcado}
+                className="flex flex-col items-center gap-1 text-center text-[11px] leading-tight text-ink transition active:scale-95"
+              >
+                <span className={`mancha flex size-12 items-center justify-center ${marcado ? 'mancha-on text-bg' : ''}`}>
+                  <Icone nome={iconeDaAtividade(a.nome)} size={22} />
+                </span>
+                <span className={marcado ? 'font-semibold' : ''}>{a.nome}</span>
+                {dica?.(a.id) && <span className="text-[10px] text-muted">{dica(a.id)}</span>}
+              </button>
+            );
+          })}
         </div>
       )}
     </div>
