@@ -3,6 +3,7 @@ import { Link } from 'react-router';
 import { PartyPopper } from 'lucide-react';
 import { Button, EmptyState, ErrorState, Spinner } from '@/components/ui';
 import { AcessoRapido } from '@/components/bancada/AcessoRapido';
+import { EstacaoDoAno } from '@/components/bancada/EstacaoDoAno';
 import { CabecalhoTarefa } from '@/components/bancada/CabecalhoTarefa';
 import { FaixaGrupo } from '@/components/bancada/FaixaGrupo';
 import { FotoTarefa } from '@/components/bancada/FotoTarefa';
@@ -74,6 +75,7 @@ export function BancadaPage() {
         {!semPlantas && <BotaoPreferencias ativos={0} onClick={() => setPrefs(true)} />}
       </header>
 
+      <EstacaoDoAno />
       {!semPlantas && plantas.data && agendas.data && <AcessoRapido />}
 
       {agendas.isLoading || plantas.isLoading ? (

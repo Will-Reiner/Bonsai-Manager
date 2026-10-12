@@ -1,11 +1,12 @@
 import { toDateInput } from './format';
+import type { Estacao } from '@/types';
 
 /** Estações no hemisfério sul (Brasil) — aproximação das datas astronômicas, [mês, dia]. */
 const ESTACOES = [
-  { nome: 'da primavera', comeco: [9, 22], final: [12, 20] },
-  { nome: 'do verão', comeco: [12, 21], final: [3, 19] },
-  { nome: 'do outono', comeco: [3, 20], final: [6, 20] },
-  { nome: 'do inverno', comeco: [6, 21], final: [9, 21] },
+  { estacao: 'PRIMAVERA', nome: 'da primavera', comeco: [9, 22], final: [12, 20] },
+  { estacao: 'VERAO', nome: 'do verão', comeco: [12, 21], final: [3, 19] },
+  { estacao: 'OUTONO', nome: 'do outono', comeco: [3, 20], final: [6, 20] },
+  { estacao: 'INVERNO', nome: 'do inverno', comeco: [6, 21], final: [9, 21] },
 ] as const;
 
 const meioDia = (ano: number, mes0: number, dia: number) => new Date(ano, mes0, dia, 12);
@@ -52,4 +53,35 @@ export function atalhosDeData(hoje = new Date()): AtalhoData[] {
 export function fimDaEstacao(hoje = new Date()): Date {
   const ontem = meioDia(hoje.getFullYear(), hoje.getMonth(), hoje.getDate() - 1);
   return ESTACOES.map((e) => proximaOcorrencia(e.final, ontem)).reduce((a, b) => (b < a ? b : a));
+}
+
+export interface EstacaoAtual {
+  estacao: Estacao;
+  proxima: Estacao;
+  diasParaProxima: number;
+  /** 0 no primeiro dia, perto de 1 na véspera da próxima. */
+  progresso: number;
+}
+
+const DIA_MS = 86_400_000;
+
+/** Estação de hoje, quanto dela já passou e quantos dias faltam para a próxima. */
+export function estacaoAtual(hoje = new Date()): EstacaoAtual {
+  const base = meioDia(hoje.getFullYear(), hoje.getMonth(), hoje.getDate());
+  // Começo mais recente (inclusive hoje) de cada estação; a atual é a que começou por último
+  const ontem = meioDia(base.getFullYear(), base.getMonth(), base.getDate() - 1);
+  const inicios = ESTACOES.map((e) => {
+    const proximo = proximaOcorrencia(e.comeco, ontem);
+    return proximo <= base ? proximo : meioDia(proximo.getFullYear() - 1, proximo.getMonth(), proximo.getDate());
+  });
+  const i = inicios.reduce((m, d, j) => (d > inicios[m] ? j : m), 0);
+  const seguinte = ESTACOES[(i + 1) % ESTACOES.length];
+  const fim = proximaOcorrencia(seguinte.comeco, base);
+  const dias = (a: Date, b: Date) => Math.round((b.getTime() - a.getTime()) / DIA_MS);
+  return {
+    estacao: ESTACOES[i].estacao,
+    proxima: seguinte.estacao,
+    diasParaProxima: dias(base, fim),
+    progresso: dias(inicios[i], base) / dias(inicios[i], fim),
+  };
 }
