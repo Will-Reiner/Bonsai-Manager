@@ -77,9 +77,11 @@ Aberta pelo lápis; age sobre o card do painel atual.
 
 ### Regras puras (`server/src/modules/planta/dominio/grupo.ts`)
 
-- `aplicarTransplante(estado, data, dias, agendaId)` passa a gravar `transplanteAgendaId = agendaId`.
-- `trocaManual(grupo)` limpa `transplanteAgendaId`; o retorno automático por expiração
-  (`resolverGruposVencidos` no `prisma-planta.repository.ts`, SQL cru) também limpa.
+- `registrar`/`concluir` gravam `transplanteAgendaId` ao mover a planta: o plano leva a atividade Transplante
+  (`AtualizacaoGrupo.transplanteAtividadeId`) e o repositório acha, na transação, a tarefa concluída daquela
+  planta+atividade na data do registro (ela pode ter acabado de ser criada).
+- Troca manual de grupo (`UpdatePlantaUseCase`) e o retorno automático por expiração
+  (`resolverGruposVencidos` no `prisma-planta.repository.ts`, SQL cru) limpam `transplanteAgendaId`.
 - Nova `reavaliarRecemTransplantada(estado, transplante, dias, agora)`:
   - `estado.grupo !== RECEM_TRANSPLANTADA` ou `transplanteAgendaId` nulo → sem mudança.
   - `transplante` nulo (apagado ou não está mais `CONCLUIDO`) → `{ grupo: grupoAnterior, grupoAnterior: null,
@@ -96,7 +98,6 @@ Aberta pelo lápis; age sobre o card do painel atual.
   (mockável), implementação Prisma aceitando o cliente da transação.
 - Injetada no construtor e chamada no fim (dentro da transação quando houver) de: `RegistrarCuidadosUseCase`,
   `ConcluirAgendasUseCase`, `UpdateAgendaUseCase`, `DeleteAgendaUseCase` e dos dois use cases novos.
-  `registrar`/`concluir` passam o id da tarefa de Transplante para `aplicarTransplante`.
 
 ### Endpoints novos
 
