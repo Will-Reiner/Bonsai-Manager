@@ -170,6 +170,8 @@ model Planta {
   grupoExpiraEm    DateTime?
   /// Agendamento de Transplante que já colocou a planta no Pré-transplante (impede reentrada pelo mesmo).
   preTransplanteAgendaId String?
+  /// Transplante concluído que colocou a planta em RECEM_TRANSPLANTADA (para desfazer se ele mudar ou sumir).
+  transplanteAgendaId    String?
   createdAt        DateTime      @default(now())
   updatedAt        DateTime      @updatedAt
 

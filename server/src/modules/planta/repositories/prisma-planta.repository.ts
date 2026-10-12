@@ -19,6 +19,7 @@ const SELECT_PLANTA = {
   grupoAnterior: true,
   grupoExpiraEm: true,
   preTransplanteAgendaId: true,
+  transplanteAgendaId: true,
   createdAt: true,
   updatedAt: true,
   especie: { select: { nomeCientifico: true, nomeComum: true } },
@@ -89,6 +90,7 @@ export class PrismaPlantaRepository implements PlantaRepository {
         grupo: data.grupo,
         grupoAnterior: data.grupoAnterior,
         grupoExpiraEm: data.grupoExpiraEm,
+        transplanteAgendaId: data.transplanteAgendaId,
       },
       select: SELECT_PLANTA,
     });
@@ -141,7 +143,7 @@ export class PrismaPlantaRepository implements PlantaRepository {
     // Copia coluna→coluna (o Prisma não faz isso em updateMany)
     await this.prisma.$executeRaw`
       UPDATE "Planta"
-      SET "grupo" = "grupoAnterior", "grupoAnterior" = NULL, "grupoExpiraEm" = NULL, "updatedAt" = NOW()
+      SET "grupo" = "grupoAnterior", "grupoAnterior" = NULL, "grupoExpiraEm" = NULL, "transplanteAgendaId" = NULL, "updatedAt" = NOW()
       WHERE "usuarioId" = ${usuarioId} AND "grupoExpiraEm" <= ${agora}`;
   }
 

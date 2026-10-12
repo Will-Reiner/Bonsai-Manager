@@ -43,7 +43,7 @@ describe('UpdatePlantaUseCase', () => {
       expect(mockPlantaRepository.update).toHaveBeenCalledWith(
         'planta-123',
         'user-123',
-        expect.objectContaining({ grupo: 'EM_CRESCIMENTO', grupoAnterior: null, grupoExpiraEm: null }),
+        expect.objectContaining({ grupo: 'EM_CRESCIMENTO', grupoAnterior: null, grupoExpiraEm: null, transplanteAgendaId: null }),
       );
     });
 
@@ -57,6 +57,7 @@ describe('UpdatePlantaUseCase', () => {
       expect(dados).not.toHaveProperty('grupo');
       expect(dados).not.toHaveProperty('grupoAnterior');
       expect(dados).not.toHaveProperty('grupoExpiraEm');
+      expect(dados).not.toHaveProperty('transplanteAgendaId');
     });
 
     const plantaId = 'planta-123';

@@ -30,7 +30,7 @@ export class UpdatePlantaUseCase {
       ...resto,
       dataAquisicao: data.dataAquisicao ? new Date(data.dataAquisicao) : undefined,
       // Grupo escolhido à mão cancela o retorno automático do transplante
-      ...(grupo !== undefined ? trocaManual(grupo) : {}),
+      ...(grupo !== undefined ? { ...trocaManual(grupo), transplanteAgendaId: null } : {}),
     };
 
     // Capa atual, para remover do storage se for substituída

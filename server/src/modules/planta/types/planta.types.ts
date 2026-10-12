@@ -57,6 +57,7 @@ export interface UpdatePlantaDTO {
   grupo?: GrupoPlanta | null;
   grupoAnterior?: GrupoPlanta | null;
   grupoExpiraEm?: Date | null;
+  transplanteAgendaId?: string | null;
 }
 
 export interface PlantaWithEspecie {
@@ -75,6 +76,7 @@ export interface PlantaWithEspecie {
   grupoAnterior?: GrupoPlanta | null;
   grupoExpiraEm?: Date | null;
   preTransplanteAgendaId?: string | null;
+  transplanteAgendaId?: string | null;
   createdAt: Date;
   updatedAt: Date;
   especie: {
