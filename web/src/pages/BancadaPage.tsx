@@ -85,6 +85,7 @@ export function BancadaPage() {
       <span className="divisoria mb-3" aria-hidden />
 
       <EstacaoDoAno />
+      <span className="divisoria mb-3 w-3/4" aria-hidden />
 
       {agendas.isLoading || plantas.isLoading ? (
         <Spinner />
