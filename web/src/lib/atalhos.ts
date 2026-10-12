@@ -13,10 +13,19 @@ export interface Atalho {
   atividadeIds: string[];
   grupos: GrupoPlanta[];
   especieIds: string[];
+  /** Nome escolhido; sem ele o atalho mostra as atividades. */
+  nome?: string;
+  /** Descrição gravada no cuidado toda vez que o atalho é usado. */
+  detalhes?: string;
 }
 
 const GRUPOS = new Set<string>(GRUPOS_PLANTA.map((g) => g.value));
 const textos = (v: unknown) => (Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string') : []);
+/** Texto sem espaços nas pontas; vazio ou não texto → sem a chave. */
+const opcional = <K extends string>(chave: K, v: unknown): Partial<Record<K, string>> => {
+  const t = typeof v === 'string' ? v.trim() : '';
+  return t ? ({ [chave]: t } as Record<K, string>) : {};
+};
 
 /** Atalhos salvos; valor ausente ou quebrado → nenhum; itens sem id ou valores estranhos são descartados. */
 export function lerAtalhos(texto: string | undefined): Atalho[] {
@@ -37,9 +46,16 @@ export function lerAtalhos(texto: string | undefined): Atalho[] {
         atividadeIds: textos(o.atividadeIds),
         grupos: textos(o.grupos).filter((g): g is GrupoPlanta => GRUPOS.has(g)),
         especieIds: textos(o.especieIds),
+        ...opcional('nome', o.nome),
+        ...opcional('detalhes', o.detalhes),
       },
     ];
   });
+}
+
+/** Título do atalho: o nome escolhido, senão as atividades ("Rega + Adubação"). */
+export function tituloAtalho(atalho: Atalho, validas: Atividade[]): string {
+  return atalho.nome || validas.map((a) => a.nome).join(' + ') || 'Atividade removida';
 }
 
 /** Plantas do atalho agora: em algum dos grupos E de alguma das espécies (filtro vazio não filtra); por número. */

@@ -11,6 +11,7 @@ import {
   salvarAtalho,
   tarefasDoAtalho,
   temEspecieSemPlanta,
+  tituloAtalho,
   type Atalho,
 } from './atalhos';
 
@@ -47,6 +48,34 @@ describe('lerAtalhos', () => {
       { id: 'ok', atividadeIds: ['a', 2], grupos: ['DEBILITADA', 'INVENTADO'], especieIds: 'e1' },
     ]);
     expect(lerAtalhos(texto)).toEqual([{ id: 'ok', atividadeIds: ['a'], grupos: ['DEBILITADA'], especieIds: [] }]);
+  });
+
+  it('nome e descrição sem espaços nas pontas; vazios ou não texto somem', () => {
+    const texto = JSON.stringify([
+      atalho({ id: 'a', nome: '  Rega da manhã ', detalhes: ' Regar até escorrer\n' }),
+      { ...atalho({ id: 'b' }), nome: '   ', detalhes: 3 },
+    ]);
+    const [a, b] = lerAtalhos(texto);
+    expect(a).toEqual(atalho({ id: 'a', nome: 'Rega da manhã', detalhes: 'Regar até escorrer' }));
+    expect(b).not.toHaveProperty('nome');
+    expect(b).not.toHaveProperty('detalhes');
+  });
+});
+
+describe('tituloAtalho', () => {
+  const rega = { id: 'rega', nome: 'Rega' } as Atividade;
+  const adub = { id: 'adub', nome: 'Adubação' } as Atividade;
+
+  it('nome escolhido vence', () => {
+    expect(tituloAtalho(atalho({ nome: 'Manhã' }), [rega])).toBe('Manhã');
+  });
+
+  it('sem nome: as atividades', () => {
+    expect(tituloAtalho(atalho(), [rega, adub])).toBe('Rega + Adubação');
+  });
+
+  it('sem nome e sem atividade válida', () => {
+    expect(tituloAtalho(atalho(), [])).toBe('Atividade removida');
   });
 });
 

@@ -77,6 +77,9 @@
 - [x] vamos adicionar um botao de adicionar rotina no modal "+" onde temos varias outras coisas, onde a pessoa pode adicionar rotinas e escolher entre diversas plantas e/ou uma só
   > Feito em 2026-10-12: "Criar rotina" no "+" abre o Agendar já em Repetir (`/agendar?repetir=1`).
 
+- [x] para os atalhos rapidos, vamos fazer com que o usuario possa escolher o nome desse atalho e adicionar uma descricao/obs ao criar o atalho, onde sempre q usar o atalho, essa descricao fique salva na tarefa
+  > Feito em 2026-10-12: atalho ganhou Nome (opcional, senão mostra as atividades) e Descrição / obs., que vem preenchida na confirmação (ajustável só daquela vez) e vai como `detalhes` do cuidado e das tarefas concluídas junto.
+
 - MUDAR DINAMICA PARA CABER ADUBACAO LIQUIDA SEM INTERFERIR OUTRAS FUNCIONALIDADES
 
 # ideias para o futuro:

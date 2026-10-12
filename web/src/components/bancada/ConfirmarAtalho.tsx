@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { Button } from '@/components/ui';
+import { Button, Field } from '@/components/ui';
 import { Sheet } from '@/components/Sheet';
 import { GradePlantas } from '@/components/care/PlantasPicker';
 import { useToast } from '@/context/ToastContext';
@@ -11,13 +11,14 @@ import {
   plantasDoAtalho,
   rotuloAlvo,
   tarefasDoAtalho,
+  tituloAtalho,
   type Atalho,
 } from '@/lib/atalhos';
 import { agendasApi } from '@/lib/endpoints';
 import { keys, useAgendas, useAtividades, useMoverRecemTransplantada, useNomeEspecie, usePlantas } from '@/lib/queries';
 import { ATIVIDADE_TRANSPLANTE } from '@/types';
 
-/** Confirmação do atalho: plantas do alvo marcadas (toque desmarca), tarefas próximas a concluir e Registrar. */
+/** Confirmação do atalho: plantas do alvo marcadas (toque desmarca), descrição do atalho (ajustável só desta vez), tarefas próximas a concluir e Registrar. */
 export function ConfirmarAtalho({ atalho, onClose, onEditar }: { atalho: Atalho; onClose: () => void; onEditar: () => void }) {
   const queryClient = useQueryClient();
   const toast = useToast();
@@ -28,6 +29,7 @@ export function ConfirmarAtalho({ atalho, onClose, onEditar }: { atalho: Atalho;
   const mover = useMoverRecemTransplantada();
   const [desmarcadas, setDesmarcadas] = useState<string[]>([]);
   const [concluir, setConcluir] = useState(true);
+  const [detalhes, setDetalhes] = useState(atalho.detalhes ?? '');
   const [salvando, setSalvando] = useState(false);
 
   const alvo = plantasDoAtalho(atalho, plantas.data ?? []);
@@ -45,7 +47,7 @@ export function ConfirmarAtalho({ atalho, onClose, onEditar }: { atalho: Atalho;
       await agendasApi.registrar({
         // eslint-disable-next-line react/purity -- roda no handler (depois do toque), não no render
         data: new Date().toISOString(),
-        plantas: marcadas.map((p) => ({ plantaId: p.id, atividadeIds: ids })),
+        plantas: marcadas.map((p) => ({ plantaId: p.id, atividadeIds: ids, detalhes: detalhes.trim() || undefined })),
         concluirAgendaIds: concluirIds.length ? concluirIds : undefined,
         moverRecemTransplantada: comTransplante && mover ? true : undefined,
       });
@@ -68,7 +70,7 @@ export function ConfirmarAtalho({ atalho, onClose, onEditar }: { atalho: Atalho;
     <Sheet
       open
       onClose={onClose}
-      title={validas.map((a) => a.nome).join(' + ')}
+      title={tituloAtalho(atalho, validas)}
       footer={
         <>
           <Button block disabled={!n} loading={salvando} onClick={registrar}>
@@ -81,6 +83,7 @@ export function ConfirmarAtalho({ atalho, onClose, onEditar }: { atalho: Atalho;
       }
     >
       <p className="-mt-1 mb-3 text-sm text-muted">
+        {atalho.nome && `${validas.map((a) => a.nome).join(' + ')} · `}
         {rotuloAlvo(atalho, nomeEspecie)} · hoje
       </p>
       {alvo.length ? (
@@ -92,6 +95,11 @@ export function ConfirmarAtalho({ atalho, onClose, onEditar }: { atalho: Atalho;
       ) : (
         <p className="py-6 text-center text-sm text-muted">Nenhuma planta neste atalho agora.</p>
       )}
+      <div className="mt-4">
+        <Field label="Descrição / obs.">
+          <textarea className="input min-h-16" value={detalhes} onChange={(e) => setDetalhes(e.target.value)} placeholder="Opcional" />
+        </Field>
+      </div>
       {tarefas.length > 0 && (
         <label className="card mt-4 flex cursor-pointer items-center gap-3 p-3">
           <input

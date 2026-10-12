@@ -4,7 +4,7 @@ import { AtividadeIcone } from '@/components/AtividadeIcone';
 import { BotaoTopo } from '@/components/Preferencias';
 import { Sheet } from '@/components/Sheet';
 import { Spinner } from '@/components/ui';
-import { atividadesValidas, plantasDoAtalho, rotuloAlvo, type Atalho } from '@/lib/atalhos';
+import { atividadesValidas, plantasDoAtalho, rotuloAlvo, tituloAtalho, type Atalho } from '@/lib/atalhos';
 import { useAtalhos, useAtividades, useNomeEspecie, usePlantas, usePreferencias } from '@/lib/queries';
 import { ConfirmarAtalho } from './ConfirmarAtalho';
 import { EditarAtalho } from './EditarAtalho';
@@ -57,11 +57,11 @@ export function AcessoRapido() {
               >
                 <AtividadeIcone nome={validas[0]?.nome ?? ''} className="size-10" size={18} />
                 <span className="min-w-0 flex-1">
-                  <span className="block truncate font-semibold">
-                    {validas.length ? validas.map((v) => v.nome).join(' + ') : 'Atividade removida'}
-                  </span>
+                  <span className="block truncate font-semibold">{tituloAtalho(atalho, validas)}</span>
                   <span className="block truncate text-sm text-muted">
-                    {rotuloAlvo(atalho, nomeEspecie)} · <span className="font-medium text-primary">{n === 1 ? '1 planta' : `${n} plantas`}</span>
+                    {/* Com nome, as atividades descem para a linha de baixo */}
+                    {atalho.nome && validas.length > 0 && `${validas.map((v) => v.nome).join(' + ')} · `}
+                    {rotuloAlvo(atalho, nomeEspecie)} ·<span className="font-medium text-primary">{n === 1 ? '1 planta' : `${n} plantas`}</span>
                   </span>
                 </span>
                 <ChevronRight size={18} className="shrink-0 text-muted" />
