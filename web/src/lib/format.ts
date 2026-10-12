@@ -87,6 +87,23 @@ export function dataRelativa(iso: string): string {
   return dataCurta(iso);
 }
 
+/** Distância até a data: "Hoje", "Amanhã", "Daqui 10 dias", "1 mês atrás", "2 anos atrás". */
+export function distanciaRelativa(iso: string): string {
+  const d = diasAte(iso);
+  if (d === 0) return 'Hoje';
+  if (d === 1) return 'Amanhã';
+  if (d === -1) return 'Ontem';
+  const dias = Math.abs(d);
+  const plural = (n: number, um: string, varios: string) => `${n} ${n === 1 ? um : varios}`;
+  const quanto =
+    dias < 30
+      ? plural(dias, 'dia', 'dias')
+      : dias < 365
+        ? plural(Math.round(dias / 30), 'mês', 'meses')
+        : plural(Math.floor(dias / 365), 'ano', 'anos');
+  return d > 0 ? `Daqui ${quanto}` : `${quanto} atrás`;
+}
+
 /** Idade aproximada a partir da data de aquisição: "2 anos e 3 meses", "5 meses". */
 export function tempoDesde(iso?: string | null): string | null {
   if (!iso) return null;

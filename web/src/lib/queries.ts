@@ -4,6 +4,7 @@ import {
   atividadesApi,
   especiesApi,
   fotosApi,
+  inspiracoesApi,
   plantasApi,
   preferenciasApi,
   rotinasApi,
@@ -18,6 +19,7 @@ export const keys = {
   planta: (id: string) => ['plantas', id] as const,
   agendas: ['agendas'] as const,
   fotos: (plantaId: string) => ['fotos', plantaId] as const,
+  inspiracoes: (plantaId: string) => ['inspiracoes', plantaId] as const,
   especies: ['especies'] as const,
   especiesSugeridas: ['especies', 'sugeridas'] as const,
   atividades: ['atividades'] as const,
@@ -35,6 +37,9 @@ export const useAgendas = () => useQuery({ queryKey: keys.agendas, queryFn: agen
 export const useRotinas = () => useQuery({ queryKey: keys.rotinas, queryFn: rotinasApi.list });
 export const useFotos = (plantaId: string) =>
   useQuery({ queryKey: keys.fotos(plantaId), queryFn: () => fotosApi.listByPlanta(plantaId) });
+/** Inspirações da planta (o app usa só uma: `data?.[0]`). */
+export const useInspiracoes = (plantaId: string) =>
+  useQuery({ queryKey: keys.inspiracoes(plantaId), queryFn: () => inspiracoesApi.list(plantaId), enabled: !!plantaId });
 export const useEspecies = (enabled = true) =>
   useQuery({ queryKey: keys.especies, queryFn: especiesApi.list, staleTime: 5 * 60_000, enabled });
 export const useAtividades = () =>

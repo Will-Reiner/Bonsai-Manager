@@ -95,21 +95,29 @@ export class PrismaPlantaRepository implements PlantaRepository {
   }
 
   async delete(id: string, usuarioId: string): Promise<void> {
-    await this.prisma.planta.delete({
-      where: {
-        id,
-        usuarioId,
-      },
-    });
+    await this.prisma.$transaction([
+      // Foto avulsa (sem planta) que só servia de inspiração desta planta ficaria órfã
+      this.prisma.foto.deleteMany({ where: inspiracaoAvulsaDaPlanta(id, usuarioId) }),
+      this.prisma.planta.delete({
+        where: {
+          id,
+          usuarioId,
+        },
+      }),
+    ]);
   }
 
   async findUrlsDeMidia(id: string): Promise<string[]> {
     const planta = await this.prisma.planta.findUnique({
       where: { id },
-      select: { fotoCapaUrl: true, fotos: { select: { caminhoArquivo: true, thumbnailUrl: true } } },
+      select: { fotoCapaUrl: true, usuarioId: true, fotos: { select: { caminhoArquivo: true, thumbnailUrl: true } } },
     });
     if (!planta) return [];
-    return [planta.fotoCapaUrl, ...planta.fotos.flatMap((f) => [f.caminhoArquivo, f.thumbnailUrl])].filter(
+    const inspiracoes = await this.prisma.foto.findMany({
+      where: inspiracaoAvulsaDaPlanta(id, planta.usuarioId),
+      select: { caminhoArquivo: true, thumbnailUrl: true },
+    });
+    return [planta.fotoCapaUrl, ...[...planta.fotos, ...inspiracoes].flatMap((f) => [f.caminhoArquivo, f.thumbnailUrl])].filter(
       (u): u is string => !!u,
     );
   }
@@ -172,4 +180,13 @@ export class PrismaPlantaRepository implements PlantaRepository {
       ),
     );
   }
+}
+
+/** Fotos sem planta ligadas só a esta planta como inspiração. */
+function inspiracaoAvulsaDaPlanta(plantaId: string, usuarioId: string) {
+  return {
+    plantaId: null,
+    usuarioId,
+    inspiracoes: { some: { plantaId }, every: { plantaId } },
+  };
 }

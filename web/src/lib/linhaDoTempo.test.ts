@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { chaveDoAtual, chaveItem, linhaDoTempo, notasDoCuidado, tarefasDoDia, tituloCuidado } from './linhaDoTempo';
+import { chaveDoAtual, chaveItem, fotosPorMes, linhaDoTempo, notasDoCuidado, tarefasDoDia, tituloCuidado } from './linhaDoTempo';
 import type { Agenda, Foto } from '@/types';
 
 // Hoje fixo: 8 de outubro de 2026, meio-dia local
@@ -184,5 +184,32 @@ describe('chaveDoAtual', () => {
     const { passado, pendentes } = linhaDoTempo([p]);
     expect(chaveDoAtual([...passado, ...pendentes], p.id)).toBe(`t-${p.id}`);
     expect(chaveDoAtual([...passado, ...pendentes], 'x')).toBeNull();
+  });
+});
+
+describe('fotosPorMes', () => {
+  const quando = (a: number, m: number, d: number) => new Date(a, m, d, 10).toISOString();
+
+  it('agrupa por ano e mês, do mais novo para o mais velho', () => {
+    const fotos = [
+      foto('f4', quando(2024, 4, 3)),
+      foto('f1', quando(2026, 3, 20)),
+      foto('f3', quando(2026, 0, 5)),
+      foto('f2', quando(2026, 3, 2)),
+    ];
+    const anos = fotosPorMes(fotos);
+    expect(anos.map((a) => a.ano)).toEqual([2026, 2024]);
+    expect(anos[0].meses.map((m) => m.nome)).toEqual(['abril', 'janeiro']);
+    expect(anos[0].meses[0].fotos.map((f) => f.id)).toEqual(['f1', 'f2']);
+    expect(anos[1].meses.map((m) => [m.nome, m.fotos.map((f) => f.id)])).toEqual([['maio', ['f4']]]);
+  });
+
+  it('usa a data de captura quando existe', () => {
+    const f = foto('f1', quando(2026, 9, 1), { dataCaptura: quando(2025, 11, 31) });
+    expect(fotosPorMes([f]).map((a) => [a.ano, a.meses[0].nome])).toEqual([[2025, 'dezembro']]);
+  });
+
+  it('ignora vídeos', () => {
+    expect(fotosPorMes([foto('v', quando(2026, 0, 1), { tipo: 'VIDEO' })])).toEqual([]);
   });
 });

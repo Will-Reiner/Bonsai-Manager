@@ -7,6 +7,25 @@ export const dataDaFoto = (f: Foto) => f.dataCaptura ?? f.createdAt;
 export const fotosOrdenadas = (fotos: Foto[] = []) =>
   fotos.filter((f) => f.tipo !== 'VIDEO').sort((a, b) => dataDaFoto(b).localeCompare(dataDaFoto(a)));
 
+const fmtMes = new Intl.DateTimeFormat('pt-BR', { month: 'long' });
+
+export type FotosDoAno = { ano: number; meses: { chave: string; nome: string; fotos: Foto[] }[] };
+
+/** Só imagens, agrupadas por ano e mês (pela data da foto), do mais novo para o mais velho. */
+export function fotosPorMes(fotos: Foto[] = []): FotosDoAno[] {
+  const anos: FotosDoAno[] = [];
+  for (const f of fotosOrdenadas(fotos)) {
+    const d = new Date(dataDaFoto(f));
+    const chave = `${d.getFullYear()}-${d.getMonth()}`;
+    let ano = anos.at(-1);
+    if (ano?.ano !== d.getFullYear()) anos.push((ano = { ano: d.getFullYear(), meses: [] }));
+    let mes = ano.meses.at(-1);
+    if (mes?.chave !== chave) ano.meses.push((mes = { chave, nome: fmtMes.format(d), fotos: [] }));
+    mes.fotos.push(f);
+  }
+  return anos;
+}
+
 export type FotoMini = { id: string; caminhoArquivo: string };
 
 /** Descrição ou obs. de um cuidado do dia; `atividades` null = vale para todas as tarefas do card. */

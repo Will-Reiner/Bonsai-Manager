@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
-import { plantaCodigoNome, plantaNome, plantaRotulo, plantaTitulo, subtituloDaColecao, termoDeBusca } from './format';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { distanciaRelativa, plantaCodigoNome, plantaNome, plantaRotulo, plantaTitulo, subtituloDaColecao, termoDeBusca } from './format';
 
 const ficus = { nomeComum: 'Ficus', nomeCientifico: 'Ficus microcarpa' };
 
@@ -78,5 +78,36 @@ describe('subtituloDaColecao', () => {
 
   it('sem nome nem espécie: o título já é "Planta #N", fica só o aviso da espécie', () => {
     expect(subtituloDaColecao({ identificador: 14 })).toEqual({ especie: true, codigo: null });
+  });
+});
+
+describe('distanciaRelativa', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 9, 12, 15, 0));
+  });
+  afterEach(() => vi.useRealTimers());
+  const dia = (d: number, m = 9, a = 2026) => new Date(a, m, d, 10, 0).toISOString();
+
+  it('hoje, amanhã e ontem', () => {
+    expect(distanciaRelativa(dia(12))).toBe('Hoje');
+    expect(distanciaRelativa(dia(13))).toBe('Amanhã');
+    expect(distanciaRelativa(dia(11))).toBe('Ontem');
+  });
+
+  it('dias no futuro e no passado', () => {
+    expect(distanciaRelativa(dia(22))).toBe('Daqui 10 dias');
+    expect(distanciaRelativa(dia(2))).toBe('10 dias atrás');
+  });
+
+  it('meses a partir de 30 dias', () => {
+    expect(distanciaRelativa(dia(11, 10))).toBe('Daqui 1 mês');
+    expect(distanciaRelativa(dia(12, 8))).toBe('1 mês atrás');
+    expect(distanciaRelativa(dia(12, 6))).toBe('3 meses atrás');
+  });
+
+  it('anos a partir de 365 dias', () => {
+    expect(distanciaRelativa(dia(12, 9, 2025))).toBe('1 ano atrás');
+    expect(distanciaRelativa(dia(1, 0, 2024))).toBe('2 anos atrás');
   });
 });

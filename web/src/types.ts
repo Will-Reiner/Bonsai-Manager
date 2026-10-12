@@ -96,6 +96,13 @@ export interface Foto {
   agendaId?: string | null;
 }
 
+/** Foto de inspiração da planta (o objetivo). Uma por planta no app. */
+export interface Inspiracao {
+  plantaId: string;
+  fotoId: string;
+  foto: Foto;
+}
+
 export interface TipoRecurso {
   id: string;
   nome: string;

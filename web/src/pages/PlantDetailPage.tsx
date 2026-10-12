@@ -1,15 +1,16 @@
 import { useMemo, useState, type ReactNode } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
 import { CalendarCheck, CalendarClock, CalendarPlus, Camera, Check, ChevronRight, Clock, ImagePlus, Layers, Pencil, Plus, Repeat, ShoppingBag } from 'lucide-react';
-import { EmptyState, ErrorState, PageHeader, PlantThumb, SectionTitle, Spinner } from '@/components/ui';
+import { EmptyState, ErrorState, PageHeader, SectionTitle, Spinner } from '@/components/ui';
 import { Sheet } from '@/components/Sheet';
 import { RotinaSheet } from '@/components/care/RotinaSheet';
+import { CapaEInspiracao } from '@/components/planta/CapaEInspiracao';
 import { Roda } from '@/components/Roda';
 import { EnviosProgresso, useEnviarFotos } from '@/components/FotoUpload';
 import { useCare } from '@/context/CareContext';
 import { errorMessage } from '@/lib/api';
-import { dataCurta, dataRelativa, especieNome, grupoLabel, modoAquisicaoLabel, plantaTitulo, tempoDesde } from '@/lib/format';
-import { rotuloUltima, textoEstacoes, textoIntervalo, ultimasPorPlanta } from '@/lib/cuidados';
+import { dataCurta, dataRelativa, distanciaRelativa, especieNome, grupoLabel, modoAquisicaoLabel, plantaTitulo, tempoDesde } from '@/lib/format';
+import { textoEstacoes, textoIntervalo } from '@/lib/cuidados';
 import { chaveItem, dataDaFoto, fotosOrdenadas, linhaDoTempo, tituloCuidado, type ItemLinha } from '@/lib/linhaDoTempo';
 import { useAgendas, useFotos, usePlanta, useRotinas } from '@/lib/queries';
 import type { Foto } from '@/types';
@@ -30,12 +31,6 @@ export function PlantDetailPage() {
   const daPlanta = useMemo(() => (agendas.data ?? []).filter((a) => a.plantaId === id), [agendas.data, id]);
   const imagens = useMemo(() => fotosOrdenadas(fotos.data), [fotos.data]);
   const linha = useMemo(() => linhaDoTempo(daPlanta, fotos.data), [daPlanta, fotos.data]);
-  const ultimos = useMemo(() => {
-    const nomes = new Map(daPlanta.map((a) => [a.atividadeId, a.atividade?.nome ?? 'Cuidado']));
-    return [...(ultimasPorPlanta(daPlanta).get(id) ?? [])]
-      .map(([atividadeId, data]) => ({ atividadeId, data, nome: nomes.get(atividadeId) ?? 'Cuidado' }))
-      .sort((a, b) => b.data.localeCompare(a.data));
-  }, [daPlanta, id]);
 
   if (planta.isLoading) return <><PageHeader title="Planta" back /><Spinner /></>;
   if (planta.isError || !planta.data)
@@ -66,15 +61,7 @@ export function PlantDetailPage() {
       />
       {upload.input}
 
-      <div className="mx-auto max-w-2xl sm:px-4 sm:pt-4">
-        <button
-          onClick={() => (capa ? abrirFoto(capa) : navigate(galeria))}
-          className="block w-full overflow-hidden sm:rounded-3xl"
-          aria-label="Abrir fotos"
-        >
-          <PlantThumb url={p.fotoCapaUrl} className="aspect-[4/5] max-h-[70dvh] w-full" />
-        </button>
-      </div>
+      <CapaEInspiracao planta={p} onAbrirCapa={() => (capa ? abrirFoto(capa) : navigate(galeria))} />
 
       <div className="mx-auto max-w-2xl px-4">
         <div className="mt-4">
@@ -153,19 +140,6 @@ export function PlantDetailPage() {
             <RodaLinhaDoTempo passado={linha.passado} pendentes={linha.pendentes} abrirFoto={abrirFoto} />
           )}
         </Secao>
-
-        {ultimos.length > 0 && (
-          <Secao titulo="Últimos cuidados">
-            <div className="card divide-y divide-line">
-              {ultimos.map((u) => (
-                <div key={u.atividadeId} className="flex items-center justify-between gap-3 px-4 py-2.5 text-sm">
-                  <span className="font-medium">{u.nome}</span>
-                  <span className="text-muted">{rotuloUltima([u.data])}</span>
-                </div>
-              ))}
-            </div>
-          </Secao>
-        )}
 
         <Secao titulo="Rotinas">
           {daPlantaRotinas.length > 0 && (
@@ -277,8 +251,7 @@ function CardLinha({ item, rotulo, abrirFoto }: { item: ItemLinha; rotulo?: stri
         : fotos.length > 1
           ? `${fotos.length} fotos`
           : 'Foto';
-  const quando =
-    estado === 'feita' ? dataCurta(item.data) : estado === 'atrasada' ? `Atrasada · ${dataRelativa(item.data)}` : dataRelativa(item.data);
+  const quando = estado === 'atrasada' ? `Atrasada · ${distanciaRelativa(item.data).toLowerCase()}` : distanciaRelativa(item.data);
 
   return (
     <button

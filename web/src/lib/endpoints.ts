@@ -9,6 +9,7 @@ import type {
   Foto,
   GrupoPlanta,
   GuiaSazonal,
+  Inspiracao,
   ModoAquisicao,
   Planta,
   Preferencias,
@@ -149,6 +150,28 @@ export const fotosApi = {
   create: (body: { caminhoArquivo: string; plantaId?: string | null; titulo?: string; dataCaptura?: string | null }) =>
     data<Foto>(api.post('/fotos', { ...body, tipo: 'FOTO' })),
   remove: (id: string) => api.delete(`/fotos/${id}`),
+};
+
+export const inspiracoesApi = {
+  list: (plantaId: string) => data<Inspiracao[]>(api.get(`/inspiracoes/planta/${plantaId}`)),
+  add: (plantaId: string, fotoId: string) => api.post(`/inspiracoes/${plantaId}/${fotoId}`),
+  remove: (plantaId: string, fotoId: string) => api.delete(`/inspiracoes/${plantaId}/${fotoId}`),
+  /** Uma inspiração por planta: liga a nova e desfaz as anteriores (foto avulsa, sem planta, é apagada junto). */
+  definir: async (plantaId: string, fotoId: string, anteriores: Inspiracao[] = []) => {
+    if (!anteriores.some((i) => i.fotoId === fotoId)) await inspiracoesApi.add(plantaId, fotoId);
+    await inspiracoesApi.limpar(plantaId, anteriores.filter((i) => i.fotoId !== fotoId));
+  },
+  limpar: async (plantaId: string, inspiracoes: Inspiracao[]) => {
+    for (const i of inspiracoes) {
+      if (i.foto.plantaId) await inspiracoesApi.remove(plantaId, i.fotoId);
+      else await fotosApi.remove(i.fotoId);
+    }
+  },
+  /** Foto nova só de inspiração: sobe sem planta, para não entrar na galeria nem no histórico. */
+  enviar: async (plantaId: string, caminhoArquivo: string, anteriores: Inspiracao[] = []) => {
+    const foto = await fotosApi.create({ caminhoArquivo, plantaId: null, titulo: 'Inspiração' });
+    await inspiracoesApi.definir(plantaId, foto.id, anteriores);
+  },
 };
 
 export const midiaApi = {
