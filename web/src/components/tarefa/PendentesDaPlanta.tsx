@@ -1,7 +1,8 @@
 import { useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { useQueryClient } from '@tanstack/react-query';
-import { CalendarClock, Check, MoreHorizontal, Repeat, Settings2, SkipForward, Trash2 } from 'lucide-react';
+import { Check, MoreHorizontal, Settings2, SkipForward, Trash2 } from 'lucide-react';
+import { Icone } from '@/components/Icone';
 import { AtividadeIcone } from '@/components/AtividadeIcone';
 import { ConfirmSheet, Sheet } from '@/components/Sheet';
 import { RotinaSheet } from '@/components/care/RotinaSheet';
@@ -152,7 +153,7 @@ export function PendentesDaPlanta({ agenda, agendas }: { agenda: Agenda; agendas
                       {a.rotina && (
                         <span className="text-muted">
                           {' · '}
-                          <Repeat size={12} className="inline align-[-1px]" /> {textoIntervalo(a.rotina.intervaloDias)}
+                          <Icone nome="rotina" size={12} className="align-[-1px]" /> {textoIntervalo(a.rotina.intervaloDias)}
                           {a.rotina.pausada && ' (pausada)'}
                         </span>
                       )}
@@ -173,7 +174,7 @@ export function PendentesDaPlanta({ agenda, agendas }: { agenda: Agenda; agendas
           </Button>
           <div className={`grid gap-2 [&>button:disabled]:opacity-50 ${comMais ? 'grid-cols-3' : 'grid-cols-2'}`}>
             <Button variant="secondary" size="sm" disabled={!n} onClick={() => reagendar(selecionadas)}>
-              <CalendarClock size={16} /> Reagendar
+              <Icone nome="reagendar" size={16} /> Reagendar
             </Button>
             <Button variant="danger" size="sm" disabled={!n} onClick={() => setConfirmarExclusao(true)}>
               <Trash2 size={16} /> Excluir

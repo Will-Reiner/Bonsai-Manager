@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { SlidersHorizontal } from 'lucide-react';
+import { Icone } from '@/components/Icone';
 
 /** Botão redondo do topo da tela (lupa, preferências…); `marcado` destaca quando há algo ativo. */
 export function BotaoTopo({
@@ -31,7 +31,7 @@ export function BotaoTopo({
 export function BotaoPreferencias({ ativos, onClick }: { ativos: number; onClick: () => void }) {
   return (
     <BotaoTopo label={ativos ? `Preferências · ${ativos} filtro(s) ativo(s)` : 'Preferências'} onClick={onClick} marcado={ativos > 0}>
-      <SlidersHorizontal size={20} />
+      <Icone nome="preferencias" size={20} />
       {ativos > 0 && (
         <span className="absolute -right-1 -top-1 flex size-5 items-center justify-center rounded-full bg-primary text-[11px] font-bold text-white ring-2 ring-bg">
           {ativos}

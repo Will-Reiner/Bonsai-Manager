@@ -102,6 +102,51 @@
     -webkit-mask: var(--icone) no-repeat center / contain;
     mask: var(--icone) no-repeat center / contain;
   }
+  /* Linha superior da barra de baixo em pincelada */
+  .linha-pincel::before {
+    content: '';
+    position: absolute;
+    left: 1rem;
+    right: 1rem;
+    top: 0;
+    height: 6px;
+    background-color: var(--color-ink);
+    opacity: 0.55;
+    -webkit-mask: url('/arte/pincel-medio.webp') no-repeat center / 100% 100%;
+    mask: url('/arte/pincel-medio.webp') no-repeat center / 100% 100%;
+  }
+  /* Aba (F2): na ativa o nome some e uma pincelada vermelhão se pinta no lugar */
+  .aba-rotulo {
+    position: relative;
+    display: flex;
+    height: 12px;
+    width: 100%;
+    align-items: center;
+    justify-content: center;
+  }
+  .aba-nome {
+    transition: opacity 0.18s, transform 0.18s;
+  }
+  .aba-ativa .aba-nome {
+    opacity: 0;
+    transform: translateY(3px);
+  }
+  .aba-pincel {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 40px;
+    height: 6px;
+    transform: translate(-50%, -50%) translateX(2px);
+    background-color: var(--color-hanko);
+    -webkit-mask: url('/arte/pincel-longo.webp') no-repeat center / 100% 100%;
+    mask: url('/arte/pincel-longo.webp') no-repeat center / 100% 100%;
+    clip-path: inset(0 100% 0 0);
+    transition: clip-path 0.38s cubic-bezier(0.3, 0.7, 0.2, 1) 0.05s;
+  }
+  .aba-ativa .aba-pincel {
+    clip-path: inset(0 0 0 0);
+  }
   /* Divisória em pincelada fina, tingida pela tinta */
   .divisoria {
     display: block;
@@ -167,5 +212,9 @@
   .animate-sheet-up,
   .animate-fade-in {
     animation: none;
+  }
+  .aba-nome,
+  .aba-pincel {
+    transition: none;
   }
 }

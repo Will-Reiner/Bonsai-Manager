@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { ChevronRight, Plus, Zap } from 'lucide-react';
+import { ChevronRight, Plus } from 'lucide-react';
+import { Icone } from '@/components/Icone';
 import { AtividadeIcone } from '@/components/AtividadeIcone';
 import { BotaoTopo } from '@/components/Preferencias';
 import { Sheet } from '@/components/Sheet';
@@ -41,7 +42,7 @@ export function AcessoRapido() {
   return (
     <>
       <BotaoTopo label="Acesso rápido" onClick={() => setAberto(true)}>
-        <Zap size={20} />
+        <Icone nome="acesso-rapido" size={20} />
       </BotaoTopo>
       <Sheet open={aberto} onClose={() => setAberto(false)} title="Acesso rápido">
         {!pronto ? (

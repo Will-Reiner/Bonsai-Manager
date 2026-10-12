@@ -1,6 +1,7 @@
 import { useMemo, useState, type ReactNode } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
-import { CalendarCheck, CalendarClock, CalendarPlus, Camera, Check, ChevronRight, Clock, ImagePlus, Layers, Pencil, Plus, Repeat, ShoppingBag } from 'lucide-react';
+import { CalendarClock, Camera, Check, ChevronRight, Clock, ImagePlus, Layers, Pencil, Plus, Repeat, ShoppingBag } from 'lucide-react';
+import { Icone } from '@/components/Icone';
 import { EmptyState, ErrorState, PageHeader, SectionTitle, Spinner } from '@/components/ui';
 import { Sheet } from '@/components/Sheet';
 import { RotinaSheet } from '@/components/care/RotinaSheet';
@@ -183,8 +184,8 @@ export function PlantDetailPage() {
       <RotinaSheet rotinaId={rotinaAberta} onClose={() => setRotinaAberta(null)} />
       <Sheet open={acoes} onClose={() => setAcoes(false)} title={plantaTitulo(p)}>
         <div className="grid gap-2.5 pb-safe">
-          <AcaoItem icon={<CalendarCheck size={22} />} title="Registrar cuidado" text="Reguei, adubei, podei… agora" onClick={acao(() => registrarCuidado(p.id))} />
-          <AcaoItem icon={<CalendarPlus size={22} />} title="Agendar cuidado" text="Criar uma tarefa para depois" onClick={acao(() => agendarCuidado(p.id))} />
+          <AcaoItem icon={<Icone nome="registrar" />} title="Registrar cuidado" text="Reguei, adubei, podei… agora" onClick={acao(() => registrarCuidado(p.id))} />
+          <AcaoItem icon={<Icone nome="agendar" />} title="Agendar cuidado" text="Criar uma tarefa para depois" onClick={acao(() => agendarCuidado(p.id))} />
           <AcaoItem icon={<Camera size={22} />} title="Tirar foto" text="Abrir a câmera agora" onClick={acao(upload.tirarFoto)} />
           <AcaoItem icon={<ImagePlus size={22} />} title="Adicionar fotos da galeria" text="Uma ou várias de uma vez" onClick={acao(upload.escolher)} />
         </div>
