@@ -7,6 +7,7 @@ import { EstacaoDoAno } from '@/components/bancada/EstacaoDoAno';
 import { CabecalhoTarefa } from '@/components/bancada/CabecalhoTarefa';
 import { FaixaGrupo } from '@/components/bancada/FaixaGrupo';
 import { FotoTarefa } from '@/components/bancada/FotoTarefa';
+import { Hanko } from '@/components/Hanko';
 import { LinhaTarefa } from '@/components/bancada/LinhaTarefa';
 import { BotaoPreferencias, OpcoesChips } from '@/components/Preferencias';
 import { Sheet } from '@/components/Sheet';
@@ -59,7 +60,9 @@ export function BancadaPage() {
             {saudacao()}
             {nome && `, ${nome}`}
           </p>
-          <h1 className="text-3xl font-semibold">Bancada</h1>
+          <h1 className="flex items-center gap-2.5 text-3xl font-semibold">
+            Bancada <Hanko tamanho={26} />
+          </h1>
           {!semPlantas && agendas.data && (
             <p className="text-sm text-muted">
               {periodoAtual.label} · {pendentes.length} tarefa{pendentes.length === 1 ? '' : 's'}
@@ -79,6 +82,7 @@ export function BancadaPage() {
           </div>
         )}
       </header>
+      <span className="divisoria mb-3" aria-hidden />
 
       <EstacaoDoAno />
 

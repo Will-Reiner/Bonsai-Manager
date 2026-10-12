@@ -75,6 +75,25 @@
     border-radius: 46% 54% 50% 48% / 60% 46% 54% 40%;
     filter: url(#tinta-mancha);
   }
+  /* Carimbo 流 (marca Nagare): tamanho em --hanko-tam */
+  .hanko {
+    display: inline-flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    width: var(--hanko-tam, 34px);
+    height: var(--hanko-tam, 34px);
+    border-radius: 3px;
+    background-color: var(--color-hanko);
+    color: #f7e9e2;
+    font-family: 'Noto Serif JP', serif;
+    font-style: normal;
+    font-weight: 700;
+    font-size: calc(var(--hanko-tam, 34px) * 0.62);
+    line-height: 1;
+    transform: rotate(-4deg);
+    filter: url(#tinta-aspera);
+  }
   /* Divisória em pincelada fina, tingida pela tinta */
   .divisoria {
     display: block;
