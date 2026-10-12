@@ -45,13 +45,14 @@
 - [x] ao registrar, quando aparece a tela de tarefas agendadas que serao concluidas, hoje aparece apenas "Tarefa - #ID", faca com que apareca a foto da planta em questao tambem
   > Feito em 2026-10-12: miniatura da capa ao lado de cada tarefa.
 
-- na tela de detalhes de procedimento feito, vamos alterar algumas coisas:
+- [x] na tela de detalhes de procedimento feito, vamos alterar algumas coisas:
   - a primeira coisa q aparece é a foto de capa da planta com o id e especie, nao precisamos disso pode tirar
   - a primeira coisa passa a ser o titulo (decidir se vamos fazer um titulo para a pagina ou usar o do header da pagina) com as informacoes de concluido, data e obs e descricao
   - abaixo temos o historico, vamos retirar ele tambem
   - a baixo das informacoes vamos colocar as fotos adicionadas nesse procedimento, caso seja mais de uma fazemos a mesma dinamica de scroll lateral em roda das fotos
   - no canto superior direito, vamos colocar um botao de edicao, para o usuario poder editar as informacoes do procedimento caso ache necessario e/ou poder excluir o procedimento feito (veja que caso isso altere alguma outra funcionalidade externa como exemplo, excluiu transplante > a planta deve sair de recem transplantada, caso esteja, e ir para o grupo que ela estava antes)
   - vamos fazer com que os procedimentos do historico sejam scrolaveis... caso a pessoa esteja nos detalhes de um, se ela scrolar para o lado vai para o seguinte ou volta para o anterior
+  > Feito em 2026-10-12 (spec em docs/superpowers/specs/2026-10-12-detalhe-do-cuidado-design.md): a página mostra o card do dia (título, data, notas, fotos em roda), desliza entre os cuidados feitos da planta e o lápis abre a edição (data, tirar tarefa, descrição/obs.) e o Excluir. Excluir ou mudar o Transplante que pôs a planta em Recém transplantada a devolve ao grupo anterior — vale para qualquer caminho que grava tarefas (registrar, concluir, editar, excluir).
 
 - [x] na tela de detalhes da planta, retire a sessao "ultimos cuidados", e nos cards de procedimentos da roda de historico e cuidados, vamos fazer com que mostre ao inves do dia, mostre "daqui 10 dias" ou "1 mes atras"
   > Feito em 2026-10-12: "Últimos cuidados" saiu; os cards mostram `distanciaRelativa` (`web/src/lib/format.ts`).
