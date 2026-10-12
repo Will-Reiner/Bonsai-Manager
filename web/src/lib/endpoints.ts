@@ -103,6 +103,20 @@ export interface ConcluirResultado {
   criadas: Agenda[];
 }
 
+export interface TextoDoCuidado {
+  agendaId: string;
+  /** null apaga o texto. */
+  detalhes?: string | null;
+  observacaoFutura?: string | null;
+}
+
+export interface EditarCuidadoInput {
+  agendaIds: string[];
+  dataConcluida?: string;
+  textos?: TextoDoCuidado[];
+  removerAgendaIds?: string[];
+}
+
 export const agendasApi = {
   list: () => data<Agenda[]>(api.get('/agendas')),
   create: (body: { plantaId: string; atividadeId: string; dataAgendada: string; detalhes?: string }) =>
@@ -119,6 +133,10 @@ export const agendasApi = {
   /** "Pular esta vez" (só tarefa de rotina): a próxima conta a partir de hoje. */
   /** "Pular esta vez"; `proxima` diz se a rotina ganhou a próxima tarefa. */
   pular: (id: string) => data<{ proxima: boolean }>(api.post(`/agendas/${id}/pular`)),
+  /** Cuidado do dia (todas as tarefas do card): data, textos e tarefas tiradas, tudo ou nada. */
+  editarCuidado: (body: EditarCuidadoInput) => data<Agenda[]>(api.put('/agendas/cuidado', body)),
+  /** Apaga o cuidado do dia; as fotos ficam na galeria. */
+  excluirCuidado: (agendaIds: string[]) => api.post('/agendas/cuidado/excluir', { agendaIds }),
 };
 
 export const guiasSazonaisApi = {

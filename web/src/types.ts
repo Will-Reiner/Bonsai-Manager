@@ -65,6 +65,8 @@ export interface Planta {
   grupoAnterior?: GrupoPlanta | null;
   grupoExpiraEm?: string | null;
   preTransplanteAgendaId?: string | null;
+  /** Transplante concluído que colocou a planta em Recém transplantada. */
+  transplanteAgendaId?: string | null;
   createdAt: string;
   updatedAt: string;
   usuarioId: string;
