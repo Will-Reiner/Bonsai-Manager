@@ -72,11 +72,15 @@ export function BancadaPage() {
             </p>
           )}
         </div>
-        {!semPlantas && <BotaoPreferencias ativos={0} onClick={() => setPrefs(true)} />}
+        {!semPlantas && (
+          <div className="flex shrink-0 gap-2">
+            {plantas.data && agendas.data && <AcessoRapido />}
+            <BotaoPreferencias ativos={0} onClick={() => setPrefs(true)} />
+          </div>
+        )}
       </header>
 
       <EstacaoDoAno />
-      {!semPlantas && plantas.data && agendas.data && <AcessoRapido />}
 
       {agendas.isLoading || plantas.isLoading ? (
         <Spinner />

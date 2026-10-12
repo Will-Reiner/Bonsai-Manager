@@ -40,7 +40,7 @@
   > Feito em 2026-10-12: na página da planta a capa desliza para a inspiração (2 pontinhos embaixo); sem inspiração, o 2º slide oferece "Das fotos dela" (galeria em modo escolher) ou "Foto nova" (sobe sem planta, fora da galeria e do histórico). Tocar na inspiração troca/remove; o visualizador de fotos ganhou "Usar como inspiração". Uma por planta no app (o banco aceita várias); excluir a planta apaga a foto avulsa de inspiração.
 
 - [x] mostrar em qual estacao estamos na tela de bancada com o progresso da estacao sendo visivel com um "x dias para prox estacao". para o acesso rapido, vamos transforma-lo em um botao que ficara ao lado do botao de preferencias
-  > Estação feita em 2026-10-12: cartão na Bancada com a estação, barra de progresso e "N dias para o verão" (`estacaoAtual` em `web/src/lib/estacoes.ts`). Acesso rápido como botão: ainda não.
+  > Estação feita em 2026-10-12: cartão na Bancada com a estação, barra de progresso e "N dias para o verão" (`estacaoAtual` em `web/src/lib/estacoes.ts`). Acesso rápido virou botão (raio) ao lado de Preferências, com os atalhos numa gaveta; a faixa saiu da Bancada.
 
 - [x] ao registrar, quando aparece a tela de tarefas agendadas que serao concluidas, hoje aparece apenas "Tarefa - #ID", faca com que apareca a foto da planta em questao tambem
   > Feito em 2026-10-12: miniatura da capa ao lado de cada tarefa.
