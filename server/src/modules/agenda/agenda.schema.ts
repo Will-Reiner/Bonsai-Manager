@@ -140,3 +140,21 @@ export const registrarCuidadosSchema = z.object({
     moverRecemTransplantada: z.boolean().optional(),
   }),
 });
+
+const idTarefa = z.string().uuid({ message: 'ID da tarefa inválido.' });
+const listaDeTarefas = z.array(idTarefa).min(1, { message: 'Informe as tarefas do cuidado.' }).max(50);
+const textoDoCuidado = z.string().max(2000, { message: 'Texto muito longo.' }).nullable().optional();
+
+// Cuidado do dia: editar (data, textos, tirar tarefas) e excluir
+export const editarCuidadoSchema = z.object({
+  body: z.object({
+    agendaIds: listaDeTarefas,
+    dataConcluida: z.string().datetime({ message: 'Data inválida.' }).optional(),
+    textos: z.array(z.object({ agendaId: idTarefa, detalhes: textoDoCuidado, observacaoFutura: textoDoCuidado })).optional(),
+    removerAgendaIds: z.array(idTarefa).optional(),
+  }),
+});
+
+export const excluirCuidadoSchema = z.object({
+  body: z.object({ agendaIds: listaDeTarefas }),
+});

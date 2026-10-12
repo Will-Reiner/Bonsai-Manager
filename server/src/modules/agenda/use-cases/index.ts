@@ -6,3 +6,5 @@ export { UpdateAgendaUseCase } from './update-agenda.use-case';
 export { DeleteAgendaUseCase } from './delete-agenda.use-case';
 export { ConcluirAgendasUseCase } from './concluir-agendas.use-case';
 export { RegistrarCuidadosUseCase } from './registrar-cuidados.use-case';
+export { EditarCuidadoUseCase } from './editar-cuidado.use-case';
+export { ExcluirCuidadoUseCase } from './excluir-cuidado.use-case';

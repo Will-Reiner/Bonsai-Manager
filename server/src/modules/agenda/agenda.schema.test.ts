@@ -1,4 +1,4 @@
-import { createAgendaSchema, updateAgendaSchema } from './agenda.schema';
+import { createAgendaSchema, editarCuidadoSchema, excluirCuidadoSchema, updateAgendaSchema } from './agenda.schema';
 
 const PLANTA = '6f1c2a3b-4d5e-4f60-8a7b-9c0d1e2f3a4b';
 const ATIVIDADE = '7a2b3c4d-5e6f-4a70-8b9c-0d1e2f3a4b5c';
@@ -27,5 +27,21 @@ describe('updateAgendaSchema', () => {
     const { body } = updateAgendaSchema.parse({ body: { observacoes: 'legado', detalhes: 'ok' }, params: { id: AGENDA } });
     expect(body).not.toHaveProperty('observacoes');
     expect(body.detalhes).toBe('ok');
+  });
+});
+
+describe('editarCuidadoSchema / excluirCuidadoSchema', () => {
+  it('aceita textos nulos (apagar o texto)', () => {
+    const r = editarCuidadoSchema.safeParse({ body: { agendaIds: [AGENDA], textos: [{ agendaId: AGENDA, detalhes: null }] } });
+    expect(r.success).toBe(true);
+  });
+
+  it('exige ao menos uma tarefa', () => {
+    expect(editarCuidadoSchema.safeParse({ body: { agendaIds: [] } }).success).toBe(false);
+    expect(excluirCuidadoSchema.safeParse({ body: { agendaIds: [] } }).success).toBe(false);
+  });
+
+  it('recusa id inválido', () => {
+    expect(excluirCuidadoSchema.safeParse({ body: { agendaIds: ['x'] } }).success).toBe(false);
   });
 });

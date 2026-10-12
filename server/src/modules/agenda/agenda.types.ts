@@ -3,6 +3,7 @@ import { PendenteReconciliavel } from './dominio/reconciliar';
 import { Estacao } from './dominio/estacoes';
 import { RotinaEstado } from './dominio/rotina';
 import { EstadoGrupo } from '../planta/dominio/grupo';
+import type { Db } from '../planta/use-cases/reavaliar-grupos';
 
 export interface CreateAgendaDTO {
   plantaId: string;
@@ -173,4 +174,34 @@ export interface ConclusaoRepository {
     plantaIds: string[],
     usuarioId: string,
   ): Promise<{ atividadeId: string | null; dias: number; plantas: AtualizacaoGrupo[] }>;
+}
+
+export interface TextoDoCuidado {
+  agendaId: string;
+  /** null apaga o texto. */
+  detalhes?: string | null;
+  observacaoFutura?: string | null;
+}
+
+export interface EditarCuidadoDTO {
+  agendaIds: string[];
+  dataConcluida?: string;
+  textos?: TextoDoCuidado[];
+  removerAgendaIds?: string[];
+}
+
+export interface PlanoEdicaoCuidado {
+  manter: string[];
+  remover: string[];
+  dataConcluida?: Date;
+  textos: TextoDoCuidado[];
+}
+
+/** Cuidado do dia (tarefas concluídas da planta num dia) editado/excluído de uma vez. */
+export interface CuidadoRepository {
+  /** Tarefas do usuário dentre os ids (qualquer status). */
+  findDoUsuario(ids: string[], usuarioId: string): Promise<{ id: string; plantaId: string; status: AgendaStatus }[]>;
+  /** Aplica o plano numa transação; `depois` roda dentro dela (reavaliação do grupo). Devolve as tarefas que ficaram. */
+  editar(plano: PlanoEdicaoCuidado, depois: (db: Db) => Promise<void>): Promise<any[]>;
+  excluir(ids: string[], depois: (db: Db) => Promise<void>): Promise<void>;
 }

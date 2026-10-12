@@ -1,7 +1,8 @@
 import { Request, Response } from 'express';
 import { ZodError } from 'zod';
 import { parsePagination, buildPaginatedResponse } from '../../utils/pagination';
-import { createAgendaSchema, createAgendasLoteSchema, updateAgendaSchema, agendaIdSchema, concluirAgendasSchema, registrarCuidadosSchema } from './agenda.schema';
+import { createAgendaSchema, createAgendasLoteSchema, updateAgendaSchema, agendaIdSchema, concluirAgendasSchema, registrarCuidadosSchema, editarCuidadoSchema, excluirCuidadoSchema } from './agenda.schema';
+import { PrismaCuidadoRepository } from './repositories/prisma-cuidado.repository';
 import { PrismaAgendaRepository } from './repositories/prisma-agenda.repository';
 import { PrismaConclusaoRepository } from './repositories/prisma-conclusao.repository';
 import {
@@ -13,8 +14,10 @@ import {
   DeleteAgendaUseCase,
   ConcluirAgendasUseCase,
   RegistrarCuidadosUseCase,
+  EditarCuidadoUseCase,
+  ExcluirCuidadoUseCase,
 } from './use-cases';
-import { CreateAgendaDTO, CreateAgendasLoteDTO, UpdateAgendaDTO, ConcluirAgendasDTO, RegistrarCuidadosDTO } from './agenda.types';
+import { CreateAgendaDTO, CreateAgendasLoteDTO, UpdateAgendaDTO, ConcluirAgendasDTO, RegistrarCuidadosDTO, EditarCuidadoDTO } from './agenda.types';
 import '../../middlewares/auth.middleware'; // Import para garantir que a extensão da interface Request seja reconhecida
 import { mensagemDoErro } from '../../utils/errors';
 import { ReavaliarGruposUseCase } from '../planta/use-cases/reavaliar-grupos';
@@ -29,6 +32,8 @@ export class AgendaController {
   private deleteAgendaUseCase: DeleteAgendaUseCase;
   private concluirAgendasUseCase: ConcluirAgendasUseCase;
   private registrarCuidadosUseCase: RegistrarCuidadosUseCase;
+  private editarCuidadoUseCase: EditarCuidadoUseCase;
+  private excluirCuidadoUseCase: ExcluirCuidadoUseCase;
 
   constructor() {
     const reavaliar = new ReavaliarGruposUseCase(new PrismaReavaliacaoRepository());
@@ -42,6 +47,9 @@ export class AgendaController {
     const conclusaoRepository = new PrismaConclusaoRepository();
     this.concluirAgendasUseCase = new ConcluirAgendasUseCase(conclusaoRepository, reavaliar);
     this.registrarCuidadosUseCase = new RegistrarCuidadosUseCase(conclusaoRepository, reavaliar);
+    const cuidadoRepository = new PrismaCuidadoRepository();
+    this.editarCuidadoUseCase = new EditarCuidadoUseCase(cuidadoRepository, reavaliar);
+    this.excluirCuidadoUseCase = new ExcluirCuidadoUseCase(cuidadoRepository, reavaliar);
   }
 
   async getById(req: Request, res: Response) {
@@ -192,6 +200,50 @@ export class AgendaController {
       }
       
       res.status(500).json({ error: 'Erro interno do servidor' });
+    }
+  }
+
+  /** Mensagens dos use cases de cuidado que viram 400 (as de acesso viram 404). */
+  private static readonly ERROS_CUIDADO = [
+    'O cuidado precisa estar concluído.',
+    'As tarefas precisam ser da mesma planta.',
+    'Para tirar todas as tarefas, exclua o cuidado.',
+    'Tarefa fora do cuidado.',
+    'A data não pode ser no futuro.',
+  ];
+
+  private erroDoCuidado(res: Response, error: unknown, acao: string) {
+    if (error instanceof ZodError) return res.status(400).json({ error: mensagemDoErro(error) });
+    if (error instanceof Error && error.message === 'Acesso negado ou agendamento não encontrado.') {
+      return res.status(404).json({ error: error.message });
+    }
+    if (error instanceof Error && AgendaController.ERROS_CUIDADO.includes(error.message)) {
+      return res.status(400).json({ error: error.message });
+    }
+    console.error('Erro ao ' + acao + ' cuidado:', error);
+    return res.status(500).json({ error: 'Erro interno do servidor' });
+  }
+
+  async editarCuidado(req: Request, res: Response) {
+    try {
+      const { body } = editarCuidadoSchema.parse({ body: req.body });
+      const usuarioId = req.user?.userId;
+      if (!usuarioId) return res.status(401).json({ error: 'Usuário não autenticado' });
+      res.json(await this.editarCuidadoUseCase.execute(body as EditarCuidadoDTO, usuarioId));
+    } catch (error) {
+      return this.erroDoCuidado(res, error, 'editar');
+    }
+  }
+
+  async excluirCuidado(req: Request, res: Response) {
+    try {
+      const { body } = excluirCuidadoSchema.parse({ body: req.body });
+      const usuarioId = req.user?.userId;
+      if (!usuarioId) return res.status(401).json({ error: 'Usuário não autenticado' });
+      await this.excluirCuidadoUseCase.execute(body.agendaIds, usuarioId);
+      res.status(204).send();
+    } catch (error) {
+      return this.erroDoCuidado(res, error, 'excluir');
     }
   }
 

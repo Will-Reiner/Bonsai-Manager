@@ -14,6 +14,8 @@ agendaRouter.get('/', agendaController.getAllByUser.bind(agendaController));
 agendaRouter.post('/lote', agendaController.createLote.bind(agendaController));
 agendaRouter.post('/concluir', agendaController.concluir.bind(agendaController));
 agendaRouter.post('/registrar', agendaController.registrar.bind(agendaController));
+agendaRouter.put('/cuidado', agendaController.editarCuidado.bind(agendaController));
+agendaRouter.post('/cuidado/excluir', agendaController.excluirCuidado.bind(agendaController));
 agendaRouter.post('/:id/pular', rotinaController.pular);
 agendaRouter.get('/:id', agendaController.getById.bind(agendaController));
 agendaRouter.put('/:id', agendaController.update.bind(agendaController));
