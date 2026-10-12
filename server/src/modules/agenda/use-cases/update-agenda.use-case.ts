@@ -1,22 +1,28 @@
 import { UpdateAgendaDTO, AgendaRepository } from '../agenda.types';
+import { ReavaliadorDeGrupos } from '../../planta/use-cases/reavaliar-grupos';
 
 export class UpdateAgendaUseCase {
-  constructor(private agendaRepository: AgendaRepository) {}
+  constructor(
+    private agendaRepository: AgendaRepository,
+    private reavaliar: ReavaliadorDeGrupos,
+  ) {}
 
   async execute(id: string, data: UpdateAgendaDTO, usuarioId: string) {
-    const exists = await this.agendaRepository.existsByIdAndUser(id, usuarioId);
-    
-    if (!exists) {
+    const agenda = await this.agendaRepository.findByIdAndUser(id, usuarioId);
+
+    if (!agenda) {
       throw new Error('Acesso negado ou agendamento não encontrado.');
     }
 
-    // Se há recursos utilizados, usa o método com transação
-    if (data.recursosUtilizados && data.recursosUtilizados.length > 0) {
-      return await this.agendaRepository.updateWithResources(id, data);
-    }
-
-    // Caso contrário, usa o método simples
+    // Se há recursos utilizados, usa o método com transação; senão o método simples
     const { recursosUtilizados, ...updateData } = data;
-    return await this.agendaRepository.update(id, updateData);
+    const atualizada =
+      recursosUtilizados && recursosUtilizados.length > 0
+        ? await this.agendaRepository.updateWithResources(id, data)
+        : await this.agendaRepository.update(id, updateData);
+
+    // Mudar data/status de um Transplante pode mexer no grupo da planta
+    await this.reavaliar.execute([agenda.plantaId], usuarioId);
+    return atualizada;
   }
 }

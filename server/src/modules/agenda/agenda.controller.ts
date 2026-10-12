@@ -37,8 +37,8 @@ export class AgendaController {
     this.createAgendasLoteUseCase = new CreateAgendasLoteUseCase(agendaRepository);
     this.getAllAgendasByUserUseCase = new GetAllAgendasByUserUseCase(agendaRepository);
     this.getAgendaByIdUseCase = new GetAgendaByIdUseCase(agendaRepository);
-    this.updateAgendaUseCase = new UpdateAgendaUseCase(agendaRepository);
-    this.deleteAgendaUseCase = new DeleteAgendaUseCase(agendaRepository);
+    this.updateAgendaUseCase = new UpdateAgendaUseCase(agendaRepository, reavaliar);
+    this.deleteAgendaUseCase = new DeleteAgendaUseCase(agendaRepository, reavaliar);
     const conclusaoRepository = new PrismaConclusaoRepository();
     this.concluirAgendasUseCase = new ConcluirAgendasUseCase(conclusaoRepository, reavaliar);
     this.registrarCuidadosUseCase = new RegistrarCuidadosUseCase(conclusaoRepository, reavaliar);
