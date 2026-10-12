@@ -9,7 +9,7 @@ description: Use when the Nagare/Bonsai Manager app needs a new icon, illustrati
 A IA de imagem gera **peças paradas e isoladas**; o código transforma em asset e o app anima. Nunca peça à IA a tela pronta, GIF, ou o estado ativo de um ícone.
 
 ## Fluxo
-1. **Escrever o prompt** a partir dos blocos de `prompts.md` (estilo + tipo de peça). Sempre anexar a imagem-mestra `test-assets/estilo/Gemini_Generated_Image_kb1grckb1grckb1g.jpeg`.
+1. **Escrever o prompt** a partir dos blocos de `prompts.md` (estilo + tipo de peça). Sempre anexar a imagem-mestra `test-assets/estilo/imagem_mestra.jpeg`.
 2. **Gerar no Gemini** (usuário, fora do Claude). Fundo **branco puro**, peças **separadas** com espaço entre elas. Salvar em `test-assets/estilo/<tipo>/` (fora do git).
 3. **Olhar a imagem** (Read) antes de processar: leitura errada do tema (ex.: bordo que parece cannabis, frasco que parece mamadeira) → ajustar prompt e gerar de novo.
 4. **Processar** com `python .claude/skills/criando-assets-sumi/scripts/processar.py <comando>` (`--help` em cada um). Requer `pip install pillow numpy scipy vtracer`.

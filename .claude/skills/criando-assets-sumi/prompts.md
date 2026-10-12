@@ -1,7 +1,7 @@
 # Prompts (Gemini / Nano Banana / Veo)
 
 Sempre em inglês (o modelo segue melhor detalhes técnicos), sempre com a **imagem-mestra anexada**:
-`test-assets/estilo/Gemini_Generated_Image_kb1grckb1grckb1g.jpeg`.
+`test-assets/estilo/imagem_mestra.jpeg`.
 Para ajustar, converse no mesmo chat ("make the strokes drier", "fewer details") — ele edita mantendo o resto.
 
 ## 1. Bloco de estilo (ilustrações, texturas, pinceladas)

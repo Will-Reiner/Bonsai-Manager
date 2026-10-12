@@ -55,7 +55,7 @@
 
 ```bash
 P=.claude/skills/criando-assets-sumi/scripts/processar.py
-M=test-assets/estilo/Gemini_Generated_Image_kb1grckb1grckb1g.jpeg
+M=test-assets/estilo/imagem_mestra.jpeg
 T=$(mktemp -d)
 mkdir -p web/public/arte web/public/icones
 python -W ignore $P papel test-assets/estilo/papel/papel.jpeg --saida web/public/arte/papel.jpg
@@ -63,7 +63,7 @@ python -W ignore $P tinta $M --caixa 150,160,1900,340 --minimo 150 --max 600 --s
 python -W ignore $P tinta $M --caixa 150,410,1250,600 --minimo 150 --max 600 --saida $T --prefixo medio
 python -W ignore $P tinta $M --caixa 155,680,790,860 --minimo 150 --max 400 --saida $T --prefixo curto
 python -W ignore $P tinta $M --caixa 690,990,1170,1460 --minimo 150 --max 320 --saida $T --prefixo enso
-python -W ignore $P tinta test-assets/estilo/pinceladas/pinceladas.jpeg --minimo 150 --max 600 --saida $T --prefixo fino
+python -W ignore $P tinta test-assets/estilo/pinceladas/pinceladas.jpeg --max 600 --saida $T --prefixo fino  # sem --minimo: as finas têm < 150px de altura
 ls $T
 ```
 
