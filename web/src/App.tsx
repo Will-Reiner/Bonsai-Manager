@@ -1,5 +1,6 @@
 import { useEffect, type ReactNode } from 'react';
 import { BrowserRouter, Navigate, Route, Routes, useLocation, useNavigationType } from 'react-router';
+import { FiltrosTinta } from '@/components/FiltrosTinta';
 import { Layout } from '@/components/Layout';
 import { useAuth } from '@/context/AuthContext';
 import { CareProvider } from '@/context/CareContext';
@@ -49,6 +50,7 @@ function RolarParaTopo() {
 export default function App() {
   return (
     <BrowserRouter>
+      <FiltrosTinta />
       <RolarParaTopo />
       <Routes>
         <Route path="/login" element={<Publica><LoginPage /></Publica>} />

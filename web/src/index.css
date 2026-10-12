@@ -1,13 +1,15 @@
 @import 'tailwindcss';
 
-/* Tema Argila clara — docs/superpowers/specs/2026-10-07-tema-argila-bancada-design.md */
+/* Tema Argila + Caderno de sumi — docs/superpowers/specs/2026-10-07-tema-argila-bancada-design.md e 2026-10-12-identidade-nagare-sumi-design.md */
 @theme {
   --color-primary: #493628;
   --color-primary-dark: #34261c;
   --color-primary-light: #e9ddd5;
   --color-accent: #ab886d;
   --color-accent-light: #d6c0b3;
-  --color-bg: #efecec;
+  --color-bg: #f4f0e8;
+  --color-vazio: #ebe4d9;
+  --color-hanko: #b23a2a;
   --color-card: #f8f6f5;
   --color-ink: #2b1f17;
   --color-muted: #7a6a5e;
@@ -29,6 +31,8 @@
   }
   body {
     @apply bg-bg text-ink font-sans antialiased;
+    background-image: url('/arte/papel.jpg');
+    background-size: 384px;
   }
   h1,
   h2,
@@ -58,8 +62,27 @@
   .chip {
     @apply inline-flex items-center gap-1.5 rounded-full border border-line bg-card px-3.5 py-2 text-sm font-medium text-ink transition active:scale-95;
   }
+  /* Selecionado = mancha de tinta (o filtro fica só no ::before, nunca no texto) */
   .chip-active {
-    @apply border-primary bg-primary text-white;
+    @apply relative isolate border-transparent bg-transparent text-bg;
+  }
+  .chip-active::before {
+    content: '';
+    position: absolute;
+    inset: -1px;
+    z-index: -1;
+    background-color: var(--color-ink);
+    border-radius: 46% 54% 50% 48% / 60% 46% 54% 40%;
+    filter: url(#tinta-mancha);
+  }
+  /* Divisória em pincelada fina, tingida pela tinta */
+  .divisoria {
+    display: block;
+    height: 9px;
+    background-color: var(--color-ink);
+    opacity: 0.7;
+    -webkit-mask: url('/arte/pincel-fino.webp') no-repeat center / 100% 100%;
+    mask: url('/arte/pincel-fino.webp') no-repeat center / 100% 100%;
   }
   /* Faixa de grupo: cor cheia à esquerda, dissolvendo no fundo (cor em --faixa, via estiloFaixa) */
   .faixa {
