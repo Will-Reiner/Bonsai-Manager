@@ -131,7 +131,7 @@ Aberta pelo lápis; age sobre o card do painel atual.
 ## Testes
 
 - Server (jest, repositórios mockados): `reavaliarRecemTransplantada` (fora do grupo, sem id, transplante
-  sumiu, data mudou, expirou, igual); `aplicarTransplante` com id; `EditarCuidadoUseCase` e
+  sumiu, data mudou, expirou, igual); registrar/concluir com `transplanteAtividadeId`; `EditarCuidadoUseCase` e
   `ExcluirCuidadoUseCase` (validações, chamadas ao repositório, reavaliação); `registrar`/`concluir`/
   `update`/`delete` chamam a reavaliação; schemas novos.
 - Web (vitest): `src/lib/cuidadoDoDia.ts`.
