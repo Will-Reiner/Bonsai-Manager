@@ -252,6 +252,41 @@
 .animate-fade-in {
   animation: fade-in 0.18s ease-out;
 }
+/* Ensō se desenhando: máscara cônica de 0 a 360° a partir de 180deg (base do círculo = abertura do traço),
+   para começar e terminar exatamente na falha do pincel. Spinner em loop; celebração uma vez. */
+@property --enso {
+  syntax: '<angle>';
+  inherits: false;
+  initial-value: 0deg;
+}
+@keyframes enso-desenha {
+  from {
+    --enso: 0deg;
+  }
+  to {
+    --enso: 360deg;
+  }
+}
+@keyframes enso-icone-aparece {
+  to {
+    opacity: 1;
+  }
+}
+.enso-carregando,
+.enso-uma-vez {
+  -webkit-mask: conic-gradient(from 180deg, #000 var(--enso), transparent 0);
+  mask: conic-gradient(from 180deg, #000 var(--enso), transparent 0);
+}
+.enso-carregando {
+  animation: enso-desenha 1.1s cubic-bezier(0.45, 0.05, 0.25, 1) infinite;
+}
+.enso-uma-vez {
+  animation: enso-desenha 1.1s cubic-bezier(0.45, 0.05, 0.25, 1) forwards;
+}
+.enso-icone {
+  opacity: 0;
+  animation: enso-icone-aparece 0.4s 0.8s forwards;
+}
 @media (prefers-reduced-motion: reduce) {
   .animate-sheet-up,
   .animate-fade-in {
@@ -261,5 +296,15 @@
   .aba-pincel,
   .mancha::before {
     transition: none;
+  }
+  .enso-carregando,
+  .enso-uma-vez {
+    animation: none;
+    -webkit-mask: none;
+    mask: none;
+  }
+  .enso-icone {
+    animation: none;
+    opacity: 1;
   }
 }

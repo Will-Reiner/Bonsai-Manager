@@ -55,8 +55,8 @@ export function Field({ label, hint, children }: { label: string; hint?: string;
 
 export function Spinner({ label = 'Carregando…' }: { label?: string }) {
   return (
-    <div className="flex items-center justify-center gap-2 py-16 text-muted" role="status">
-      <Loader2 size={20} className="animate-spin" />
+    <div className="flex flex-col items-center justify-center gap-2 py-14 text-muted" role="status">
+      <img src="/arte/enso.webp" alt="" className="enso-carregando size-12 opacity-80" />
       <span className="text-sm">{label}</span>
     </div>
   );
