@@ -1,13 +1,13 @@
 import type { Estacao } from '@/types';
 
 /** Ícones próprios (traço sumi) servidos de web/public/icones — ver a skill criando-assets-sumi. */
-// "comunidade" é provisório (traço simples) até sair o definitivo pela skill criando-assets-sumi.
 export const ICONES = [
   'bancada', 'colecao', 'comunidade', 'perfil', 'mais',
   'registrar', 'agendar', 'rotina', 'adicionar-planta', 'fotos-lote', 'preferencias', 'acesso-rapido', 'historico', 'reagendar',
   'rega', 'adubacao', 'adubacao-liquida', 'poda', 'poda-estrutural', 'desfolha', 'aramacao', 'desaramacao',
   'transplante', 'fitossanitario', 'revisao', 'generico', 'atrasada',
   'primavera', 'verao', 'outono', 'inverno',
+  'curtir', 'comentar', 'salvar', 'notificacoes', 'seguir',
 ] as const;
 
 export type NomeIcone = (typeof ICONES)[number];
