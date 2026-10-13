@@ -190,6 +190,19 @@
     background-color: var(--color-accent);
     clip-path: inset(0 calc(100% - var(--pct)) 0 0);
   }
+  /* Partículas sazonais (ParticulasEstacao): mexidas só por transform */
+  .particulas-estacao .particula,
+  .particulas-estacao .particula-neve {
+    position: absolute;
+    left: 0;
+    top: 0;
+    will-change: transform;
+    user-select: none;
+  }
+  .particulas-estacao .particula-neve {
+    border-radius: 50%;
+    background: radial-gradient(circle, var(--color-muted) 0 45%, transparent 72%);
+  }
   /* Erro de conexão: tronco e galho por baixo, árvore inteira por cima; aos 0,9s a inteira some e o galho cai */
   .arvore-erro {
     position: relative;

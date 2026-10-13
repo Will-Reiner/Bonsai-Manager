@@ -9,7 +9,10 @@ import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/context/ToastContext';
 import { errorMessage } from '@/lib/api';
 import { authApi, preferenciasApi } from '@/lib/endpoints';
+import { useEscolha } from '@/lib/escolhas';
 import { CHAVE_FAVORITAS, lerFavoritas } from '@/lib/favoritas';
+import { useMenosMovimento } from '@/lib/movimento';
+import { CHAVE_ANIMACOES, OPCOES_ANIMACOES } from '@/lib/particulas';
 import { keys, useAgendas, useAtividades, usePreferencias, useTransplanteDias, usePreTransplanteDias, usePlantas, useMoverRecemTransplantada } from '@/lib/queries';
 import { uploadImage } from '@/lib/upload';
 
@@ -195,6 +198,33 @@ function AtividadesFavoritas() {
   );
 }
 
+/** "Animações sazonais": guardada no aparelho, como o aberto/fechado de Mais opções. */
+function AnimacoesSazonaisPreferencia() {
+  const [valor, setValor] = useEscolha(CHAVE_ANIMACOES, 'sim', OPCOES_ANIMACOES);
+  const menosMovimento = useMenosMovimento();
+
+  return (
+    <section className="card mt-4 p-4">
+      <label className="flex cursor-pointer items-center gap-3">
+        <input
+          type="checkbox"
+          className="size-5 shrink-0 accent-primary"
+          checked={valor === 'sim'}
+          onChange={(e) => setValor(e.target.checked ? 'sim' : 'nao')}
+        />
+        <span className="min-w-0 flex-1">
+          <span className="block font-semibold">Animações sazonais</span>
+          <span className="block text-xs text-muted">
+            {menosMovimento
+              ? 'O aparelho pediu menos movimento, então as animações ficam paradas.'
+              : 'Pétalas, folhas ou neve caindo ao fundo, conforme a estação.'}
+          </span>
+        </span>
+      </label>
+    </section>
+  );
+}
+
 export function PreferenciasPage() {
   return (
     <div className="pb-10">
@@ -205,6 +235,8 @@ export function PreferenciasPage() {
         <TempoPreTransplante />
         <TempoTransplante />
         <MoverTransplantePreferencia />
+        <h2 className="mt-8 text-xs font-semibold uppercase tracking-wider text-muted">Neste aparelho</h2>
+        <AnimacoesSazonaisPreferencia />
       </div>
     </div>
   );

@@ -1,6 +1,7 @@
 import { useRef, useState, type ReactNode } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router';
 import { Icone } from '@/components/Icone';
+import { ParticulasEstacao } from '@/components/ParticulasEstacao';
 import type { NomeIcone } from '@/lib/icones';
 import { Sheet } from './Sheet';
 import { useCare } from '@/context/CareContext';
@@ -26,6 +27,7 @@ export function Layout() {
 
   return (
     <div className="min-h-dvh pb-24">
+      <ParticulasEstacao />
       <Outlet />
 
       <nav className="linha-pincel fixed inset-x-0 bottom-0 z-40 bg-bg/90 pb-safe backdrop-blur">
