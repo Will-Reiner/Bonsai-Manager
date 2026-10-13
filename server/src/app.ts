@@ -15,6 +15,7 @@ import { atividadeRecursoRouter } from './modules/atividade-recurso/atividade-re
 import ferramentaRouter from './modules/ferramenta/ferramenta.router';
 import { guiaSazonalRouter } from './modules/guia-sazonal/guia-sazonal.router';
 import amizadeRouter from './modules/amizade/amizade.router';
+import comunidadeRouter from './modules/comunidade/comunidade.router';
 import { inspiracaoRouter } from './modules/inspiracao/inspiracao.router';
 import atividadeFerramentaSugeridaRouter from './modules/atividade-ferramenta-sugerida/atividade-ferramenta-sugerida.router';
 import { guiaDeTecnicasRouter } from './modules/guia-de-tecnicas/guia-de-tecnicas.router';
@@ -74,6 +75,7 @@ app.use('/api/atividades-recursos', atividadeRecursoRouter);
 app.use('/api/ferramentas', ferramentaRouter);
 app.use('/api/guias-sazonais', guiaSazonalRouter);
 app.use('/api/amizades', amizadeRouter);
+app.use('/api/comunidade', comunidadeRouter);
 app.use('/api/inspiracoes', inspiracaoRouter);
 app.use('/api/atividades-ferramentas-sugeridas', atividadeFerramentaSugeridaRouter);
 app.use('/api/guias-de-tecnicas', guiaDeTecnicasRouter);
