@@ -1,7 +1,10 @@
-import { AmizadeRepository, FollowDTO, AmizadeResponseDTO } from '../amizade.types';
+import { AmizadeRepository, AvisoDeSeguir, FollowDTO, AmizadeResponseDTO } from '../amizade.types';
 
 export class FollowUserUseCase {
-  constructor(private amizadeRepository: AmizadeRepository) {}
+  constructor(
+    private amizadeRepository: AmizadeRepository,
+    private aviso: AvisoDeSeguir,
+  ) {}
 
   async execute(data: FollowDTO): Promise<AmizadeResponseDTO> {
     const { seguidorId, seguidoId } = data;
@@ -26,6 +29,8 @@ export class FollowUserUseCase {
       throw new Error('Já está a seguir este utilizador.');
     }
 
-    return await this.amizadeRepository.follow(data);
+    const amizade = await this.amizadeRepository.follow(data);
+    await this.aviso.seguiu(seguidorId, seguidoId);
+    return amizade;
   }
 }

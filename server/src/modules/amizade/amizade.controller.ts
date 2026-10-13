@@ -3,11 +3,13 @@ import { prisma } from '../../lib/prisma';
 import { amizadeSchema } from './amizade.schema';
 import { PrismaAmizadeRepository } from './repositories/prisma-amizade.repository';
 import { FollowUserUseCase, UnfollowUserUseCase, GetSeguidoresUseCase, GetSeguindoUseCase } from './use-cases';
+import { criarAvisoDeSeguir } from '../comunidade/avisos';
 
 export class AmizadeController {
   private amizadeRepository = new PrismaAmizadeRepository();
-  private followUserUseCase = new FollowUserUseCase(this.amizadeRepository);
-  private unfollowUserUseCase = new UnfollowUserUseCase(this.amizadeRepository);
+  private aviso = criarAvisoDeSeguir();
+  private followUserUseCase = new FollowUserUseCase(this.amizadeRepository, this.aviso);
+  private unfollowUserUseCase = new UnfollowUserUseCase(this.amizadeRepository, this.aviso);
   private getSeguidoresUseCase = new GetSeguidoresUseCase(this.amizadeRepository);
   private getSeguindoUseCase = new GetSeguindoUseCase(this.amizadeRepository);
 

@@ -23,3 +23,10 @@ export interface AmizadeRepository {
   findSeguidores(userId: string): Promise<any[]>;
   findSeguindo(userId: string): Promise<any[]>;
 }
+
+
+/** Quem cuida dos avisos da Comunidade quando alguém segue / deixa de seguir. */
+export interface AvisoDeSeguir {
+  seguiu(seguidorId: string, seguidoId: string): Promise<void>;
+  deixouDeSeguir(seguidorId: string, seguidoId: string): Promise<void>;
+}

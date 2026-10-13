@@ -4,6 +4,7 @@ import { AmizadeRepository, UnfollowDTO } from '../amizade.types';
 describe('UnfollowUserUseCase', () => {
   let unfollowUserUseCase: UnfollowUserUseCase;
   let mockAmizadeRepository: jest.Mocked<AmizadeRepository>;
+  let aviso: { seguiu: jest.Mock; deixouDeSeguir: jest.Mock };
 
   beforeEach(() => {
     mockAmizadeRepository = {
@@ -15,7 +16,8 @@ describe('UnfollowUserUseCase', () => {
       findSeguindo: jest.fn(),
       findSeguidores: jest.fn(),
     };
-    unfollowUserUseCase = new UnfollowUserUseCase(mockAmizadeRepository);
+    aviso = { seguiu: jest.fn(), deixouDeSeguir: jest.fn().mockResolvedValue(undefined) };
+    unfollowUserUseCase = new UnfollowUserUseCase(mockAmizadeRepository, aviso);
   });
 
   it('should unfollow a user successfully', async () => {
@@ -47,5 +49,14 @@ describe('UnfollowUserUseCase', () => {
 
     expect(mockAmizadeRepository.existsAmizade).toHaveBeenCalledWith('user1', 'user2');
     expect(mockAmizadeRepository.unfollow).not.toHaveBeenCalled();
+  });
+
+  it('tira o aviso de "começou a seguir"', async () => {
+    mockAmizadeRepository.existsAmizade.mockResolvedValue(true);
+    mockAmizadeRepository.unfollow.mockResolvedValue(undefined);
+
+    await unfollowUserUseCase.execute({ seguidorId: 'user1', seguidoId: 'user2' });
+
+    expect(aviso.deixouDeSeguir).toHaveBeenCalledWith('user1', 'user2');
   });
 });

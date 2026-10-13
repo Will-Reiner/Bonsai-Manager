@@ -4,6 +4,7 @@ import { AmizadeRepository, FollowDTO } from '../amizade.types';
 describe('FollowUserUseCase', () => {
   let followUserUseCase: FollowUserUseCase;
   let mockAmizadeRepository: jest.Mocked<AmizadeRepository>;
+  let aviso: { seguiu: jest.Mock; deixouDeSeguir: jest.Mock };
 
   beforeEach(() => {
     mockAmizadeRepository = {
@@ -15,7 +16,8 @@ describe('FollowUserUseCase', () => {
       findSeguindo: jest.fn(),
       findSeguidores: jest.fn(),
     };
-    followUserUseCase = new FollowUserUseCase(mockAmizadeRepository);
+    aviso = { seguiu: jest.fn().mockResolvedValue(undefined), deixouDeSeguir: jest.fn() };
+    followUserUseCase = new FollowUserUseCase(mockAmizadeRepository, aviso);
   });
 
   it('should follow a user successfully', async () => {
@@ -98,5 +100,21 @@ describe('FollowUserUseCase', () => {
 
     await expect(followUserUseCase.execute({ seguidorId: 'user1', seguidoId: 'user2' })).rejects.toThrow('Este perfil é privado.');
     expect(mockAmizadeRepository.follow).not.toHaveBeenCalled();
+  });
+
+  it('avisa quem foi seguido', async () => {
+    mockAmizadeRepository.perfilPublico.mockResolvedValue(true);
+    mockAmizadeRepository.existsAmizade.mockResolvedValue(false);
+    mockAmizadeRepository.follow.mockResolvedValue({ seguidorId: 'user1', seguidoId: 'user2' });
+
+    await followUserUseCase.execute({ seguidorId: 'user1', seguidoId: 'user2' });
+
+    expect(aviso.seguiu).toHaveBeenCalledWith('user1', 'user2');
+  });
+
+  it('não avisa quando não chegou a seguir (perfil privado)', async () => {
+    mockAmizadeRepository.perfilPublico.mockResolvedValue(false);
+    await expect(followUserUseCase.execute({ seguidorId: 'user1', seguidoId: 'user2' })).rejects.toThrow();
+    expect(aviso.seguiu).not.toHaveBeenCalled();
   });
 });

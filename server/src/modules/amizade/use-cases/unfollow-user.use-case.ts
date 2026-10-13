@@ -1,7 +1,10 @@
-import { AmizadeRepository, UnfollowDTO } from '../amizade.types';
+import { AmizadeRepository, AvisoDeSeguir, UnfollowDTO } from '../amizade.types';
 
 export class UnfollowUserUseCase {
-  constructor(private amizadeRepository: AmizadeRepository) {}
+  constructor(
+    private amizadeRepository: AmizadeRepository,
+    private aviso: AvisoDeSeguir,
+  ) {}
 
   async execute(data: UnfollowDTO): Promise<void> {
     const { seguidorId, seguidoId } = data;
@@ -13,5 +16,6 @@ export class UnfollowUserUseCase {
     }
 
     await this.amizadeRepository.unfollow(data);
+    await this.aviso.deixouDeSeguir(seguidorId, seguidoId);
   }
 }
