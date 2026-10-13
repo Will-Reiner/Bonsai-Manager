@@ -136,7 +136,8 @@ export function CollectionPage() {
         <ErrorState text={errorMessage(plantas.error)} onRetry={() => plantas.refetch()} />
       ) : plantas.data?.length === 0 ? (
         <EmptyState
-          title="Sua coleção está vazia"
+          ilustracao="/arte/colecao-vazia.webp"
+          title="Um vaso esperando"
           text="Adicione sua primeira planta para começar a registrar cuidados e fotos."
           action={
             <Link to="/plantas/nova">

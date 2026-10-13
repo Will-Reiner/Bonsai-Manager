@@ -136,7 +136,7 @@ export function PlantDetailPage() {
           {agendas.isLoading ? (
             <Spinner />
           ) : linha.pendentes.length + linha.passado.length === 0 ? (
-            <EmptyState title="Nada por aqui ainda" text="Cuidados agendados, concluídos e fotos aparecem nesta linha do tempo." />
+            <EmptyState ilustracao="/arte/planta-sem-tarefas.webp" title="Nada por aqui ainda" text="Cuidados agendados, concluídos e fotos aparecem nesta linha do tempo." />
           ) : (
             <RodaLinhaDoTempo passado={linha.passado} pendentes={linha.pendentes} abrirFoto={abrirFoto} />
           )}

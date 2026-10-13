@@ -1,6 +1,5 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router';
-import { PartyPopper } from 'lucide-react';
 import { Button, EmptyState, ErrorState, Spinner } from '@/components/ui';
 import { AcessoRapido } from '@/components/bancada/AcessoRapido';
 import { EstacaoDoAno } from '@/components/bancada/EstacaoDoAno';
@@ -93,6 +92,7 @@ export function BancadaPage() {
         <ErrorState text={errorMessage(agendas.error ?? plantas.error)} onRetry={() => { if (agendas.isError) agendas.refetch(); if (plantas.isError) plantas.refetch(); }} />
       ) : semPlantas ? (
         <EmptyState
+          ilustracao="/arte/colecao-vazia.webp"
           title="Adicione sua primeira planta"
           text="Cadastre seus bonsais para acompanhar tarefas, cuidados e fotos."
           action={
@@ -102,13 +102,11 @@ export function BancadaPage() {
           }
         />
       ) : blocos.length === 0 ? (
-        <div className="mt-4 flex items-center gap-3 border-y border-line py-4">
-          <PartyPopper className="shrink-0 text-primary" size={24} />
-          <p className="text-sm">
-            <span className="font-semibold">Nada pendente {periodoAtual.vazio}.</span>{' '}
-            <span className="text-muted">Aproveite para observar suas plantas 🌿</span>
-          </p>
-        </div>
+        <EmptyState
+          ilustracao="/arte/bancada-vazia.webp"
+          title={`Nada pendente ${periodoAtual.vazio}`}
+          text="Tudo em dia. Bom momento para só olhar suas plantas."
+        />
       ) : (
         <div className="space-y-4 pb-6">
           {blocos.map((b) => (

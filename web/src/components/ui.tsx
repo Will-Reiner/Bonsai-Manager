@@ -77,21 +77,28 @@ export function ErrorState({ text, onRetry }: { text: string; onRetry?: () => vo
 
 export function EmptyState({
   icon,
+  ilustracao,
   title,
   text,
   action,
 }: {
   icon?: ReactNode;
+  /** URL de uma ilustração de /arte (substitui o círculo do ícone). */
+  ilustracao?: string;
   title: string;
   text?: string;
   action?: ReactNode;
 }) {
   return (
-    <div className="flex flex-col items-center px-6 py-14 text-center">
-      <div className="mb-4 flex size-14 items-center justify-center rounded-full bg-primary-light text-primary">
-        {icon ?? <Sprout size={26} />}
-      </div>
-      <h3 className="text-lg font-semibold">{title}</h3>
+    <div className={`flex flex-col items-center px-6 text-center ${ilustracao ? 'py-8' : 'py-14'}`}>
+      {ilustracao ? (
+        <img src={ilustracao} alt="" loading="lazy" className="mb-3 max-h-[38vh] w-auto max-w-[260px] object-contain" />
+      ) : (
+        <div className="mb-4 flex size-14 items-center justify-center rounded-full bg-primary-light text-primary">
+          {icon ?? <Sprout size={26} />}
+        </div>
+      )}
+      <h3 className={ilustracao ? 'text-xl font-semibold italic' : 'text-lg font-semibold'}>{title}</h3>
       {text && <p className="mt-1.5 max-w-xs text-sm text-muted">{text}</p>}
       {action && <div className="mt-5">{action}</div>}
     </div>
