@@ -1,4 +1,4 @@
-import { buscaSchema, feedSchema, idSchema } from './comunidade.schema';
+import { buscaSchema, comentarSchema, feedSchema, idSchema, paginaSchema } from './comunidade.schema';
 
 const UUID = '6f1b4a8e-2f7a-4c1e-9a4b-3d2e1f0a9b8c';
 
@@ -20,5 +20,18 @@ describe('schemas da Comunidade', () => {
   });
   it('busca: termo vazio por padrão', () => {
     expect(buscaSchema.parse({ query: {} }).query.q).toBe('');
+  });
+});
+
+describe('comentário', () => {
+  it('limpa espaços e aceita até 1000', () => {
+    expect(comentarSchema.parse({ params: { id: UUID }, body: { texto: '  Lindo!  ' } }).body.texto).toBe('Lindo!');
+    expect(() => comentarSchema.parse({ params: { id: UUID }, body: { texto: 'x'.repeat(1001) } })).toThrow();
+  });
+  it('vazio ou só espaços é recusado', () => {
+    expect(() => comentarSchema.parse({ params: { id: UUID }, body: { texto: '   ' } })).toThrow('Escreva o comentário.');
+  });
+  it('página só com cursor', () => {
+    expect(paginaSchema.parse({ query: {} }).query).toEqual({});
   });
 });
