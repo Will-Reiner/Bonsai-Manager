@@ -60,6 +60,13 @@ export interface LeituraComunidadeRepository {
   planta(id: string): Promise<PlantaLida | null>;
   /** Perfis públicos pelo nome público (sem diferenciar maiúsculas). */
   buscar(q: string, limite: number): Promise<UsuarioLido[]>;
+  /** Contagens de curtidas/comentários e se o leitor curtiu/salvou, por post. */
+  interacoes(postIds: string[], viewerId: string): Promise<Map<string, InteracoesDoPost>>;
+  comentarios(postId: string, cursor: string | undefined, limite: number): Promise<ComentarioLido[]>;
+  /** Meus salvos de posts ainda visíveis, do mais recente salvo. */
+  salvos(viewerId: string, cursor: string | undefined, limite: number): Promise<{ createdAt: Date; post: PostLido }[]>;
+  notificacoes(usuarioId: string, cursor: string | undefined, limite: number): Promise<NotificacaoLida[]>;
+  naoLidas(usuarioId: string): Promise<number>;
 }
 
 
@@ -93,4 +100,29 @@ export interface NotificacaoDTO {
   ator: AutorDTO;
   post: { id: string; plantaId: string; capa: string | null } | null;
   comentario: string | null;
+}
+
+
+export interface NovaNotificacao {
+  usuarioId: string;
+  atorId: string;
+  tipo: TipoNotificacao;
+  postId?: string;
+  comentarioId?: string;
+}
+
+export interface InteracoesRepository {
+  /** true = curtida nova (não existia). */
+  curtir(usuarioId: string, postId: string): Promise<boolean>;
+  /** true = havia curtida e foi removida. */
+  descurtir(usuarioId: string, postId: string): Promise<boolean>;
+  totalCurtidas(postId: string): Promise<number>;
+  salvar(usuarioId: string, postId: string): Promise<void>;
+  dessalvar(usuarioId: string, postId: string): Promise<void>;
+  comentar(usuarioId: string, postId: string, texto: string): Promise<ComentarioLido>;
+  comentario(id: string): Promise<{ id: string; usuarioId: string; post: { usuarioId: string } } | null>;
+  apagarComentario(id: string): Promise<void>;
+  notificar(n: NovaNotificacao): Promise<void>;
+  removerNotificacoes(n: Omit<NovaNotificacao, 'comentarioId'>): Promise<void>;
+  marcarLidas(usuarioId: string): Promise<void>;
 }

@@ -9,7 +9,8 @@ export const LIMITE_PAGINA = 20;
 export async function carregarPosts(repo: LeituraComunidadeRepository, posts: PostLido[], viewerId: string): Promise<PostDTO[]> {
   if (!posts.length) return [];
   const { fotos, cuidados } = await repo.conteudo([...new Set(posts.map((p) => p.plantaId))], janelaDosPosts(posts));
-  return montarPosts(posts, conteudoPorDia(fotos, cuidados), viewerId);
+  const interacoes = await repo.interacoes(posts.map((p) => p.id), viewerId);
+  return montarPosts(posts, conteudoPorDia(fotos, cuidados), viewerId, interacoes);
 }
 
 /** Página cheia → há mais: o cursor é a posição (data da ordem + id) do último lido, mesmo que ele tenha saído da montagem. */

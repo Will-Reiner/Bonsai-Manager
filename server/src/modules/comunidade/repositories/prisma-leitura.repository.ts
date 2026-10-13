@@ -1,5 +1,6 @@
 import { prisma } from '../../../lib/prisma';
-import { filtroDaBusca, filtroDoFeed, filtroDosPostsDoUsuario, filtrosDaJanela } from './filtros';
+import { filtroDaBusca, filtroDasNotificacoes, filtroDoFeed, filtroDosComentarios, filtroDosPostsDoUsuario, filtroDosSalvos, filtrosDaJanela } from './filtros';
+import { interacoesPorPost } from '../dominio/interacoes';
 import type { AbaFeed, Janela, LeituraComunidadeRepository } from '../comunidade.types';
 
 const usuarioLido = { id: true, nome: true, nomePublico: true, fotoPerfilUrl: true, perfilPublico: true, historicoPublico: true } as const;
@@ -11,6 +12,7 @@ const plantaLida = {
   plantaPublica: true,
   especie: { select: { nomeComum: true, nomeCientifico: true } },
 } as const;
+const comentarioLido = { id: true, texto: true, createdAt: true, usuario: { select: usuarioLido }, post: { select: { usuarioId: true } } } as const;
 const postLido = { id: true, dia: true, publicadoEm: true, plantaId: true, usuario: { select: usuarioLido }, planta: { select: plantaLida } } as const;
 
 export class PrismaLeituraComunidadeRepository implements LeituraComunidadeRepository {
@@ -108,5 +110,59 @@ export class PrismaLeituraComunidadeRepository implements LeituraComunidadeRepos
       take: limite,
       select: usuarioLido,
     });
+  }
+
+  // Em sequência (não Promise.all), como o resto do projeto
+  async interacoes(postIds: string[], viewerId: string) {
+    const onde = { postId: { in: postIds } };
+    const curtidas = await prisma.curtida.groupBy({ by: ['postId'], where: onde, _count: { _all: true } });
+    const comentarios = await prisma.comentario.groupBy({ by: ['postId'], where: onde, _count: { _all: true } });
+    const minhasCurtidas = await prisma.curtida.findMany({ where: { ...onde, usuarioId: viewerId }, select: { postId: true } });
+    const meusSalvos = await prisma.salvo.findMany({ where: { ...onde, usuarioId: viewerId }, select: { postId: true } });
+    return interacoesPorPost(postIds, {
+      curtidas: curtidas.map((c) => ({ postId: c.postId, total: c._count._all })),
+      comentarios: comentarios.map((c) => ({ postId: c.postId, total: c._count._all })),
+      curtiu: minhasCurtidas.map((c) => c.postId),
+      salvou: meusSalvos.map((s) => s.postId),
+    });
+  }
+
+  comentarios(postId: string, cursor: string | undefined, limite: number) {
+    return prisma.comentario.findMany({
+      where: filtroDosComentarios(postId, cursor),
+      orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+      take: limite,
+      select: comentarioLido,
+    });
+  }
+
+  salvos(viewerId: string, cursor: string | undefined, limite: number) {
+    return prisma.salvo.findMany({
+      where: filtroDosSalvos(viewerId, cursor),
+      orderBy: [{ createdAt: 'desc' }, { postId: 'desc' }],
+      take: limite,
+      select: { createdAt: true, post: { select: postLido } },
+    });
+  }
+
+  notificacoes(usuarioId: string, cursor: string | undefined, limite: number) {
+    return prisma.notificacao.findMany({
+      where: filtroDasNotificacoes(usuarioId, cursor),
+      orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+      take: limite,
+      select: {
+        id: true,
+        tipo: true,
+        lida: true,
+        createdAt: true,
+        ator: { select: usuarioLido },
+        post: { select: { id: true, planta: { select: { id: true, fotoCapaUrl: true } } } },
+        comentario: { select: { texto: true } },
+      },
+    });
+  }
+
+  naoLidas(usuarioId: string) {
+    return prisma.notificacao.count({ where: { usuarioId, lida: false } });
   }
 }

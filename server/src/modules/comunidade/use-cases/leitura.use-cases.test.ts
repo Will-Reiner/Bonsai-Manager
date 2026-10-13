@@ -44,6 +44,11 @@ beforeEach(() => {
     plantasPublicas: jest.fn().mockResolvedValue([]),
     planta: jest.fn().mockResolvedValue(null),
     buscar: jest.fn().mockResolvedValue([]),
+    interacoes: jest.fn().mockResolvedValue(new Map()),
+    comentarios: jest.fn().mockResolvedValue([]),
+    salvos: jest.fn().mockResolvedValue([]),
+    notificacoes: jest.fn().mockResolvedValue([]),
+    naoLidas: jest.fn().mockResolvedValue(0),
   };
 });
 
@@ -56,6 +61,7 @@ describe('ObterFeedUseCase', () => {
     expect(repo.conteudo).toHaveBeenCalledWith(['p1'], { de: new Date('2026-10-09T00:00:00Z'), ate: new Date('2026-10-12T00:00:00Z') });
     expect(r.itens).toHaveLength(1);
     expect(r.proximoCursor).toBeNull();
+    expect(repo.interacoes).toHaveBeenCalledWith(['post1'], 'b');
   });
   it('página cheia devolve o cursor do último lido', async () => {
     repo.feed.mockResolvedValue(Array.from({ length: 20 }, (_, i) => post({ id: `post${i}` })));
@@ -73,8 +79,10 @@ describe('ObterFeedUseCase', () => {
 describe('ObterPostUseCase', () => {
   it('post visível volta montado', async () => {
     repo.post.mockResolvedValue(post());
+    repo.interacoes.mockResolvedValue(new Map([['post1', { curtidas: 2, comentarios: 1, curtiu: true, salvou: false }]]));
     const dto = await new ObterPostUseCase(repo).execute('b', 'post1');
     expect(dto.id).toBe('post1');
+    expect(dto).toMatchObject({ curtidas: 2, curtiu: true, totalComentarios: 1 });
     expect(dto.cuidados).toEqual([{ atividade: 'Poda', detalhes: 'nota', observacao: null }]);
   });
   it('perfil que ficou privado: 404 para os outros, visível para o dono', async () => {
