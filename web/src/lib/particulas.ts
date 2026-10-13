@@ -9,19 +9,20 @@ export const PARAMETROS = {
   fatorVelocidade: 0.55,
   variacaoVelocidade: 0.3,
   vento: 0.4,
-  opacidade: 0.38,
   /** Maior passo de tempo por quadro: a aba voltando do fundo não dá salto. */
   dtMaximo: 0.05,
 } as const;
 
 /** Neve é ponto de tinta, menor que folha e pétala. */
-const ESCALA_NEVE = 0.4;
+const ESCALA_NEVE = 0.55;
 
 export type TipoParticula = 'petala' | 'folha' | 'neve';
 
 export interface CenaEstacao {
   tipo: TipoParticula;
   sprites: readonly string[];
+  /** Folhas (tinta escura) ficam em 38%, o valor aprovado; pétalas e neve são claras e precisam de mais. */
+  opacidade: number;
 }
 
 const sprites = (prefixo: string, total: number) =>
@@ -29,10 +30,10 @@ const sprites = (prefixo: string, total: number) =>
 
 // Objetos fixos: a mesma estação devolve sempre a mesma cena (dependência estável de efeito)
 const CENAS: Record<Estacao, CenaEstacao | null> = {
-  PRIMAVERA: { tipo: 'petala', sprites: sprites('petala', 15) },
+  PRIMAVERA: { tipo: 'petala', sprites: sprites('petala', 15), opacidade: 0.65 },
   VERAO: null,
-  OUTONO: { tipo: 'folha', sprites: sprites('folha', 10) },
-  INVERNO: { tipo: 'neve', sprites: [] },
+  OUTONO: { tipo: 'folha', sprites: sprites('folha', 10), opacidade: 0.38 },
+  INVERNO: { tipo: 'neve', sprites: [], opacidade: 0.6 },
 };
 
 /** O que cai em cada estação; verão = nada. */

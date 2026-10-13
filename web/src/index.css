@@ -214,7 +214,7 @@
   }
   .particulas-estacao .particula-neve {
     border-radius: 50%;
-    background: radial-gradient(circle, var(--color-muted) 0 45%, transparent 72%);
+    background: radial-gradient(circle, var(--color-muted) 0 60%, transparent 78%);
   }
   /* Erro de conexão: tronco e galho por baixo, árvore inteira por cima; aos 0,9s a inteira some e o galho cai */
   .arvore-erro {

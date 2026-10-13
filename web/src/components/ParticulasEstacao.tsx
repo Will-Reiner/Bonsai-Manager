@@ -125,7 +125,7 @@ export function ParticulasEstacao() {
       ref={camada}
       aria-hidden="true"
       className="particulas-estacao pointer-events-none fixed inset-0 -z-10 overflow-hidden"
-      style={{ opacity: PARAMETROS.opacidade }}
+      style={{ opacity: cena?.opacidade }}
     />
   );
 }

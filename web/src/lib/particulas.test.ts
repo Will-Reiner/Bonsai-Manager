@@ -35,7 +35,15 @@ describe('cenaDaEstacao', () => {
   });
 
   it('inverno = neve feita em código (sem imagens)', () => {
-    expect(cenaDaEstacao('INVERNO')).toEqual({ tipo: 'neve', sprites: [] });
+    const neve = cenaDaEstacao('INVERNO')!;
+    expect(neve.tipo).toBe('neve');
+    expect(neve.sprites).toEqual([]);
+  });
+
+  it('opacidade por cena: folhas (tinta escura) 38%, pétalas e neve (claras) mais fortes', () => {
+    expect(cenaDaEstacao('OUTONO')!.opacidade).toBe(0.38);
+    expect(cenaDaEstacao('PRIMAVERA')!.opacidade).toBe(0.65);
+    expect(cenaDaEstacao('INVERNO')!.opacidade).toBe(0.6);
   });
 
   it('verão não tem partículas', () => {
