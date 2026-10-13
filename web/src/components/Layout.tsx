@@ -5,6 +5,7 @@ import { ParticulasEstacao } from '@/components/ParticulasEstacao';
 import type { NomeIcone } from '@/lib/icones';
 import { Sheet } from './Sheet';
 import { useCare } from '@/context/CareContext';
+import { useNaoLidas } from '@/lib/queries';
 
 const tabs: ({ to: string; label: string; icone: NomeIcone; end?: boolean } | null)[] = [
   { to: '/', label: 'Bancada', icone: 'bancada', end: true },
@@ -20,6 +21,7 @@ export function Layout() {
   const navigate = useNavigate();
   const fotosRef = useRef<HTMLInputElement>(null);
   const { registrarCuidado, agendarCuidado } = useCare();
+  const naoLidas = useNaoLidas().data?.total ?? 0;
 
   const acao = (fn: () => void) => () => {
     setAcoes(false);
@@ -39,7 +41,7 @@ export function Layout() {
                 key={tab.to}
                 to={tab.to}
                 end={tab.end}
-                aria-label={tab.label}
+                aria-label={tab.to === '/comunidade' && naoLidas > 0 ? `${tab.label} · novidades` : tab.label}
                 className={({ isActive }) =>
                   `flex flex-col items-center gap-1 text-[11px] font-medium ${isActive ? 'aba-ativa text-ink' : 'text-muted'}`
                 }
@@ -49,6 +51,9 @@ export function Layout() {
                     <span className="relative size-[26px]">
                       <Icone nome={tab.icone} size={26} className={`absolute inset-0 transition-opacity duration-200 ${isActive ? 'opacity-0' : ''}`} />
                       <Icone nome={tab.icone} ativo size={26} className={`absolute inset-0 transition-opacity duration-200 ${isActive ? '' : 'opacity-0'}`} />
+                      {tab.to === '/comunidade' && naoLidas > 0 && (
+                        <span aria-hidden className="absolute -right-1 -top-0.5 size-2.5 rounded-full bg-hanko ring-2 ring-bg" />
+                      )}
                     </span>
                     <span className="aba-rotulo">
                       <span className="aba-nome">{tab.label}</span>

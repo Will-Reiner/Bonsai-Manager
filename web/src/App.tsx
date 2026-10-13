@@ -12,6 +12,8 @@ import { ComunidadePage } from '@/pages/comunidade/ComunidadePage';
 import { BuscarPerfisPage } from '@/pages/comunidade/BuscarPerfisPage';
 import { PerfilPublicoPage } from '@/pages/comunidade/PerfilPublicoPage';
 import { PlantaPublicaPage } from '@/pages/comunidade/PlantaPublicaPage';
+import { NotificacoesPage } from '@/pages/comunidade/NotificacoesPage';
+import { SalvosPage } from '@/pages/comunidade/SalvosPage';
 import { PostPage } from '@/pages/comunidade/PostPage';
 import { AddPlantPage } from '@/pages/AddPlantPage';
 import { PlantDetailPage } from '@/pages/PlantDetailPage';
@@ -84,6 +86,8 @@ export default function App() {
         <Route path="/comunidade/post/:id" element={<Privada><PostPage /></Privada>} />
         <Route path="/comunidade/u/:id" element={<Privada><PerfilPublicoPage /></Privada>} />
         <Route path="/comunidade/planta/:id" element={<Privada><PlantaPublicaPage /></Privada>} />
+        <Route path="/comunidade/salvos" element={<Privada><SalvosPage /></Privada>} />
+        <Route path="/comunidade/notificacoes" element={<Privada><NotificacoesPage /></Privada>} />
         <Route path="/perfil/editar" element={<Privada><EditProfilePage /></Privada>} />
         <Route path="/perfil/preferencias" element={<Privada><PreferenciasPage /></Privada>} />
         <Route path="/admin" element={<Privada><SoAdmin><AdminPage /></SoAdmin></Privada>} />

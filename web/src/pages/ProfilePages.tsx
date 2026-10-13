@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { ChevronRight, LogOut, MapPin, Pencil, ShieldCheck, SlidersHorizontal, Users } from 'lucide-react';
 import { Avatar, Button, Field, Opcao, PageHeader } from '@/components/ui';
+import { Icone } from '@/components/Icone';
 import { ComunidadePreferencias } from '@/components/comunidade/ComunidadePreferencias';
 import { PhotoInput } from '@/components/PhotoInput';
 import { MoverTransplanteCampo } from '@/components/fluxo/MoverTransplanteCampo';
@@ -277,6 +278,7 @@ export function ProfilePage() {
 
       <nav className="card mt-4 divide-y divide-line overflow-hidden">
         {perfil?.id && <MenuItem to={`/comunidade/u/${perfil.id}`} icon={<Users size={20} />} label="Ver meu perfil público" />}
+        <MenuItem to="/comunidade/salvos" icon={<Icone nome="salvar" size={20} />} label="Salvos" />
         <MenuItem to="/perfil/preferencias" icon={<SlidersHorizontal size={20} />} label="Preferências" />
         <MenuItem to="/perfil/editar" icon={<Pencil size={20} />} label="Editar perfil" />
         {isAdmin && <MenuItem to="/admin" icon={<ShieldCheck size={20} />} label="Painel admin" />}

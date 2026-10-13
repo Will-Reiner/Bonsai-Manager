@@ -5,17 +5,19 @@ import { capaDoPost } from '@/lib/comunidade';
 import { usePostsDoPerfil } from '@/lib/queries';
 import { useFimDaLista } from '@/lib/useFimDaLista';
 
-/** Grade de todos os posts de um perfil (inclui o acervo fora do feed), com rolagem infinita. */
-export function GradePosts({ usuarioId }: { usuarioId: string }) {
-  const lista = usePostsDoPerfil(usuarioId);
-  const posts = useMemo(() => lista.data?.pages.flatMap((p) => p.itens) ?? [], [lista.data]);
+/** Mesmo tipo de `usePostsDoPerfil` e `useSalvos` (lista infinita de posts). */
+type Consulta = ReturnType<typeof usePostsDoPerfil>;
+
+/** Grade de posts com rolagem infinita (perfil, salvos). */
+export function GradeDePosts({ consulta, vazio }: { consulta: Consulta; vazio: { title: string; text?: string } }) {
+  const posts = useMemo(() => consulta.data?.pages.flatMap((p) => p.itens) ?? [], [consulta.data]);
   const fim = useFimDaLista(() => {
-    if (lista.hasNextPage && !lista.isFetchingNextPage) void lista.fetchNextPage();
+    if (consulta.hasNextPage && !consulta.isFetchingNextPage) void consulta.fetchNextPage();
   }, [posts.length]);
 
-  if (lista.isLoading) return <Spinner />;
-  if (lista.isError) return <ErrorState text="Não foi possível carregar os posts." erro={lista.error} onRetry={() => lista.refetch()} />;
-  if (!posts.length) return <EmptyState title="Ainda sem posts" text="Os dias com foto das plantas da comunidade aparecem aqui." />;
+  if (consulta.isLoading) return <Spinner />;
+  if (consulta.isError) return <ErrorState text="Não foi possível carregar os posts." erro={consulta.error} onRetry={() => consulta.refetch()} />;
+  if (!posts.length) return <EmptyState title={vazio.title} text={vazio.text} />;
   return (
     <>
       <div className="grid grid-cols-3 gap-1">
@@ -26,7 +28,17 @@ export function GradePosts({ usuarioId }: { usuarioId: string }) {
         ))}
       </div>
       <div ref={fim} />
-      {lista.isFetchingNextPage && <Spinner />}
+      {consulta.isFetchingNextPage && <Spinner />}
     </>
+  );
+}
+
+/** Todos os posts de um perfil (inclui o acervo fora do feed). */
+export function GradePosts({ usuarioId }: { usuarioId: string }) {
+  return (
+    <GradeDePosts
+      consulta={usePostsDoPerfil(usuarioId)}
+      vazio={{ title: 'Ainda sem posts', text: 'Os dias com foto das plantas da comunidade aparecem aqui.' }}
+    />
   );
 }

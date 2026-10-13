@@ -4,13 +4,14 @@ import { useQuery } from '@tanstack/react-query';
 import { Search } from 'lucide-react';
 import { BotaoTopo, OpcoesChips } from '@/components/Preferencias';
 import { Button, EmptyState, ErrorState, Spinner } from '@/components/ui';
+import { Icone } from '@/components/Icone';
 import { CardGrupo } from '@/components/comunidade/CardGrupo';
 import { CardPost } from '@/components/comunidade/CardPost';
 import { FaixaPerfilPrivado } from '@/components/comunidade/FaixaPerfilPrivado';
 import { useAuth } from '@/context/AuthContext';
 import { agruparFeed, chaveDoPost } from '@/lib/comunidade';
 import { authApi } from '@/lib/endpoints';
-import { keys, useFeed } from '@/lib/queries';
+import { keys, useFeed, useNaoLidas } from '@/lib/queries';
 import { useFimDaLista } from '@/lib/useFimDaLista';
 import type { AbaFeed } from '@/types';
 
@@ -23,6 +24,7 @@ const ABAS: { value: AbaFeed; label: string }[] = [
 export function ComunidadePage() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const naoLidas = useNaoLidas().data?.total ?? 0;
   const me = useQuery({ queryKey: keys.me, queryFn: authApi.me });
   const [params, setParams] = useSearchParams();
   const escolhida = params.get('aba') as AbaFeed | null;
@@ -34,6 +36,18 @@ export function ComunidadePage() {
     <div className="mx-auto max-w-2xl px-4 pt-safe">
       <header className="flex items-center gap-2 pb-2 pt-6">
         <h1 className="flex-1 text-3xl font-semibold">Comunidade</h1>
+        <BotaoTopo
+          label={naoLidas ? `Notificações · ${naoLidas} nova(s)` : 'Notificações'}
+          onClick={() => navigate('/comunidade/notificacoes')}
+          marcado={naoLidas > 0}
+        >
+          <Icone nome="notificacoes" size={20} />
+          {naoLidas > 0 && (
+            <span className="absolute -right-1 -top-1 flex size-5 items-center justify-center rounded-full bg-hanko text-[11px] font-bold text-white ring-2 ring-bg">
+              {naoLidas > 9 ? '9+' : naoLidas}
+            </span>
+          )}
+        </BotaoTopo>
         <BotaoTopo label="Buscar pessoas" onClick={() => navigate('/comunidade/buscar')}>
           <Search size={20} />
         </BotaoTopo>
