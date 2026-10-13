@@ -8,7 +8,7 @@ import { CardGrupo } from '@/components/comunidade/CardGrupo';
 import { CardPost } from '@/components/comunidade/CardPost';
 import { FaixaPerfilPrivado } from '@/components/comunidade/FaixaPerfilPrivado';
 import { useAuth } from '@/context/AuthContext';
-import { agruparFeed } from '@/lib/comunidade';
+import { agruparFeed, chaveDoPost } from '@/lib/comunidade';
 import { authApi } from '@/lib/endpoints';
 import { keys, useFeed } from '@/lib/queries';
 import { useFimDaLista } from '@/lib/useFimDaLista';
@@ -75,7 +75,7 @@ function Feed({ aba, irParaExplorar }: { aba: AbaFeed; irParaExplorar: () => voi
   return (
     <div className="space-y-4 pb-6">
       {itens.map((item) =>
-        item.tipo === 'post' ? <CardPost key={item.post.id} post={item.post} /> : <CardGrupo key={item.chave} autor={item.autor} posts={item.posts} />,
+        item.tipo === 'post' ? <CardPost key={chaveDoPost(item.post)} post={item.post} /> : <CardGrupo key={item.chave} autor={item.autor} posts={item.posts} />,
       )}
       <div ref={fim} />
       {feed.isFetchingNextPage && <Spinner />}

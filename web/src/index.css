@@ -317,6 +317,29 @@
 .animate-fade-in {
   animation: fade-in 0.18s ease-out;
 }
+@keyframes curtida {
+  0% {
+    opacity: 0;
+    transform: scale(0.4);
+  }
+  15% {
+    opacity: 0.95;
+    transform: scale(1.12);
+  }
+  30% {
+    transform: scale(1);
+  }
+  75% {
+    opacity: 0.95;
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1);
+  }
+}
+.animate-curtida {
+  animation: curtida 0.9s ease-out both;
+}
 /* Ensō se desenhando: máscara cônica de 0 a 360° a partir de 180deg (base do círculo = abertura do traço),
    para começar e terminar exatamente na falha do pincel. Spinner em loop; celebração uma vez. */
 @property --enso {
@@ -438,7 +461,8 @@
     animation: none;
   }
   .animate-sheet-up,
-  .animate-fade-in {
+  .animate-fade-in,
+  .animate-curtida {
     animation: none;
   }
   .aba-nome,

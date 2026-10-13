@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Avatar } from '@/components/ui';
 import { CardPost } from './CardPost';
-import { capaDoPost } from '@/lib/comunidade';
+import { capaDoPost, chaveDoPost } from '@/lib/comunidade';
 import { tempoRelativo } from '@/lib/format';
 import type { AutorComunidade, PostComunidade } from '@/types';
 
@@ -10,7 +10,7 @@ const MINIATURAS = 8;
 /** Vários posts seguidos da mesma pessoa no mesmo dia: um cartão com miniaturas, que abre nos posts. */
 export function CardGrupo({ autor, posts }: { autor: AutorComunidade; posts: PostComunidade[] }) {
   const [aberto, setAberto] = useState(false);
-  if (aberto) return <>{posts.map((p) => <CardPost key={p.id} post={p} />)}</>;
+  if (aberto) return <>{posts.map((p) => <CardPost key={chaveDoPost(p)} post={p} />)}</>;
   return (
     <button type="button" onClick={() => setAberto(true)} className="card block w-full p-3 text-left">
       <div className="flex items-center gap-3">

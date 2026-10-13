@@ -2,6 +2,7 @@ import { useParams } from 'react-router';
 import { EmptyState, ErrorState, PageHeader, Spinner } from '@/components/ui';
 import { CardPost } from '@/components/comunidade/CardPost';
 import { ehNaoEncontrado } from '@/lib/api';
+import { chaveDoPost } from '@/lib/comunidade';
 import { usePost } from '@/lib/queries';
 
 export function PostPage() {
@@ -20,7 +21,7 @@ export function PostPage() {
             <ErrorState text="Não foi possível carregar o post." erro={post.error} onRetry={() => post.refetch()} />
           )
         ) : (
-          post.data && <CardPost post={post.data} />
+          post.data && <CardPost key={chaveDoPost(post.data)} post={post.data} />
         )}
       </div>
     </div>

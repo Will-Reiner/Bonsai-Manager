@@ -1,12 +1,15 @@
 import { Link } from 'react-router';
 import { Avatar } from '@/components/ui';
+import { AcoesDoPost } from './AcoesDoPost';
 import { CuidadosDoPost } from './CuidadosDoPost';
 import { FotosDoPost } from './FotosDoPost';
+import { useInteracoesDoPost } from './useInteracoesDoPost';
 import { dataLonga, plantaCodigoNome, tempoRelativo } from '@/lib/format';
 import type { PostComunidade } from '@/types';
 
 /** Um post: quem, qual planta, fotos do dia e os cuidados (quando o histórico é público). */
 export function CardPost({ post }: { post: PostComunidade }) {
+  const interacoes = useInteracoesDoPost(post);
   return (
     <article className="card overflow-hidden">
       <header className="flex items-center gap-3 p-3">
@@ -25,8 +28,9 @@ export function CardPost({ post }: { post: PostComunidade }) {
           {tempoRelativo(post.publicadoEm)}
         </time>
       </header>
-      <FotosDoPost fotos={post.fotos} />
+      <FotosDoPost fotos={post.fotos} onToqueDuplo={() => interacoes.curtir(true)} />
       <div className="space-y-2 p-3">
+        <AcoesDoPost post={post} interacoes={interacoes} />
         <CuidadosDoPost cuidados={post.cuidados} />
         <Link to={`/comunidade/post/${post.id}`} className="block text-xs text-muted">
           {dataLonga(`${post.dia}T12:00:00`)}
