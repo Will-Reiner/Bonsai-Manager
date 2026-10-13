@@ -11,6 +11,9 @@ const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       staleTime: 30_000,
+      // Sem internet a consulta tenta mesmo assim e falha com erro de rede (a tela mostra "Sem conexão"),
+      // em vez de ficar pausada sem dado nem erro
+      networkMode: 'always',
       retry: (count, error) => {
         const status = (error as { response?: { status?: number } }).response?.status;
         return status !== undefined && status < 500 ? false : count < 2;

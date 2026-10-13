@@ -43,11 +43,11 @@ export function ToastProvider({ children }: { children: ReactNode }) {
             {t.text}
           </div>
         ))}
+        {celebracao && <span className="sr-only">{celebracao.text}</span>}
       </div>
       {celebracao && (
         <div
-          role="status"
-          aria-live="polite"
+          aria-hidden
           onClick={() => fechar(celebracao.id)}
           className="animate-fade-in fixed inset-0 z-[70] flex flex-col items-center justify-center bg-bg/90 px-8 text-center"
         >

@@ -196,6 +196,7 @@
     width: 100%;
     aspect-ratio: 1744 / 1123;
     overflow-x: clip; /* o galho caindo não pode criar rolagem lateral */
+    pointer-events: none; /* o galho caído (invisível) não pode cobrir o "Tentar de novo" */
   }
   .arvore-erro img {
     position: absolute;
