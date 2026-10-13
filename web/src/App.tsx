@@ -9,6 +9,10 @@ import { LoginPage, RegisterPage } from '@/pages/AuthPages';
 import { BancadaPage } from '@/pages/BancadaPage';
 import { CollectionPage } from '@/pages/CollectionPage';
 import { ComunidadePage } from '@/pages/comunidade/ComunidadePage';
+import { BuscarPerfisPage } from '@/pages/comunidade/BuscarPerfisPage';
+import { PerfilPublicoPage } from '@/pages/comunidade/PerfilPublicoPage';
+import { PlantaPublicaPage } from '@/pages/comunidade/PlantaPublicaPage';
+import { PostPage } from '@/pages/comunidade/PostPage';
 import { AddPlantPage } from '@/pages/AddPlantPage';
 import { PlantDetailPage } from '@/pages/PlantDetailPage';
 import { EditPlantPage } from '@/pages/EditPlantPage';
@@ -76,6 +80,10 @@ export default function App() {
         <Route path="/registrar" element={<Privada><RegistrarPage /></Privada>} />
         <Route path="/agendar" element={<Privada><AgendarPage /></Privada>} />
         <Route path="/fotos/lote" element={<Privada><BatchPhotosPage /></Privada>} />
+        <Route path="/comunidade/buscar" element={<Privada><BuscarPerfisPage /></Privada>} />
+        <Route path="/comunidade/post/:id" element={<Privada><PostPage /></Privada>} />
+        <Route path="/comunidade/u/:id" element={<Privada><PerfilPublicoPage /></Privada>} />
+        <Route path="/comunidade/planta/:id" element={<Privada><PlantaPublicaPage /></Privada>} />
         <Route path="/perfil/editar" element={<Privada><EditProfilePage /></Privada>} />
         <Route path="/perfil/preferencias" element={<Privada><PreferenciasPage /></Privada>} />
         <Route path="/admin" element={<Privada><SoAdmin><AdminPage /></SoAdmin></Privada>} />

@@ -1,7 +1,7 @@
 import { useRef, useState, type FormEvent, type ReactNode } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { ChevronRight, LogOut, MapPin, Pencil, ShieldCheck, SlidersHorizontal } from 'lucide-react';
+import { ChevronRight, LogOut, MapPin, Pencil, ShieldCheck, SlidersHorizontal, Users } from 'lucide-react';
 import { Avatar, Button, Field, Opcao, PageHeader } from '@/components/ui';
 import { ComunidadePreferencias } from '@/components/comunidade/ComunidadePreferencias';
 import { PhotoInput } from '@/components/PhotoInput';
@@ -276,6 +276,7 @@ export function ProfilePage() {
       </section>
 
       <nav className="card mt-4 divide-y divide-line overflow-hidden">
+        {perfil?.id && <MenuItem to={`/comunidade/u/${perfil.id}`} icon={<Users size={20} />} label="Ver meu perfil público" />}
         <MenuItem to="/perfil/preferencias" icon={<SlidersHorizontal size={20} />} label="Preferências" />
         <MenuItem to="/perfil/editar" icon={<Pencil size={20} />} label="Editar perfil" />
         {isAdmin && <MenuItem to="/admin" icon={<ShieldCheck size={20} />} label="Painel admin" />}
@@ -287,7 +288,7 @@ export function ProfilePage() {
   );
 }
 
-function Numero({ label, valor }: { label: string; valor: number }) {
+export function Numero({ label, valor }: { label: string; valor: number }) {
   return (
     <div className="rounded-xl bg-bg py-2.5">
       <dd className="font-display text-xl font-semibold text-primary-dark">{valor}</dd>
