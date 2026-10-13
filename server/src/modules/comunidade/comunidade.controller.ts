@@ -7,7 +7,7 @@ import { ObterFeedUseCase } from './use-cases/obter-feed.use-case';
 import { ObterPerfilUseCase } from './use-cases/obter-perfil.use-case';
 import { ObterPlantaPublicaUseCase } from './use-cases/obter-planta-publica.use-case';
 import { ObterPostUseCase } from './use-cases/obter-post.use-case';
-import { mensagemDoErro } from '../../utils/errors';
+import { respostaDoErro } from './erros';
 
 const repo = new PrismaLeituraComunidadeRepository();
 const obterFeed = new ObterFeedUseCase(repo);
@@ -17,13 +17,14 @@ const listarPostsDoPerfil = new ListarPostsDoPerfilUseCase(repo);
 const obterPlantaPublica = new ObterPlantaPublicaUseCase(repo);
 const buscarPerfis = new BuscarPerfisUseCase(repo);
 
-/** Executa a leitura e traduz os erros: invisível/inexistente → 404; o resto (validação) → 400. */
+/** Executa a leitura e traduz os erros (ver respostaDoErro); erro inesperado vai para o log. */
 const responder = (ler: (req: Request, viewerId: string) => Promise<unknown>) => async (req: Request, res: Response) => {
   try {
     return res.status(200).json(await ler(req, req.user!.userId));
-  } catch (error: any) {
-    if (error?.name === 'NaoEncontrado') return res.status(404).json({ error: error.message });
-    return res.status(400).json({ error: mensagemDoErro(error, 'Erro ao carregar a comunidade') });
+  } catch (error) {
+    const { status, body } = respostaDoErro(error);
+    if (status === 500) console.error('[comunidade] erro na leitura', error);
+    return res.status(status).json(body);
   }
 };
 
