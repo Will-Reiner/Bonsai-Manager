@@ -35,6 +35,10 @@ export const keys = {
   postsDoPerfil: (id: string) => ['comunidade', 'perfil', id, 'posts'] as const,
   plantaPublica: (id: string) => ['comunidade', 'planta', id] as const,
   buscaPerfis: (q: string) => ['comunidade', 'busca', q] as const,
+  comentarios: (postId: string) => ['comunidade', 'comentarios', postId] as const,
+  salvos: ['comunidade', 'salvos'] as const,
+  notificacoes: ['comunidade', 'notificacoes'] as const,
+  naoLidas: ['comunidade', 'nao-lidas'] as const,
 };
 
 export const usePlantas = () => useQuery({ queryKey: keys.plantas, queryFn: plantasApi.list });
@@ -164,3 +168,33 @@ export const usePlantaPublica = (id: string) =>
 
 export const useBuscaPerfis = (q: string) =>
   useQuery({ queryKey: keys.buscaPerfis(q), queryFn: () => comunidadeApi.buscar(q), enabled: q.length >= 2, staleTime: 30_000 });
+
+
+export const useComentarios = (postId: string) =>
+  useInfiniteQuery({
+    queryKey: keys.comentarios(postId),
+    queryFn: ({ pageParam }) => comunidadeApi.comentarios(postId, pageParam),
+    initialPageParam: undefined as string | undefined,
+    getNextPageParam: proximaPagina,
+    enabled: !!postId,
+  });
+
+export const useSalvos = () =>
+  useInfiniteQuery({
+    queryKey: keys.salvos,
+    queryFn: ({ pageParam }) => comunidadeApi.salvos(pageParam),
+    initialPageParam: undefined as string | undefined,
+    getNextPageParam: proximaPagina,
+  });
+
+export const useNotificacoes = () =>
+  useInfiniteQuery({
+    queryKey: keys.notificacoes,
+    queryFn: ({ pageParam }) => comunidadeApi.notificacoes(pageParam),
+    initialPageParam: undefined as string | undefined,
+    getNextPageParam: proximaPagina,
+  });
+
+/** Contador do sino/aba: atualiza ao voltar o foco do app (sem push). */
+export const useNaoLidas = () =>
+  useQuery({ queryKey: keys.naoLidas, queryFn: comunidadeApi.naoLidas, staleTime: 60_000, refetchOnWindowFocus: true });

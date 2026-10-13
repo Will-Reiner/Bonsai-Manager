@@ -222,6 +222,10 @@ export interface PostComunidade {
   fotos: FotoDoPost[];
   /** null quando o histórico do dono não é público. */
   cuidados: CuidadoDoPost[] | null;
+  curtidas: number;
+  curtiu: boolean;
+  salvou: boolean;
+  totalComentarios: number;
 }
 export interface Pagina<T> { itens: T[]; proximoCursor: string | null }
 export interface PerfilPublico extends AutorComunidade {
@@ -234,3 +238,17 @@ export interface PerfilPublico extends AutorComunidade {
 }
 export interface DiaPublico { dia: string; postId: string | null; fotos: FotoDoPost[]; cuidados: CuidadoDoPost[] | null }
 export interface PlantaPublica { planta: PlantaComunidade; dono: AutorComunidade; dias: DiaPublico[] }
+
+
+export type TipoNotificacao = 'CURTIDA' | 'COMENTARIO' | 'SEGUIU';
+export interface ComentarioComunidade { id: string; texto: string; createdAt: string; autor: AutorComunidade; podeApagar: boolean }
+export interface NotificacaoComunidade {
+  id: string;
+  tipo: TipoNotificacao;
+  lida: boolean;
+  createdAt: string;
+  ator: AutorComunidade;
+  post: { id: string; plantaId: string; capa: string | null } | null;
+  /** Trecho do comentário (só em COMENTARIO). */
+  comentario: string | null;
+}

@@ -4,6 +4,7 @@ import type {
   AbaFeed,
   Agenda,
   AutorComunidade,
+  ComentarioComunidade,
   AgendaStatus,
   Atividade,
   Especie,
@@ -13,6 +14,7 @@ import type {
   GuiaSazonal,
   Inspiracao,
   ModoAquisicao,
+  NotificacaoComunidade,
   Pagina,
   PerfilPublico,
   Planta,
@@ -250,4 +252,19 @@ export const comunidadeApi = {
   buscar: (q: string) => data<AutorComunidade[]>(api.get('/comunidade/buscar', { params: { q } })),
   seguir: (id: string) => api.post(`/amizades/follow/${id}`),
   deixarDeSeguir: (id: string) => api.delete(`/amizades/unfollow/${id}`),
+  curtir: (id: string, sim: boolean) =>
+    data<{ curtiu: boolean; curtidas: number }>(
+      sim ? api.post(`/comunidade/posts/${id}/curtida`) : api.delete(`/comunidade/posts/${id}/curtida`),
+    ),
+  salvar: (id: string, sim: boolean) =>
+    data<{ salvou: boolean }>(sim ? api.post(`/comunidade/posts/${id}/salvo`) : api.delete(`/comunidade/posts/${id}/salvo`)),
+  comentarios: (id: string, cursor?: string) =>
+    data<Pagina<ComentarioComunidade>>(api.get(`/comunidade/posts/${id}/comentarios`, { params: { cursor } })),
+  comentar: (id: string, texto: string) => data<ComentarioComunidade>(api.post(`/comunidade/posts/${id}/comentarios`, { texto })),
+  apagarComentario: (id: string) => api.delete(`/comunidade/comentarios/${id}`),
+  salvos: (cursor?: string) => data<Pagina<PostComunidade>>(api.get('/comunidade/salvos', { params: { cursor } })),
+  notificacoes: (cursor?: string) =>
+    data<Pagina<NotificacaoComunidade>>(api.get('/comunidade/notificacoes', { params: { cursor } })),
+  naoLidas: () => data<{ total: number }>(api.get('/comunidade/notificacoes/nao-lidas')),
+  marcarLidas: () => api.post('/comunidade/notificacoes/lidas'),
 };

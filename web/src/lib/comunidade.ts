@@ -1,5 +1,5 @@
 import { toDateInput } from '@/lib/format';
-import type { AutorComunidade, Planta, PostComunidade } from '@/types';
+import type { AutorComunidade, NotificacaoComunidade, Planta, PostComunidade } from '@/types';
 
 export type ModoPlantas = 'todas' | 'selecionadas';
 
@@ -39,3 +39,30 @@ export function capaDoPost(post: PostComunidade): string | null {
   if (!f) return null;
   return f.tipo === 'VIDEO' ? f.thumbnailUrl : f.url;
 }
+
+
+/** Curtir/descurtir no cartão antes da resposta do servidor (nunca negativo; repetir não muda). */
+export function alternarCurtida(e: { curtiu: boolean; curtidas: number }, curtir: boolean) {
+  if (e.curtiu === curtir) return { curtiu: e.curtiu, curtidas: e.curtidas };
+  return { curtiu: curtir, curtidas: Math.max(0, e.curtidas + (curtir ? 1 : -1)) };
+}
+
+export const rotuloCurtidas = (n: number) => (n === 1 ? '1 curtida' : `${n} curtidas`);
+export const rotuloComentarios = (n: number) => (n === 1 ? 'ver 1 comentário' : `ver os ${n} comentários`);
+
+const TRECHO = 60;
+
+export function textoDaNotificacao(n: NotificacaoComunidade): string {
+  if (n.tipo === 'CURTIDA') return 'curtiu seu post';
+  if (n.tipo === 'SEGUIU') return 'começou a seguir você';
+  const c = n.comentario ?? '';
+  return `comentou: “${c.length > TRECHO ? `${c.slice(0, TRECHO - 1)}…` : c}”`;
+}
+
+export function linkDaNotificacao(n: NotificacaoComunidade): string {
+  if (!n.post) return `/comunidade/u/${n.ator.id}`;
+  return `/comunidade/post/${n.post.id}${n.tipo === 'COMENTARIO' ? '#comentarios' : ''}`;
+}
+
+/** Chave do cartão: muda quando curtidas/salvo vindos do servidor mudam, para o estado local recomeçar deles. */
+export const chaveDoPost = (p: PostComunidade) => `${p.id}|${p.curtiu}|${p.curtidas}|${p.salvou}|${p.totalComentarios}`;

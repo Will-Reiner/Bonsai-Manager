@@ -1,6 +1,16 @@
 import { describe, expect, it } from 'vitest';
-import { agruparFeed, capaDoPost, modoPlantas } from './comunidade';
-import type { PostComunidade } from '@/types';
+import {
+  agruparFeed,
+  alternarCurtida,
+  capaDoPost,
+  chaveDoPost,
+  linkDaNotificacao,
+  modoPlantas,
+  rotuloComentarios,
+  rotuloCurtidas,
+  textoDaNotificacao,
+} from './comunidade';
+import type { NotificacaoComunidade, PostComunidade } from '@/types';
 
 describe('modoPlantas', () => {
   it('todas públicas → todas', () => {
@@ -29,6 +39,10 @@ const post = (id: string, autor: string, publicadoEm: string, over: Partial<Post
   planta: { id: `p-${id}`, identificador: 1, nome: null, fotoCapaUrl: null, especie: null },
   fotos: [{ id: `f-${id}`, url: `u-${id}`, tipo: 'FOTO', thumbnailUrl: null }],
   cuidados: null,
+  curtidas: 0,
+  curtiu: false,
+  salvou: false,
+  totalComentarios: 0,
   ...over,
 });
 
@@ -61,5 +75,52 @@ describe('capaDoPost', () => {
     expect(capaDoPost(post('1', 'a', '2026-10-13T12:00:00'))).toBe('u-1');
     const video = post('2', 'a', '2026-10-13T12:00:00', { fotos: [{ id: 'v', url: 'v.mp4', tipo: 'VIDEO', thumbnailUrl: 'v.webp' }] });
     expect(capaDoPost(video)).toBe('v.webp');
+  });
+});
+
+describe('alternarCurtida', () => {
+  it('curtir soma, descurtir subtrai, repetir não muda', () => {
+    expect(alternarCurtida({ curtiu: false, curtidas: 2 }, true)).toEqual({ curtiu: true, curtidas: 3 });
+    expect(alternarCurtida({ curtiu: true, curtidas: 3 }, false)).toEqual({ curtiu: false, curtidas: 2 });
+    expect(alternarCurtida({ curtiu: true, curtidas: 3 }, true)).toEqual({ curtiu: true, curtidas: 3 });
+  });
+  it('nunca fica negativo', () => {
+    expect(alternarCurtida({ curtiu: true, curtidas: 0 }, false)).toEqual({ curtiu: false, curtidas: 0 });
+  });
+});
+
+describe('rótulos', () => {
+  it('singular e plural', () => {
+    expect(rotuloCurtidas(1)).toBe('1 curtida');
+    expect(rotuloCurtidas(4)).toBe('4 curtidas');
+    expect(rotuloComentarios(1)).toBe('ver 1 comentário');
+    expect(rotuloComentarios(3)).toBe('ver os 3 comentários');
+  });
+});
+
+describe('notificação', () => {
+  const base: NotificacaoComunidade = {
+    id: 'n', tipo: 'CURTIDA', lida: false, createdAt: '2026-10-13T12:00:00Z',
+    ator: { id: 'a', nome: 'Ana', fotoPerfilUrl: null }, post: { id: 'post1', plantaId: 'p1', capa: null }, comentario: null,
+  };
+  it('texto por tipo, com trecho do comentário', () => {
+    expect(textoDaNotificacao(base)).toBe('curtiu seu post');
+    expect(textoDaNotificacao({ ...base, tipo: 'SEGUIU', post: null })).toBe('começou a seguir você');
+    expect(textoDaNotificacao({ ...base, tipo: 'COMENTARIO', comentario: 'Lindo!' })).toBe('comentou: “Lindo!”');
+    const longo = 'a'.repeat(100);
+    expect(textoDaNotificacao({ ...base, tipo: 'COMENTARIO', comentario: longo })).toBe(`comentou: “${'a'.repeat(59)}…”`);
+  });
+  it('link: post (comentário vai à seção) ou perfil', () => {
+    expect(linkDaNotificacao(base)).toBe('/comunidade/post/post1');
+    expect(linkDaNotificacao({ ...base, tipo: 'COMENTARIO' })).toBe('/comunidade/post/post1#comentarios');
+    expect(linkDaNotificacao({ ...base, tipo: 'SEGUIU', post: null })).toBe('/comunidade/u/a');
+  });
+});
+
+describe('chaveDoPost', () => {
+  it('muda quando as interações vindas do servidor mudam (o cartão recomeça do valor novo)', () => {
+    const p = post('1', 'a', '2026-10-13T12:00:00');
+    expect(chaveDoPost(p)).not.toBe(chaveDoPost({ ...p, curtidas: 1 }));
+    expect(chaveDoPost(p)).toBe(chaveDoPost({ ...p }));
   });
 });
