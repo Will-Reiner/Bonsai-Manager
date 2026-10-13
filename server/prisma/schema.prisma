@@ -22,6 +22,12 @@ enum Role {
   ADMIN
 }
 
+enum TipoNotificacao {
+  CURTIDA
+  COMENTARIO
+  SEGUIU
+}
+
 enum AgendaStatus {
   PENDENTE
   CONCLUIDO
@@ -122,6 +128,11 @@ model Usuario {
   especiesSugeridas  Especie[]
   preferencias       PreferenciaUsuario[]
   posts              Post[]
+  curtidas           Curtida[]
+  comentarios        Comentario[]
+  salvos             Salvo[]
+  notificacoes       Notificacao[] @relation("NotificacoesRecebidas")
+  notificacoesFeitas Notificacao[] @relation("NotificacoesFeitas")
 }
 
 model Especie {
@@ -258,9 +269,79 @@ model Post {
   plantaId    String
   planta      Planta   @relation(fields: [plantaId], references: [id], onDelete: Cascade)
 
+  curtidas     Curtida[]
+  comentarios  Comentario[]
+  salvos       Salvo[]
+  notificacoes Notificacao[]
+
   @@unique([plantaId, dia])
   @@index([noFeed, publicadoEm])
   @@index([usuarioId, publicadoEm])
+}
+
+model Curtida {
+  createdAt DateTime @default(now())
+
+  usuarioId String
+  usuario   Usuario  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  postId    String
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@id([usuarioId, postId])
+  @@index([postId])
+}
+
+model Comentario {
+  id        String   @id @default(uuid())
+  texto     String   @db.Text
+  createdAt DateTime @default(now())
+
+  usuarioId String
+  usuario   Usuario  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  postId    String
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  notificacoes Notificacao[]
+
+  @@index([postId, createdAt])
+}
+
+model Salvo {
+  createdAt DateTime @default(now())
+
+  usuarioId String
+  usuario   Usuario  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  postId    String
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@id([usuarioId, postId])
+  @@index([usuarioId, createdAt])
+}
+
+/// Aviso dentro do app (sem push). Apagar curtida/comentário/seguir remove o aviso correspondente.
+model Notificacao {
+  id           String          @id @default(uuid())
+  tipo         TipoNotificacao
+  lida         Boolean         @default(false)
+  createdAt    DateTime        @default(now())
+
+  /// Destinatário
+  usuarioId    String
+  usuario      Usuario         @relation("NotificacoesRecebidas", fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  atorId       String
+  ator         Usuario         @relation("NotificacoesFeitas", fields: [atorId], references: [id], onDelete: Cascade)
+
+  postId       String?
+  post         Post?           @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  comentarioId String?
+  comentario   Comentario?     @relation(fields: [comentarioId], references: [id], onDelete: Cascade)
+
+  @@index([usuarioId, lida, createdAt])
 }
 
 model Agenda {
