@@ -5,6 +5,7 @@ Subcomandos (rode com --help em cada um):
   tinta    tinta sumi sobre papel/branco -> PNG máscara (alfa) na cor da tinta, uma peça por arquivo
   recorte  objetos coloridos sobre fundo branco (folhas, pétalas, vasos) -> PNG com fundo transparente
   papel    foto de papel -> textura repetível sem emenda (JPG)
+  camadas  cena inteira + a mesma sem uma parte -> 3 PNGs alinhados (inteira/base/parte) + pivô
   revisar  pasta de SVGs -> página HTML de conferência em tamanho real
 
 Dependências: pip install pillow numpy scipy vtracer
@@ -226,6 +227,42 @@ h3 {{ font:italic 600 20px Newsreader,Georgia,serif; margin:18px 0 10px; }}
     print(a.saida)
 
 
+# ---------------------------------------------------------------- camadas
+
+def _alfa_rgb(caminho):
+    arr = np.asarray(Image.open(caminho).convert("RGB"), dtype=np.float32)
+    fundo = cor_de_fundo(arr)
+    d = np.sqrt(((arr - fundo) ** 2).sum(-1))
+    a = np.clip((d - 10) / 60, 0, 1)
+    rgb = np.where(a[..., None] > 0.01, (arr - fundo * (1 - a[..., None])) / np.maximum(a[..., None], 0.01), 0)
+    return np.clip(rgb, 0, 255), a
+
+
+def cmd_camadas(a):
+    """Cena inteira + a mesma cena sem uma parte -> inteira, base e parte na mesma caixa (para animar a parte)."""
+    rgb_t, a_t = _alfa_rgb(a.inteira)
+    rgb_s, a_s = _alfa_rgb(a.sem)
+    if a_t.shape != a_s.shape:
+        raise SystemExit("as duas imagens precisam ter o mesmo tamanho")
+    dif = (a_t > 0.25) & ~ndimage.binary_dilation(a_s > 0.15, iterations=3)
+    rot, n = ndimage.label(ndimage.binary_dilation(dif, iterations=8))
+    if n == 0:
+        raise SystemExit("não achei diferença entre as imagens")
+    tam = ndimage.sum(dif, rot, range(1, n + 1))
+    regiao = ndimage.binary_dilation(rot == 1 + int(np.argmax(tam)), iterations=4)
+    a_p = a_t * regiao
+    ys, xs = np.nonzero((a_t > 0.05) | (a_s > 0.05))
+    y0, y1, x0, x1 = ys.min(), ys.max() + 1, xs.min(), xs.max() + 1
+    os.makedirs(a.saida, exist_ok=True)
+    for nome, rgb, al in (("inteira", rgb_t, a_t), ("base", rgb_s, a_s), ("parte", rgb_t, a_p)):
+        im = Image.fromarray(np.dstack([rgb, al * 255]).astype(np.uint8)[y0:y1, x0:x1])
+        im.thumbnail((a.max, a.max), Image.LANCZOS)
+        im.save(os.path.join(a.saida, f"{a.prefixo}-{nome}.png"), optimize=True)
+    gy, gx = np.nonzero(a_p > 0.3)
+    i = int(np.argmin(gx))  # ponto da parte mais à esquerda = onde ela se prende
+    print(f"pivô: {(gx[i] - x0) / (x1 - x0) * 100:.1f}% {(gy[i] - y0) / (y1 - y0) * 100:.1f}% · proporção {x1 - x0} / {y1 - y0}")
+
+
 # ---------------------------------------------------------------- CLI
 
 def main():
@@ -271,6 +308,14 @@ def main():
     s.add_argument("pasta")
     s.add_argument("--saida", required=True, help="arquivo .html")
     s.set_defaults(fn=cmd_revisar)
+
+    s = sub.add_parser("camadas", help="cena inteira + cena sem uma parte -> inteira/base/parte alinhadas")
+    s.add_argument("--inteira", required=True)
+    s.add_argument("--sem", required=True, help="a mesma cena sem a parte que vai se mover")
+    s.add_argument("--saida", required=True)
+    s.add_argument("--prefixo", required=True)
+    s.add_argument("--max", type=int, default=800)
+    s.set_defaults(fn=cmd_camadas)
 
     a = ap.parse_args()
     a.fn(a)

@@ -23,6 +23,7 @@ A IA de imagem gera **peças paradas e isoladas**; o código transforma em asset
 | Folhas, pétalas (aguada translúcida) | `recorte --prefixo folha` | PNG transparente, cor "des-misturada" do branco |
 | Vasos, objetos opacos | `recorte --solido --prefixo vaso` | PNG transparente com contorno cheio |
 | Papel | `papel --saida papel.jpg` | textura repetível sem emenda |
+| Cena + a mesma cena sem uma parte (galho que quebra) | `camadas --inteira a.jpg --sem b.jpg --prefixo erro` | 3 PNGs alinhados (inteira/base/parte) + pivô e proporção |
 | Pasta de SVGs | `revisar <pasta> --saida x.html` | página de conferência |
 
 ## Regras do sistema (decididas com o usuário)
