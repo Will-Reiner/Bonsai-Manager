@@ -1,6 +1,19 @@
 import { chaveDoDia, ConteudoDoDia } from './conteudo';
+import { podeApagarComentario } from './interacoes';
 import { mostraCuidados } from './visibilidade';
-import type { AutorDTO, DiaPublicoDTO, PlantaDTO, PlantaLidaBase, PostDTO, PostLido } from '../comunidade.types';
+import type {
+  AutorDTO,
+  ComentarioDTO,
+  ComentarioLido,
+  DiaPublicoDTO,
+  InteracoesDoPost,
+  NotificacaoDTO,
+  NotificacaoLida,
+  PlantaDTO,
+  PlantaLidaBase,
+  PostDTO,
+  PostLido,
+} from '../comunidade.types';
 
 /** Coluna DATE (meia-noite UTC) → "AAAA-MM-DD". */
 export const paraDia = (data: Date) => data.toISOString().slice(0, 10);
@@ -20,9 +33,15 @@ export const plantaDe = (p: PlantaLidaBase): PlantaDTO => ({
 });
 
 /** Posts prontos para o app; dia que ficou sem foto (corrida com uma exclusão) não vira card vazio. */
-export function montarPosts(posts: PostLido[], conteudo: Map<string, ConteudoDoDia>, viewerId: string): PostDTO[] {
+export function montarPosts(
+  posts: PostLido[],
+  conteudo: Map<string, ConteudoDoDia>,
+  viewerId: string,
+  interacoes: Map<string, InteracoesDoPost> = new Map(),
+): PostDTO[] {
   return posts.flatMap((p) => {
     const dia = paraDia(p.dia);
+    const i = interacoes.get(p.id);
     const doDia = conteudo.get(chaveDoDia(p.plantaId, dia));
     if (!doDia?.fotos.length) return [];
     return [
@@ -34,6 +53,10 @@ export function montarPosts(posts: PostLido[], conteudo: Map<string, ConteudoDoD
         planta: plantaDe(p.planta),
         fotos: doDia.fotos,
         cuidados: mostraCuidados(p.usuario, viewerId) ? doDia.cuidados : null,
+        curtidas: i?.curtidas ?? 0,
+        curtiu: i?.curtiu ?? false,
+        salvou: i?.salvou ?? false,
+        totalComentarios: i?.comentarios ?? 0,
       },
     ];
   });
@@ -58,3 +81,22 @@ export function linhaDoTempoPublica(
     })
     .sort((a, b) => b.dia.localeCompare(a.dia));
 }
+
+
+export const comentarioDe = (c: ComentarioLido, viewerId: string): ComentarioDTO => ({
+  id: c.id,
+  texto: c.texto,
+  createdAt: c.createdAt,
+  autor: autorDe(c.usuario),
+  podeApagar: podeApagarComentario(c.usuario.id, c.post.usuarioId, viewerId),
+});
+
+export const notificacaoDe = (n: NotificacaoLida): NotificacaoDTO => ({
+  id: n.id,
+  tipo: n.tipo,
+  lida: n.lida,
+  createdAt: n.createdAt,
+  ator: autorDe(n.ator),
+  post: n.post ? { id: n.post.id, plantaId: n.post.planta.id, capa: n.post.planta.fotoCapaUrl } : null,
+  comentario: n.comentario?.texto ?? null,
+});

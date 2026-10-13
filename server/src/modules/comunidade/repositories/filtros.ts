@@ -29,9 +29,7 @@ function depoisDoCursor(campo: 'publicadoEm' | 'dia', c: Cursor): Prisma.PostWhe
 
 /** Onde do feed: só posts no feed e visíveis ao leitor; em Seguindo, só meus e de quem eu sigo. */
 export function filtroDoFeed(viewerId: string, aba: AbaFeed, cursor?: string): Prisma.PostWhereInput {
-  const condicoes: Prisma.PostWhereInput[] = [
-    { OR: [{ usuarioId: viewerId }, { usuario: { perfilPublico: true }, planta: { plantaPublica: true } }] },
-  ];
+  const condicoes: Prisma.PostWhereInput[] = [visivelPara(viewerId)];
   if (aba === 'seguindo') {
     condicoes.push({ OR: [{ usuarioId: viewerId }, { usuario: { seguidores: { some: { seguidorId: viewerId } } } }] });
   }
@@ -71,4 +69,32 @@ export function filtrosDaJanela({ de, ate }: Janela): { fotos: Prisma.FotoWhereI
 /** Busca de pessoas: só perfis públicos e só pelo nome público (o nome cadastrado não liga um pseudônimo ao nome real). */
 export function filtroDaBusca(q: string): Prisma.UsuarioWhereInput {
   return { perfilPublico: true, nomePublico: { contains: q, mode: 'insensitive' } };
+}
+
+
+/** Post visível ao leitor: meu, ou de perfil e planta públicos. */
+export function visivelPara(viewerId: string): Prisma.PostWhereInput {
+  return { OR: [{ usuarioId: viewerId }, { usuario: { perfilPublico: true }, planta: { plantaPublica: true } }] };
+}
+
+/** Comentários do post em ordem crescente (createdAt, id): depois do cursor = mais novos. */
+export function filtroDosComentarios(postId: string, cursor?: string): Prisma.ComentarioWhereInput {
+  if (!cursor) return { postId };
+  const c = lerCursor(cursor);
+  return { postId, OR: [{ createdAt: { gt: c.data } }, { createdAt: c.data, id: { gt: c.id } }] };
+}
+
+/** Meus salvos de posts ainda visíveis, do mais recente salvo (createdAt, postId desc). */
+export function filtroDosSalvos(viewerId: string, cursor?: string): Prisma.SalvoWhereInput {
+  const base: Prisma.SalvoWhereInput = { usuarioId: viewerId, post: visivelPara(viewerId) };
+  if (!cursor) return base;
+  const c = lerCursor(cursor);
+  return { ...base, OR: [{ createdAt: { lt: c.data } }, { createdAt: c.data, postId: { lt: c.id } }] };
+}
+
+/** Minhas notificações, das mais novas (createdAt, id desc). */
+export function filtroDasNotificacoes(usuarioId: string, cursor?: string): Prisma.NotificacaoWhereInput {
+  if (!cursor) return { usuarioId };
+  const c = lerCursor(cursor);
+  return { usuarioId, OR: [{ createdAt: { lt: c.data } }, { createdAt: c.data, id: { lt: c.id } }] };
 }

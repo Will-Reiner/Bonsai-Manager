@@ -1,4 +1,4 @@
-import { codificarCursor, filtroDaBusca, filtroDoFeed, filtroDosPostsDoUsuario, filtrosDaJanela, janelaDosPosts, lerCursor } from './filtros';
+import { codificarCursor, filtroDaBusca, filtroDasNotificacoes, filtroDoFeed, filtroDosComentarios, filtroDosSalvos, visivelPara, filtroDosPostsDoUsuario, filtrosDaJanela, janelaDosPosts, lerCursor } from './filtros';
 
 const visivel = { OR: [{ usuarioId: 'eu' }, { usuario: { perfilPublico: true }, planta: { plantaPublica: true } }] };
 
@@ -64,5 +64,38 @@ describe('janela de leitura do conteúdo (só os dias da página)', () => {
 describe('filtroDaBusca', () => {
   it('só perfis públicos e só pelo nome público (o nome cadastrado não liga um pseudônimo ao nome real)', () => {
     expect(filtroDaBusca('an')).toEqual({ perfilPublico: true, nomePublico: { contains: 'an', mode: 'insensitive' } });
+  });
+});
+
+
+describe('filtros das interações', () => {
+  const data = new Date('2026-10-13T18:00:00.000Z');
+  const id = '6f1b4a8e-2f7a-4c1e-9a4b-3d2e1f0a9b8c';
+  const cursor = codificarCursor(data, id);
+
+  it('visivelPara é a mesma regra do feed', () => {
+    expect(visivelPara('eu')).toEqual(visivel);
+  });
+  it('comentários em ordem crescente: depois do cursor = mais novos', () => {
+    expect(filtroDosComentarios('post1')).toEqual({ postId: 'post1' });
+    expect(filtroDosComentarios('post1', cursor)).toEqual({
+      postId: 'post1',
+      OR: [{ createdAt: { gt: data } }, { createdAt: data, id: { gt: id } }],
+    });
+  });
+  it('salvos: só os meus de posts ainda visíveis, do mais recente salvo', () => {
+    expect(filtroDosSalvos('eu')).toEqual({ usuarioId: 'eu', post: visivel });
+    expect(filtroDosSalvos('eu', cursor)).toEqual({
+      usuarioId: 'eu',
+      post: visivel,
+      OR: [{ createdAt: { lt: data } }, { createdAt: data, postId: { lt: id } }],
+    });
+  });
+  it('notificações: só as minhas, das mais novas', () => {
+    expect(filtroDasNotificacoes('eu')).toEqual({ usuarioId: 'eu' });
+    expect(filtroDasNotificacoes('eu', cursor)).toEqual({
+      usuarioId: 'eu',
+      OR: [{ createdAt: { lt: data } }, { createdAt: data, id: { lt: id } }],
+    });
   });
 });

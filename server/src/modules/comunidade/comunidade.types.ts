@@ -34,7 +34,7 @@ export interface FotoDoPost { id: string; url: string; tipo: string; thumbnailUr
 export interface CuidadoDoPost { atividade: string; detalhes: string | null; observacao: string | null }
 export interface AutorDTO { id: string; nome: string; fotoPerfilUrl: string | null }
 export interface PlantaDTO { id: string; identificador: number; nome: string | null; fotoCapaUrl: string | null; especie: EspecieLida | null }
-export interface PostDTO { id: string; dia: string; publicadoEm: Date; autor: AutorDTO; planta: PlantaDTO; fotos: FotoDoPost[]; cuidados: CuidadoDoPost[] | null }
+export interface PostDTO { id: string; dia: string; publicadoEm: Date; autor: AutorDTO; planta: PlantaDTO; fotos: FotoDoPost[]; cuidados: CuidadoDoPost[] | null; curtidas: number; curtiu: boolean; salvou: boolean; totalComentarios: number }
 export interface DiaPublicoDTO { dia: string; postId: string | null; fotos: FotoDoPost[]; cuidados: CuidadoDoPost[] | null }
 export interface PlantaPublicaDTO { planta: PlantaDTO; dono: AutorDTO; dias: DiaPublicoDTO[] }
 export interface PerfilDTO extends AutorDTO { bio: string | null; localidade: string | null; eu: boolean; sigo: boolean; contagem: { plantas: number; seguidores: number; seguindo: number }; plantas: PlantaDTO[] }
@@ -67,4 +67,30 @@ export interface LeituraComunidadeRepository {
 export interface Janela {
   de: Date;
   ate: Date;
+}
+
+
+// ---- Interações (fase 3) ----
+
+export type TipoNotificacao = 'CURTIDA' | 'COMENTARIO' | 'SEGUIU';
+export interface InteracoesDoPost { curtidas: number; comentarios: number; curtiu: boolean; salvou: boolean }
+export interface ComentarioLido { id: string; texto: string; createdAt: Date; usuario: UsuarioLido; post: { usuarioId: string } }
+export interface ComentarioDTO { id: string; texto: string; createdAt: Date; autor: AutorDTO; podeApagar: boolean }
+export interface NotificacaoLida {
+  id: string;
+  tipo: TipoNotificacao;
+  lida: boolean;
+  createdAt: Date;
+  ator: UsuarioLido;
+  post: { id: string; planta: { id: string; fotoCapaUrl: string | null } } | null;
+  comentario: { texto: string } | null;
+}
+export interface NotificacaoDTO {
+  id: string;
+  tipo: TipoNotificacao;
+  lida: boolean;
+  createdAt: Date;
+  ator: AutorDTO;
+  post: { id: string; plantaId: string; capa: string | null } | null;
+  comentario: string | null;
 }
