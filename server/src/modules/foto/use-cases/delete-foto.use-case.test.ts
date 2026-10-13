@@ -6,6 +6,7 @@ describe('DeleteFotoUseCase', () => {
   let deleteFotoUseCase: DeleteFotoUseCase;
   let mockFotoRepository: jest.Mocked<FotoRepository>;
   let mockLimpeza: jest.Mocked<LimpezaDeMidia>;
+  let mockPosts: { execute: jest.Mock };
 
   const fotoId = 'foto-1';
   const usuarioId = 'user-1';
@@ -32,7 +33,8 @@ describe('DeleteFotoUseCase', () => {
     };
     mockLimpeza = { execute: jest.fn().mockResolvedValue(undefined) };
 
-    deleteFotoUseCase = new DeleteFotoUseCase(mockFotoRepository, mockLimpeza);
+    mockPosts = { execute: jest.fn().mockResolvedValue(undefined) };
+    deleteFotoUseCase = new DeleteFotoUseCase(mockFotoRepository, mockLimpeza, mockPosts);
   });
 
   it('should delete foto successfully', async () => {
@@ -141,5 +143,14 @@ describe('DeleteFotoUseCase', () => {
     // Assert
     expect(mockFotoRepository.findCapaDaPlanta).not.toHaveBeenCalled();
     expect(mockLimpeza.execute).toHaveBeenCalledWith(['https://cdn/foto-1.webp', null]);
+  });
+
+  it('sincroniza os posts da planta depois de apagar', async () => {
+    mockFotoRepository.findByIdAndUser.mockResolvedValue(foto);
+    mockFotoRepository.findCapaDaPlanta.mockResolvedValue('https://cdn/outra.webp');
+
+    await deleteFotoUseCase.execute(fotoId, usuarioId);
+
+    expect(mockPosts.execute).toHaveBeenCalledWith({ plantaIds: ['planta-1'] });
   });
 });

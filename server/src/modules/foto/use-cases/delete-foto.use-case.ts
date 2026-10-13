@@ -1,10 +1,12 @@
 import { FotoRepository } from '../foto.types';
 import { LimpezaDeMidia } from '../../midia/midia.types';
+import { SincronizadorDePosts } from '../../comunidade/comunidade.types';
 
 export class DeleteFotoUseCase {
   constructor(
     private fotoRepository: FotoRepository,
     private limpezaDeMidia: LimpezaDeMidia,
+    private posts: SincronizadorDePosts,
   ) {}
 
   async execute(id: string, usuarioId: string): Promise<void> {
@@ -24,6 +26,8 @@ export class DeleteFotoUseCase {
         await this.fotoRepository.updateCapaDaPlanta(foto.plantaId, novaCapa);
       }
     }
+
+    if (foto.plantaId) await this.posts.execute({ plantaIds: [foto.plantaId] });
 
     await this.limpezaDeMidia.execute([foto.caminhoArquivo, foto.thumbnailUrl]);
   }

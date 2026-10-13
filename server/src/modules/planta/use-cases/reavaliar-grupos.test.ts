@@ -1,4 +1,4 @@
-import { ReavaliarGruposUseCase, ReavaliacaoRepository, PlantaReavaliavel } from './reavaliar-grupos';
+import { ReavaliarGruposUseCase, ReavaliacaoRepository, PlantaReavaliavel, emSequencia } from './reavaliar-grupos';
 
 const AGORA = new Date('2026-10-12T12:00:00.000Z');
 const DIA = 86_400_000;
@@ -62,5 +62,23 @@ describe('ReavaliarGruposUseCase', () => {
 
     await useCase.execute({ plantaIds: ['p1'], agendaIds: ['ag-rega', 'ag-t'] }, 'u1');
     expect(repo.salvar).toHaveBeenCalled();
+  });
+});
+
+
+describe('emSequencia', () => {
+  it('roda cada passo em ordem com os mesmos argumentos', async () => {
+    const ordem: string[] = [];
+    const passo = (nome: string) => ({ execute: jest.fn(async () => void ordem.push(nome)) });
+    const a = passo('a');
+    const b = passo('b');
+    const tocadas = { plantaIds: ['p1'], agendaIds: ['t1'] };
+    const db = {} as never;
+
+    await emSequencia(a, b).execute(tocadas, 'u1', db);
+
+    expect(ordem).toEqual(['a', 'b']);
+    expect(a.execute).toHaveBeenCalledWith(tocadas, 'u1', db);
+    expect(b.execute).toHaveBeenCalledWith(tocadas, 'u1', db);
   });
 });

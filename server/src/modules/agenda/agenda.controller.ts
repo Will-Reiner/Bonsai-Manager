@@ -20,7 +20,8 @@ import {
 import { CreateAgendaDTO, CreateAgendasLoteDTO, UpdateAgendaDTO, ConcluirAgendasDTO, RegistrarCuidadosDTO, EditarCuidadoDTO } from './agenda.types';
 import '../../middlewares/auth.middleware'; // Import para garantir que a extensão da interface Request seja reconhecida
 import { mensagemDoErro } from '../../utils/errors';
-import { ReavaliarGruposUseCase } from '../planta/use-cases/reavaliar-grupos';
+import { emSequencia, ReavaliarGruposUseCase } from '../planta/use-cases/reavaliar-grupos';
+import { criarSincronizadorDePosts } from '../comunidade/sincronizar-posts';
 import { PrismaReavaliacaoRepository } from '../planta/repositories/prisma-reavaliacao.repository';
 
 export class AgendaController {
@@ -36,7 +37,8 @@ export class AgendaController {
   private excluirCuidadoUseCase: ExcluirCuidadoUseCase;
 
   constructor() {
-    const reavaliar = new ReavaliarGruposUseCase(new PrismaReavaliacaoRepository());
+    // Toda escrita de tarefa reavalia Recém transplantada e os posts da Comunidade (foto de cuidado muda de dia)
+    const reavaliar = emSequencia(new ReavaliarGruposUseCase(new PrismaReavaliacaoRepository()), criarSincronizadorDePosts());
     const agendaRepository = new PrismaAgendaRepository();
     this.createAgendaUseCase = new CreateAgendaUseCase(agendaRepository);
     this.createAgendasLoteUseCase = new CreateAgendasLoteUseCase(agendaRepository);

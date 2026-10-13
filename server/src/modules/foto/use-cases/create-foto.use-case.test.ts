@@ -4,6 +4,7 @@ import { FotoRepository } from '../foto.types';
 describe('CreateFotoUseCase', () => {
   let createFotoUseCase: CreateFotoUseCase;
   let mockFotoRepository: jest.Mocked<FotoRepository>;
+  let mockPosts: { execute: jest.Mock };
 
   beforeEach(() => {
     mockFotoRepository = {
@@ -19,7 +20,8 @@ describe('CreateFotoUseCase', () => {
       updateCapaDaPlanta: jest.fn(),
     };
 
-    createFotoUseCase = new CreateFotoUseCase(mockFotoRepository);
+    mockPosts = { execute: jest.fn().mockResolvedValue(undefined) };
+    createFotoUseCase = new CreateFotoUseCase(mockFotoRepository, mockPosts);
   });
 
   it('should create foto successfully without plantaId', async () => {
@@ -100,5 +102,22 @@ describe('CreateFotoUseCase', () => {
       ...createData,
       usuarioId,
     });
+  });
+
+  it('sincroniza os posts da planta da foto', async () => {
+    mockFotoRepository.checkPlantaBelongsToUser.mockResolvedValue(true);
+    mockFotoRepository.create.mockResolvedValue({ id: 'f1', plantaId: 'planta-1' });
+
+    await createFotoUseCase.execute({ caminhoArquivo: '/x.webp', plantaId: 'planta-1' }, 'user-1');
+
+    expect(mockPosts.execute).toHaveBeenCalledWith({ plantaIds: ['planta-1'] });
+  });
+
+  it('foto sem planta não sincroniza', async () => {
+    mockFotoRepository.create.mockResolvedValue({ id: 'f1', plantaId: null });
+
+    await createFotoUseCase.execute({ caminhoArquivo: '/x.webp' }, 'user-1');
+
+    expect(mockPosts.execute).not.toHaveBeenCalled();
   });
 });

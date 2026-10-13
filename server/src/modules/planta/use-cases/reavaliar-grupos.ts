@@ -52,3 +52,13 @@ export class ReavaliarGruposUseCase implements ReavaliadorDeGrupos {
     if (mudancas.length) await this.repo.salvar(mudancas, db);
   }
 }
+
+
+/** Junta vários "depois de gravar tarefas" num só (ex.: grupos + posts da Comunidade), em ordem. */
+export function emSequencia(...passos: ReavaliadorDeGrupos[]): ReavaliadorDeGrupos {
+  return {
+    async execute(tocadas, usuarioId, db) {
+      for (const passo of passos) await passo.execute(tocadas, usuarioId, db);
+    },
+  };
+}

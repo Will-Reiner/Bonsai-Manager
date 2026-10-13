@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { createFotoSchema, updateFotoSchema, fotoIdSchema, plantaIdSchema } from './foto.schema';
 import { PrismaFotoRepository } from './repositories/prisma-foto.repository';
 import { criarLimpezaDeMidia } from '../midia/limpeza-de-midia';
+import { criarSincronizadorDePosts } from '../comunidade/sincronizar-posts';
 import {
   CreateFotoUseCase,
   GetFotosByPlantaUseCase,
@@ -19,11 +20,12 @@ export class FotoController {
 
   constructor() {
     const fotoRepository = new PrismaFotoRepository();
-    this.createFotoUseCase = new CreateFotoUseCase(fotoRepository);
+    const posts = criarSincronizadorDePosts();
+    this.createFotoUseCase = new CreateFotoUseCase(fotoRepository, posts);
     this.getFotosByPlantaUseCase = new GetFotosByPlantaUseCase(fotoRepository);
     this.getFotoByIdUseCase = new GetFotoByIdUseCase(fotoRepository);
     this.updateFotoUseCase = new UpdateFotoUseCase(fotoRepository);
-    this.deleteFotoUseCase = new DeleteFotoUseCase(fotoRepository, criarLimpezaDeMidia());
+    this.deleteFotoUseCase = new DeleteFotoUseCase(fotoRepository, criarLimpezaDeMidia(), posts);
   }
 
   async create(req: Request, res: Response) {
