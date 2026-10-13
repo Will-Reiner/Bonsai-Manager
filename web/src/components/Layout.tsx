@@ -10,6 +10,7 @@ const tabs: ({ to: string; label: string; icone: NomeIcone; end?: boolean } | nu
   { to: '/', label: 'Bancada', icone: 'bancada', end: true },
   { to: '/colecao', label: 'Coleção', icone: 'colecao' },
   null, // espaço do botão +
+  { to: '/comunidade', label: 'Comunidade', icone: 'comunidade' },
   { to: '/perfil', label: 'Perfil', icone: 'perfil' },
 ];
 
@@ -31,7 +32,7 @@ export function Layout() {
       <Outlet />
 
       <nav className="linha-pincel fixed inset-x-0 bottom-0 z-40 bg-bg/90 pb-safe backdrop-blur">
-        <div className="mx-auto grid h-16 max-w-md grid-cols-4 items-center">
+        <div className="mx-auto grid h-16 max-w-md grid-cols-5 items-center">
           {tabs.map((tab, i) =>
             tab ? (
               <NavLink

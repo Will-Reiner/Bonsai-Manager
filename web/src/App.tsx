@@ -8,6 +8,7 @@ import { CareProvider } from '@/context/CareContext';
 import { LoginPage, RegisterPage } from '@/pages/AuthPages';
 import { BancadaPage } from '@/pages/BancadaPage';
 import { CollectionPage } from '@/pages/CollectionPage';
+import { ComunidadePage } from '@/pages/comunidade/ComunidadePage';
 import { AddPlantPage } from '@/pages/AddPlantPage';
 import { PlantDetailPage } from '@/pages/PlantDetailPage';
 import { EditPlantPage } from '@/pages/EditPlantPage';
@@ -61,6 +62,7 @@ export default function App() {
         <Route element={<Privada><Layout /></Privada>}>
           <Route index element={<BancadaPage />} />
           <Route path="colecao" element={<CollectionPage />} />
+          <Route path="comunidade" element={<ComunidadePage />} />
           <Route path="perfil" element={<ProfilePage />} />
         </Route>
 

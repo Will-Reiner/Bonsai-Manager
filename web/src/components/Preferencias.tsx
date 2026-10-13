@@ -55,7 +55,7 @@ export function OpcoesChips<T extends string>({
 }) {
   return (
     <fieldset>
-      <legend className="label">{titulo}</legend>
+      {titulo && <legend className="label">{titulo}</legend>}
       <div className="flex flex-wrap gap-2">
         {opcoes.map((o) => (
           <button

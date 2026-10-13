@@ -1,8 +1,9 @@
 import type { Estacao } from '@/types';
 
 /** Ícones próprios (traço sumi) servidos de web/public/icones — ver a skill criando-assets-sumi. */
+// "comunidade" é provisório (traço simples) até sair o definitivo pela skill criando-assets-sumi.
 export const ICONES = [
-  'bancada', 'colecao', 'perfil', 'mais',
+  'bancada', 'colecao', 'comunidade', 'perfil', 'mais',
   'registrar', 'agendar', 'rotina', 'adicionar-planta', 'fotos-lote', 'preferencias', 'acesso-rapido', 'historico', 'reagendar',
   'rega', 'adubacao', 'adubacao-liquida', 'poda', 'poda-estrutural', 'desfolha', 'aramacao', 'desaramacao',
   'transplante', 'fitossanitario', 'revisao', 'generico', 'atrasada',
@@ -12,7 +13,7 @@ export const ICONES = [
 export type NomeIcone = (typeof ICONES)[number];
 
 /** Só os ícones da barra de baixo têm desenho próprio para o estado ativo. */
-const COM_ATIVO: readonly NomeIcone[] = ['bancada', 'colecao', 'perfil'];
+const COM_ATIVO: readonly NomeIcone[] = ['bancada', 'colecao', 'comunidade', 'perfil'];
 
 export const urlIcone = (nome: NomeIcone, ativo = false) =>
   `/icones/${nome}${ativo && COM_ATIVO.includes(nome) ? '-ativo' : ''}.svg`;
