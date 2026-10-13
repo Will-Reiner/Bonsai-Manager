@@ -23,7 +23,8 @@ export function ComunidadePreferencias() {
   const [escolhendo, setEscolhendo] = useState(false);
 
   const lista = plantas.data ?? [];
-  const modo = modoPlantas(lista);
+  // Sem a lista não há modo: "Todas" sobre uma lista vazia tornaria todas as plantas privadas
+  const modo = modoPlantas(plantas.data);
   const publicas = lista.filter((p) => p.plantaPublica).length;
 
   async function mudar(campo: Partial<Config>) {
@@ -70,15 +71,21 @@ export function ComunidadePreferencias() {
       {user.perfilPublico && (
         <>
           <div>
-            <OpcoesChips<ModoPlantas>
-              titulo="Quais plantas aparecem"
-              opcoes={[
-                { value: 'todas', label: 'Todas' },
-                { value: 'selecionadas', label: 'Selecionadas' },
-              ]}
-              value={modo}
-              onChange={escolherModo}
-            />
+            {modo ? (
+              <OpcoesChips<ModoPlantas>
+                titulo="Quais plantas aparecem"
+                opcoes={[
+                  { value: 'todas', label: 'Todas' },
+                  { value: 'selecionadas', label: 'Selecionadas' },
+                ]}
+                value={modo}
+                onChange={escolherModo}
+              />
+            ) : (
+              <p className="text-sm text-muted">
+                {plantas.isError ? 'Não foi possível carregar suas plantas.' : 'Carregando suas plantas…'}
+              </p>
+            )}
             {modo === 'selecionadas' && (
               <button type="button" className="mt-2 text-sm font-medium text-primary" onClick={() => setEscolhendo(true)}>
                 {publicas ? `${publicas} de ${lista.length} na comunidade · Escolher` : 'Nenhuma planta aparece ainda · Escolher'}

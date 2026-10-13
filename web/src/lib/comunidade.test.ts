@@ -14,4 +14,7 @@ describe('modoPlantas', () => {
   it('sem plantas → todas (as próximas já nascem públicas)', () => {
     expect(modoPlantas([])).toBe('todas');
   });
+  it('lista ainda não carregada (ou com erro) → sem modo, para não salvar "Todas" sobre nada', () => {
+    expect(modoPlantas(undefined)).toBeNull();
+  });
 });
