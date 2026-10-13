@@ -406,7 +406,7 @@ Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
 No fim de `web/src/index.css`, **fora** de qualquer `@layer` (o `@property` precisa ficar no topo), antes do bloco `@media (prefers-reduced-motion: reduce)`:
 
 ```css
-/* Ensō se desenhando: máscara cônica que gira de 0 a 360° (Spinner em loop; celebração uma vez) */
+/* Ensō se desenhando: máscara cônica de 0 a 360° a partir de 180deg (base do círculo = abertura do traço; "270°" na convenção matemática), para começar e terminar exatamente na falha do pincel. Spinner em loop; celebração uma vez. */
 @property --enso {
   syntax: '<angle>';
   inherits: false;
@@ -427,8 +427,8 @@ No fim de `web/src/index.css`, **fora** de qualquer `@layer` (o `@property` prec
 }
 .enso-carregando,
 .enso-uma-vez {
-  -webkit-mask: conic-gradient(from 200deg, #000 var(--enso), transparent 0);
-  mask: conic-gradient(from 200deg, #000 var(--enso), transparent 0);
+  -webkit-mask: conic-gradient(from 180deg, #000 var(--enso), transparent 0);
+  mask: conic-gradient(from 180deg, #000 var(--enso), transparent 0);
 }
 .enso-carregando {
   animation: enso-desenha 1.1s cubic-bezier(0.45, 0.05, 0.25, 1) infinite;
