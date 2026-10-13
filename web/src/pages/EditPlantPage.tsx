@@ -6,6 +6,7 @@ import { Button, ErrorState, Field, PageHeader, Spinner } from '@/components/ui'
 import { ConfirmSheet, Sheet } from '@/components/Sheet';
 import { PhotoInput } from '@/components/PhotoInput';
 import { GrupoChips } from '@/components/GrupoChips';
+import { MostrarNaComunidade } from '@/components/planta/MostrarNaComunidade';
 import { SpeciesPicker } from '@/components/SpeciesPicker';
 import { useToast } from '@/context/ToastContext';
 import { errorMessage } from '@/lib/api';
@@ -38,6 +39,7 @@ function EditPlantForm({ planta: p }: { planta: Planta }) {
   const [dataAquisicao, setDataAquisicao] = useState(p.dataAquisicao ? toDateInput(p.dataAquisicao) : '');
   const [modo, setModo] = useState<ModoAquisicao | ''>(p.modoAquisicao ?? '');
   const [grupo, setGrupo] = useState<GrupoPlanta | null>(p.grupo ?? null);
+  const [plantaPublica, setPlantaPublica] = useState(p.plantaPublica);
   const [observacoes, setObservacoes] = useState(p.observacoes ?? '');
   const [foto, setFoto] = useState<File | null>(null);
   const [trocarEspecie, setTrocarEspecie] = useState(false);
@@ -59,6 +61,7 @@ function EditPlantForm({ planta: p }: { planta: Planta }) {
         observacoes: observacoes.trim(),
         // só envia se mudou, para não cancelar o retorno automático à toa
         ...(grupo !== (p.grupo ?? null) ? { grupo } : {}),
+        ...(plantaPublica !== p.plantaPublica ? { plantaPublica } : {}),
         ...(fotoCapaUrl ? { fotoCapaUrl } : {}),
       });
       await queryClient.invalidateQueries({ queryKey: keys.plantas });
@@ -145,6 +148,7 @@ function EditPlantForm({ planta: p }: { planta: Planta }) {
             </p>
           )}
         </div>
+        <MostrarNaComunidade checked={plantaPublica} onChange={setPlantaPublica} />
         <Field label="Observações">
           <textarea className="input min-h-28" value={observacoes} onChange={(e) => setObservacoes(e.target.value)} />
         </Field>

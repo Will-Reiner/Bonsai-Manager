@@ -5,7 +5,9 @@ import { Camera, Check, CheckCircle2, ImagePlus, X } from 'lucide-react';
 import { Button, Field, PageHeader, PlantThumb } from '@/components/ui';
 import { PhotoInput } from '@/components/PhotoInput';
 import { GrupoChips } from '@/components/GrupoChips';
+import { MostrarNaComunidade } from '@/components/planta/MostrarNaComunidade';
 import { SpeciesPicker } from '@/components/SpeciesPicker';
+import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/context/ToastContext';
 import { errorMessage } from '@/lib/api';
 import { fotosApi, plantasApi } from '@/lib/endpoints';
@@ -38,6 +40,7 @@ export function AddPlantPage() {
   const queryClient = useQueryClient();
   const toast = useToast();
   const especies = useEspecies();
+  const { user } = useAuth();
 
   const [passo, setPasso] = useState(0);
   const [especieId, setEspecieId] = useState('');
@@ -46,6 +49,7 @@ export function AddPlantPage() {
   const [dataAquisicao, setDataAquisicao] = useState('');
   const [modo, setModo] = useState<ModoAquisicao | ''>('');
   const [grupo, setGrupo] = useState<GrupoPlanta | null>(null);
+  const [plantaPublica, setPlantaPublica] = useState(true);
   /** Fotos da galeria — a capa é escolhida entre elas no passo seguinte. */
   const [fotos, setFotos] = useState<File[]>([]);
   const [capaIndice, setCapaIndice] = useState(0);
@@ -71,6 +75,7 @@ export function AddPlantPage() {
     setCapaIndice(0);
     setFoto(null);
     setCriada(null);
+    setPlantaPublica(true);
   }
 
   async function salvar() {
@@ -97,6 +102,7 @@ export function AddPlantPage() {
         modoAquisicao: modo || null,
         grupo,
         fotoCapaUrl,
+        plantaPublica: !!user?.perfilPublico && plantaPublica,
       });
       if (galeria.length) {
         const resultados = await Promise.allSettled(
@@ -224,6 +230,9 @@ export function AddPlantPage() {
               </div>
             </div>
             <GrupoChips value={grupo} onChange={setGrupo} />
+            <div className="mt-5">
+              <MostrarNaComunidade checked={plantaPublica} onChange={setPlantaPublica} />
+            </div>
           </section>
         )}
 
