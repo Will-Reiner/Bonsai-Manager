@@ -218,7 +218,7 @@ export function RegistrarPage() {
         queryClient.invalidateQueries({ queryKey: keys.plantas });
         const k = concluirAgendaIds.length;
         const extra = k ? ` · ${k === 1 ? '1 tarefa concluída' : `${k} tarefas concluídas`}` : '';
-        toast(`Cuidado registrado 🌿${tocadas.length > 1 ? ` em ${tocadas.length} plantas` : ''}${extra}`);
+        toast(`Cuidado registrado${tocadas.length > 1 ? ` em ${tocadas.length} plantas` : ''}${extra}`, 'celebra');
         if (montadoRef.current) sair();
       } catch (error) {
         toast(errorMessage(error), 'error');

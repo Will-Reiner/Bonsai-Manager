@@ -133,7 +133,7 @@ export function ConcluirPage() {
       queryClient.invalidateQueries({ queryKey: keys.rotinas });
       queryClient.invalidateQueries({ queryKey: ['fotos'] });
       queryClient.invalidateQueries({ queryKey: keys.plantas });
-      toast(`${marcadas.length > 1 ? `${marcadas.length} tarefas concluídas` : 'Tarefa concluída'} 🌿`);
+      toast(marcadas.length > 1 ? `${marcadas.length} tarefas concluídas` : 'Tarefa concluída', 'celebra');
       sair();
     } catch (error) {
       toast(errorMessage(error), 'error');
