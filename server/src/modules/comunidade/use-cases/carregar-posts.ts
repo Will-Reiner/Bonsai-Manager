@@ -1,14 +1,14 @@
 import { conteudoPorDia } from '../dominio/conteudo';
 import { montarPosts } from '../dominio/montar';
-import { codificarCursor } from '../repositories/filtros';
+import { codificarCursor, janelaDosPosts } from '../repositories/filtros';
 import type { LeituraComunidadeRepository, PaginaDTO, PostDTO, PostLido } from '../comunidade.types';
 
 export const LIMITE_PAGINA = 20;
 
-/** Lê fotos e cuidados das plantas dos posts (uma vez para a página toda) e monta os DTOs. */
+/** Lê fotos e cuidados das plantas dos posts, só nos dias da página (uma vez para a página toda), e monta os DTOs. */
 export async function carregarPosts(repo: LeituraComunidadeRepository, posts: PostLido[], viewerId: string): Promise<PostDTO[]> {
   if (!posts.length) return [];
-  const { fotos, cuidados } = await repo.conteudo([...new Set(posts.map((p) => p.plantaId))]);
+  const { fotos, cuidados } = await repo.conteudo([...new Set(posts.map((p) => p.plantaId))], janelaDosPosts(posts));
   return montarPosts(posts, conteudoPorDia(fotos, cuidados), viewerId);
 }
 

@@ -53,10 +53,18 @@ export interface LeituraComunidadeRepository {
   post(id: string): Promise<PostLido | null>;
   /** Posts das plantas públicas do usuário (inclui os fora do feed), por dia desc. */
   postsDoUsuario(usuarioId: string, cursor: string | undefined, limite: number): Promise<PostLido[]>;
-  conteudo(plantaIds: string[]): Promise<{ fotos: FotoLida[]; cuidados: CuidadoLido[] }>;
+  /** Sem janela: o histórico inteiro (página da planta). */
+  conteudo(plantaIds: string[], janela?: Janela): Promise<{ fotos: FotoLida[]; cuidados: CuidadoLido[] }>;
   perfil(usuarioId: string, viewerId: string): Promise<PerfilLido | null>;
   plantasPublicas(usuarioId: string): Promise<PlantaLidaBase[]>;
   planta(id: string): Promise<PlantaLida | null>;
   /** Perfis públicos por nome ou nome público (sem diferenciar maiúsculas). */
   buscar(q: string, limite: number): Promise<UsuarioLido[]>;
+}
+
+
+/** Intervalo [de, ate) de datas a ler (dias de uma página de posts, com folga para o fuso). */
+export interface Janela {
+  de: Date;
+  ate: Date;
 }

@@ -1,4 +1,4 @@
-import { codificarCursor, filtroDoFeed, filtroDosPostsDoUsuario, lerCursor } from './filtros';
+import { codificarCursor, filtroDoFeed, filtroDosPostsDoUsuario, filtrosDaJanela, janelaDosPosts, lerCursor } from './filtros';
 
 const visivel = { OR: [{ usuarioId: 'eu' }, { usuario: { perfilPublico: true }, planta: { plantaPublica: true } }] };
 
@@ -38,6 +38,25 @@ describe('cursor da página (posição do último item, não o item em si)', () 
       usuarioId: 'u1',
       planta: { plantaPublica: true },
       AND: [{ OR: [{ dia: { lt: data } }, { dia: data, id: { lt: id } }] }],
+    });
+  });
+});
+
+
+describe('janela de leitura do conteúdo (só os dias da página)', () => {
+  const de = new Date('2026-10-09T00:00:00.000Z');
+  const ate = new Date('2026-10-14T00:00:00.000Z');
+
+  it('do dia mais antigo − 1 ao mais novo + 2 (cobre o fuso de São Paulo)', () => {
+    const posts = [{ dia: new Date('2026-10-12T00:00:00Z') }, { dia: new Date('2026-10-10T00:00:00Z') }];
+    expect(janelaDosPosts(posts)).toEqual({ de, ate });
+  });
+  it('fotos pela captura, pelo upload (sem captura) ou pelo dia do cuidado; cuidados pela data feita', () => {
+    const dentro = { gte: de, lt: ate };
+    const peloCuidado = { OR: [{ dataConcluida: dentro }, { dataConcluida: null, dataAgendada: dentro }] };
+    expect(filtrosDaJanela({ de, ate })).toEqual({
+      fotos: { OR: [{ dataCaptura: dentro }, { dataCaptura: null, createdAt: dentro }, { agenda: { status: 'CONCLUIDO', ...peloCuidado } }] },
+      cuidados: peloCuidado,
     });
   });
 });

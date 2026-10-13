@@ -1,5 +1,5 @@
 import type { Prisma } from '@prisma/client';
-import type { AbaFeed } from '../comunidade.types';
+import type { AbaFeed, Janela } from '../comunidade.types';
 
 /** Posição do último item de uma página, na ordem (data desc, id desc). */
 export interface Cursor {
@@ -45,5 +45,24 @@ export function filtroDosPostsDoUsuario(usuarioId: string, cursor?: string): Pri
     usuarioId,
     planta: { plantaPublica: true },
     ...(cursor ? { AND: [depoisDoCursor('dia', lerCursor(cursor))] } : {}),
+  };
+}
+
+
+const DIA_MS = 86_400_000;
+
+/** Dias da página com folga: o dia local de São Paulo vai de dia 03h a dia+1 03h (UTC). */
+export function janelaDosPosts(posts: { dia: Date }[]): Janela {
+  const tempos = posts.map((p) => p.dia.getTime());
+  return { de: new Date(Math.min(...tempos) - DIA_MS), ate: new Date(Math.max(...tempos) + 2 * DIA_MS) };
+}
+
+/** Onde de fotos e cuidados na janela; o dia exato continua sendo decidido em `conteudoPorDia`. */
+export function filtrosDaJanela({ de, ate }: Janela): { fotos: Prisma.FotoWhereInput; cuidados: Prisma.AgendaWhereInput } {
+  const dentro = { gte: de, lt: ate };
+  const peloCuidado = { OR: [{ dataConcluida: dentro }, { dataConcluida: null, dataAgendada: dentro }] };
+  return {
+    fotos: { OR: [{ dataCaptura: dentro }, { dataCaptura: null, createdAt: dentro }, { agenda: { status: 'CONCLUIDO', ...peloCuidado } }] },
+    cuidados: peloCuidado,
   };
 }

@@ -1,6 +1,6 @@
 import { prisma } from '../../../lib/prisma';
-import { filtroDoFeed, filtroDosPostsDoUsuario } from './filtros';
-import type { AbaFeed, LeituraComunidadeRepository } from '../comunidade.types';
+import { filtroDoFeed, filtroDosPostsDoUsuario, filtrosDaJanela } from './filtros';
+import type { AbaFeed, Janela, LeituraComunidadeRepository } from '../comunidade.types';
 
 const usuarioLido = { id: true, nome: true, nomePublico: true, fotoPerfilUrl: true, perfilPublico: true, historicoPublico: true } as const;
 const plantaLida = {
@@ -38,9 +38,10 @@ export class PrismaLeituraComunidadeRepository implements LeituraComunidadeRepos
   }
 
   // Em sequência (não Promise.all), como o resto do projeto
-  async conteudo(plantaIds: string[]) {
+  async conteudo(plantaIds: string[], janela?: Janela) {
+    const naJanela = janela ? filtrosDaJanela(janela) : null;
     const fotos = await prisma.foto.findMany({
-      where: { plantaId: { in: plantaIds }, tipo: { not: 'VISAO_FUTURA' } },
+      where: { plantaId: { in: plantaIds }, tipo: { not: 'VISAO_FUTURA' }, ...(naJanela ? { AND: [naJanela.fotos] } : {}) },
       select: {
         id: true,
         plantaId: true,
@@ -53,7 +54,7 @@ export class PrismaLeituraComunidadeRepository implements LeituraComunidadeRepos
       },
     });
     const cuidados = await prisma.agenda.findMany({
-      where: { plantaId: { in: plantaIds }, status: 'CONCLUIDO' },
+      where: { plantaId: { in: plantaIds }, status: 'CONCLUIDO', ...(naJanela ? { AND: [naJanela.cuidados] } : {}) },
       orderBy: [{ dataConcluida: 'asc' }, { createdAt: 'asc' }],
       select: {
         plantaId: true,

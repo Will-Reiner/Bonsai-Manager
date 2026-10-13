@@ -52,7 +52,8 @@ describe('ObterFeedUseCase', () => {
     repo.feed.mockResolvedValue([post()]);
     const r = await new ObterFeedUseCase(repo).execute('b', 'explorar');
     expect(repo.feed).toHaveBeenCalledWith('b', 'explorar', undefined, 20);
-    expect(repo.conteudo).toHaveBeenCalledWith(['p1']);
+    // Só os dias da página (não o histórico inteiro das plantas)
+    expect(repo.conteudo).toHaveBeenCalledWith(['p1'], { de: new Date('2026-10-09T00:00:00Z'), ate: new Date('2026-10-12T00:00:00Z') });
     expect(r.itens).toHaveLength(1);
     expect(r.proximoCursor).toBeNull();
   });
