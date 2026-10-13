@@ -46,7 +46,7 @@ export class AmizadeController {
       res.status(201).json(amizade);
     } catch (error) {
       if (error instanceof Error) {
-        if (error.message === 'Não pode seguir a si mesmo.') {
+        if (error.message === 'Não pode seguir a si mesmo.' || error.message === 'Este perfil é privado.') {
           return res.status(400).json({ message: error.message });
         }
         if (error.message === 'Utilizador a ser seguido não encontrado.') {

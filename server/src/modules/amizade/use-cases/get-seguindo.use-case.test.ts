@@ -11,6 +11,7 @@ describe('GetSeguindoUseCase', () => {
       unfollow: jest.fn(),
       existsAmizade: jest.fn(),
       userExists: jest.fn(),
+      perfilPublico: jest.fn(),
       findSeguidores: jest.fn(),
       findSeguindo: jest.fn(),
     };

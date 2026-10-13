@@ -11,10 +11,13 @@ export class FollowUserUseCase {
       throw new Error('Não pode seguir a si mesmo.');
     }
 
-    // Verifica se o usuário a ser seguido existe
-    const userExists = await this.amizadeRepository.userExists(seguidoId);
-    if (!userExists) {
+    // Só perfis públicos podem ser seguidos (Comunidade aberta, sem aprovação)
+    const publico = await this.amizadeRepository.perfilPublico(seguidoId);
+    if (publico === null) {
       throw new Error('Utilizador a ser seguido não encontrado.');
+    }
+    if (!publico) {
+      throw new Error('Este perfil é privado.');
     }
 
     // Verifica se a amizade já existe

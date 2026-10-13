@@ -350,6 +350,7 @@ model Ferramenta {
 model Amizade {
   seguidorId String
   seguidoId  String
+  createdAt  DateTime @default(now())
   
   seguidor   Usuario @relation("Seguidor", fields: [seguidorId], references: [id], onDelete: Cascade)
   seguido    Usuario @relation("Seguido", fields: [seguidoId], references: [id], onDelete: Cascade)

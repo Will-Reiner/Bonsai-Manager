@@ -18,6 +18,8 @@ export interface AmizadeRepository {
   unfollow(data: UnfollowDTO): Promise<void>;
   existsAmizade(seguidorId: string, seguidoId: string): Promise<boolean>;
   userExists(userId: string): Promise<boolean>;
+  /** null = usuário não existe. */
+  perfilPublico(userId: string): Promise<boolean | null>;
   findSeguidores(userId: string): Promise<any[]>;
   findSeguindo(userId: string): Promise<any[]>;
 }

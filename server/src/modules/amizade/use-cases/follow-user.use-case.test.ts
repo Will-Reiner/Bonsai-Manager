@@ -11,6 +11,7 @@ describe('FollowUserUseCase', () => {
       unfollow: jest.fn(),
       existsAmizade: jest.fn(),
       userExists: jest.fn(),
+      perfilPublico: jest.fn(),
       findSeguindo: jest.fn(),
       findSeguidores: jest.fn(),
     };
@@ -30,13 +31,13 @@ describe('FollowUserUseCase', () => {
       createdAt: new Date(),
     };
 
-    mockAmizadeRepository.userExists.mockResolvedValue(true);
+    mockAmizadeRepository.perfilPublico.mockResolvedValue(true);
     mockAmizadeRepository.existsAmizade.mockResolvedValue(false);
     mockAmizadeRepository.follow.mockResolvedValue(expectedResult);
 
     const result = await followUserUseCase.execute(followData);
 
-    expect(mockAmizadeRepository.userExists).toHaveBeenCalledWith('user2');
+    expect(mockAmizadeRepository.perfilPublico).toHaveBeenCalledWith('user2');
     expect(mockAmizadeRepository.existsAmizade).toHaveBeenCalledWith('user1', 'user2');
     expect(mockAmizadeRepository.follow).toHaveBeenCalledWith(followData);
     expect(result).toEqual(expectedResult);
@@ -52,7 +53,7 @@ describe('FollowUserUseCase', () => {
       'Não pode seguir a si mesmo.'
     );
 
-    expect(mockAmizadeRepository.userExists).not.toHaveBeenCalled();
+    expect(mockAmizadeRepository.perfilPublico).not.toHaveBeenCalled();
     expect(mockAmizadeRepository.existsAmizade).not.toHaveBeenCalled();
     expect(mockAmizadeRepository.follow).not.toHaveBeenCalled();
   });
@@ -63,13 +64,13 @@ describe('FollowUserUseCase', () => {
       seguidoId: 'nonexistent',
     };
 
-    mockAmizadeRepository.userExists.mockResolvedValue(false);
+    mockAmizadeRepository.perfilPublico.mockResolvedValue(null);
 
     await expect(followUserUseCase.execute(followData)).rejects.toThrow(
       'Utilizador a ser seguido não encontrado.'
     );
 
-    expect(mockAmizadeRepository.userExists).toHaveBeenCalledWith('nonexistent');
+    expect(mockAmizadeRepository.perfilPublico).toHaveBeenCalledWith('nonexistent');
     expect(mockAmizadeRepository.existsAmizade).not.toHaveBeenCalled();
     expect(mockAmizadeRepository.follow).not.toHaveBeenCalled();
   });
@@ -80,15 +81,22 @@ describe('FollowUserUseCase', () => {
       seguidoId: 'user2',
     };
 
-    mockAmizadeRepository.userExists.mockResolvedValue(true);
+    mockAmizadeRepository.perfilPublico.mockResolvedValue(true);
     mockAmizadeRepository.existsAmizade.mockResolvedValue(true);
 
     await expect(followUserUseCase.execute(followData)).rejects.toThrow(
       'Já está a seguir este utilizador.'
     );
 
-    expect(mockAmizadeRepository.userExists).toHaveBeenCalledWith('user2');
+    expect(mockAmizadeRepository.perfilPublico).toHaveBeenCalledWith('user2');
     expect(mockAmizadeRepository.existsAmizade).toHaveBeenCalledWith('user1', 'user2');
+    expect(mockAmizadeRepository.follow).not.toHaveBeenCalled();
+  });
+
+  it('não segue perfil privado', async () => {
+    mockAmizadeRepository.perfilPublico.mockResolvedValue(false);
+
+    await expect(followUserUseCase.execute({ seguidorId: 'user1', seguidoId: 'user2' })).rejects.toThrow('Este perfil é privado.');
     expect(mockAmizadeRepository.follow).not.toHaveBeenCalled();
   });
 });

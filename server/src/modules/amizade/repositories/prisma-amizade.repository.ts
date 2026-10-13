@@ -58,6 +58,11 @@ export class PrismaAmizadeRepository implements AmizadeRepository {
     });
   }
 
+  async perfilPublico(userId: string): Promise<boolean | null> {
+    const user = await prisma.usuario.findUnique({ where: { id: userId }, select: { perfilPublico: true } });
+    return user ? user.perfilPublico : null;
+  }
+
   async userExists(userId: string): Promise<boolean> {
     const user = await prisma.usuario.findUnique({
       where: { id: userId },
