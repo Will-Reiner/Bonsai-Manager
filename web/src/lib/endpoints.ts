@@ -26,7 +26,7 @@ export const authApi = {
   register: (body: { nome: string; email: string; senha: string }) =>
     data<Usuario>(api.post('/auth/register', body)),
   me: () => data<Usuario>(api.get('/auth/me')),
-  updateMe: (body: Partial<Pick<Usuario, 'nome' | 'nomePublico' | 'localidade' | 'bio' | 'perfilPublico'>> & {
+  updateMe: (body: Partial<Pick<Usuario, 'nome' | 'nomePublico' | 'localidade' | 'bio' | 'perfilPublico' | 'historicoPublico' | 'postarAutomatico'>> & {
     fotoPerfilUrl?: string;
   }) => data<Usuario>(api.put('/auth/me', body)),
 };
@@ -40,6 +40,7 @@ export interface PlantaInput {
   modoAquisicao?: ModoAquisicao | null;
   observacoes?: string;
   fotoCapaUrl?: string | null;
+  plantaPublica?: boolean;
 }
 
 export const plantasApi = {
@@ -48,6 +49,8 @@ export const plantasApi = {
   create: (body: PlantaInput) => data<Planta>(api.post('/plantas', body)),
   update: (id: string, body: Partial<PlantaInput>) => data<Planta>(api.put(`/plantas/${id}`, body)),
   remove: (id: string) => api.delete(`/plantas/${id}`),
+  /** As informadas ficam públicas; as demais, privadas. */
+  definirPublicas: (plantaIds: string[]) => api.put('/plantas/publicas', { plantaIds }),
 };
 
 export interface AgendaUpdate {

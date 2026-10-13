@@ -17,6 +17,10 @@ export interface Usuario {
   fotoPerfilUrl?: string | null;
   bio?: string | null;
   perfilPublico: boolean;
+  /** Cuidados aparecem nos posts e na página pública da planta. */
+  historicoPublico: boolean;
+  /** Posts novos entram no feed da Comunidade. */
+  postarAutomatico: boolean;
   recursosHabilitado: boolean;
   createdAt: string;
   role: Role;
