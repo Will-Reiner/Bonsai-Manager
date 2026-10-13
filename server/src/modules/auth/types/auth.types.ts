@@ -23,6 +23,8 @@ export interface UpdateMeDTO {
   bio?: string;
   fotoPerfilUrl?: string;
   perfilPublico?: boolean;
+  historicoPublico?: boolean;
+  postarAutomatico?: boolean;
   recursosHabilitado?: boolean;
 }
 
@@ -35,6 +37,8 @@ export interface UserResponseDTO {
   fotoPerfilUrl: string | null;
   bio: string | null;
   perfilPublico: boolean;
+  historicoPublico: boolean;
+  postarAutomatico: boolean;
   recursosHabilitado: boolean;
   createdAt: Date;
   role: string;

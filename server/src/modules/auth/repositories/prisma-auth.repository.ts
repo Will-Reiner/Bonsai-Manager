@@ -1,6 +1,23 @@
 import { prisma } from '../../../lib/prisma';
 import { AuthRepository, RegisterDTO, UserResponseDTO, GetMeResponseDTO, UpdateMeDTO } from '../types/auth.types';
 
+/** Campos do usuário devolvidos ao app (login, cadastro, /me). */
+const camposDoUsuario = {
+  id: true,
+  nome: true,
+  email: true,
+  nomePublico: true,
+  localidade: true,
+  fotoPerfilUrl: true,
+  bio: true,
+  perfilPublico: true,
+  historicoPublico: true,
+  postarAutomatico: true,
+  recursosHabilitado: true,
+  createdAt: true,
+  role: true,
+} as const;
+
 export class PrismaAuthRepository implements AuthRepository {
   async findUserByEmail(email: string): Promise<any | null> {
     return prisma.usuario.findUnique({
@@ -17,19 +34,7 @@ export class PrismaAuthRepository implements AuthRepository {
         senhaHash: senha, // A senha já vem hasheada do use case
         nomePublico: data.nomePublico || data.nome,
       },
-      select: {
-        id: true,
-        nome: true,
-        email: true,
-        nomePublico: true,
-        localidade: true,
-        fotoPerfilUrl: true,
-        bio: true,
-        perfilPublico: true,
-        recursosHabilitado: true,
-        createdAt: true,
-        role: true,
-      },
+      select: camposDoUsuario,
     });
 
     return newUser;
@@ -39,17 +44,7 @@ export class PrismaAuthRepository implements AuthRepository {
     const user = await prisma.usuario.findUnique({
       where: { id },
       select: {
-        id: true,
-        nome: true,
-        email: true,
-        nomePublico: true,
-        localidade: true,
-        fotoPerfilUrl: true,
-        bio: true,
-        perfilPublico: true,
-        recursosHabilitado: true,
-        createdAt: true,
-        role: true,
+        ...camposDoUsuario,
         seguindo: {
           select: {
             seguido: {
@@ -87,19 +82,7 @@ export class PrismaAuthRepository implements AuthRepository {
     const updatedUser = await prisma.usuario.update({
       where: { id },
       data,
-      select: {
-        id: true,
-        nome: true,
-        email: true,
-        nomePublico: true,
-        localidade: true,
-        fotoPerfilUrl: true,
-        bio: true,
-        perfilPublico: true,
-        recursosHabilitado: true,
-        createdAt: true,
-        role: true,
-      },
+      select: camposDoUsuario,
     });
 
     return updatedUser;

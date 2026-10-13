@@ -41,6 +41,8 @@ describe('RegisterUseCase', () => {
         fotoPerfilUrl: null,
         bio: null,
         perfilPublico: false,
+        historicoPublico: false,
+        postarAutomatico: true,
         recursosHabilitado: false,
         createdAt: new Date(),
         role: 'USER',

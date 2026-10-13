@@ -30,6 +30,8 @@ const swaggerDefinition = {
           nomePublico: { type: 'string', nullable: true },
           fotoPerfilUrl: { type: 'string', nullable: true },
           perfilPublico: { type: 'boolean' },
+          historicoPublico: { type: 'boolean' },
+          postarAutomatico: { type: 'boolean' },
           role: { type: 'string', enum: ['USER', 'ADMIN'] },
           createdAt: { type: 'string', format: 'date-time' },
           updatedAt: { type: 'string', format: 'date-time' },

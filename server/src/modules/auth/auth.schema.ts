@@ -29,6 +29,8 @@ export const updateUserSchema = z.object({
     bio: z.string().optional(),
     fotoPerfilUrl: z.string().url().optional(),
     perfilPublico: z.boolean().optional(),
+    historicoPublico: z.boolean().optional(),
+    postarAutomatico: z.boolean().optional(),
     recursosHabilitado: z.boolean().optional(),
   })
 });
