@@ -54,3 +54,10 @@ export const plantaIdSchema = z.object({
     id: z.string().uuid({ message: 'ID da planta inválido.' }),
   }),
 });
+
+
+export const definirPublicasSchema = z.object({
+  body: z.object({
+    plantaIds: z.array(z.string().uuid('Planta inválida.')).max(2000),
+  }),
+});

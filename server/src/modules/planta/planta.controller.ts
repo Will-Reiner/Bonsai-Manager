@@ -1,13 +1,14 @@
 import { Request, Response } from 'express';
 import { parsePagination, buildPaginatedResponse } from '../../utils/pagination';
 import { prisma } from '../../lib/prisma';
-import { createPlantaSchema, updatePlantaSchema, plantaIdSchema } from './planta.schema';
+import { createPlantaSchema, updatePlantaSchema, plantaIdSchema, definirPublicasSchema } from './planta.schema';
 import { 
   CreatePlantaUseCase, 
   GetPlantasByUserUseCase, 
   GetPlantaByIdUseCase, 
   UpdatePlantaUseCase, 
-  DeletePlantaUseCase 
+  DeletePlantaUseCase,
+  DefinirPlantasPublicasUseCase,
 } from './use-cases';
 import { PrismaPlantaRepository, PrismaEspecieRepository } from './repositories';
 import { criarLimpezaDeMidia } from '../midia/limpeza-de-midia';
@@ -24,6 +25,7 @@ const getPlantasByUserUseCase = new GetPlantasByUserUseCase(plantaRepository);
 const getPlantaByIdUseCase = new GetPlantaByIdUseCase(plantaRepository);
 const updatePlantaUseCase = new UpdatePlantaUseCase(plantaRepository, especieRepository, limpezaDeMidia);
 const deletePlantaUseCase = new DeletePlantaUseCase(plantaRepository, limpezaDeMidia);
+const definirPlantasPublicasUseCase = new DefinirPlantasPublicasUseCase(plantaRepository);
 
 export const plantaController = {
   create: async (req: Request, res: Response) => {
@@ -101,6 +103,17 @@ export const plantaController = {
         return res.status(409).json({ error: 'Já existe uma planta com esse código.' });
       }
       return res.status(400).json({ error: mensagemDoErro(error, 'Erro ao atualizar planta') });
+    }
+  },
+
+  definirPublicas: async (req: Request, res: Response) => {
+    try {
+      const usuarioId = req.user!.userId;
+      const { plantaIds } = definirPublicasSchema.parse(req).body;
+      await definirPlantasPublicasUseCase.execute(usuarioId, plantaIds);
+      return res.status(204).send();
+    } catch (error: any) {
+      return res.status(400).json({ error: mensagemDoErro(error, 'Erro ao salvar plantas da comunidade') });
     }
   },
 

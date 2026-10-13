@@ -101,6 +101,8 @@ export interface PlantaRepository {
   /** Dias da preferência, Transplantes pendentes e plantas candidatas (em Pré-transplante ou com Transplante pendente). */
   estadoPreTransplante(usuarioId: string): Promise<{ dias: number; plantas: PlantaPre[]; pendentes: TransplantePendente[] }>;
   aplicarMudancasPre(mudancas: (PlantaPre & { grupoLido: GrupoPlanta | null })[]): Promise<void>;
+  /** As plantas informadas (do usuário) ficam públicas; as demais dele, privadas. Ids de outros usuários são ignorados. */
+  definirPublicas(usuarioId: string, plantaIds: string[]): Promise<void>;
 }
 
 export interface EspecieRepository {

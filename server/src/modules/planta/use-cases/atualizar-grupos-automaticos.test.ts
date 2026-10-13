@@ -20,6 +20,7 @@ describe('atualizarGruposAutomaticos', () => {
       resolverGruposVencidos: jest.fn().mockResolvedValue(undefined),
       estadoPreTransplante: jest.fn().mockResolvedValue({ dias: 30, plantas: [], pendentes: [] }),
       aplicarMudancasPre: jest.fn().mockResolvedValue(undefined),
+      definirPublicas: jest.fn(),
     };
   });
 

@@ -10,6 +10,7 @@ plantaRouter.use(authMiddleware);
 plantaRouter.post('/', plantaController.create);
 plantaRouter.get('/', plantaController.getAllByUser);
 plantaRouter.get('/:id', plantaController.getById);
+plantaRouter.put('/publicas', plantaController.definirPublicas); // antes de /:id
 plantaRouter.put('/:id', plantaController.update);
 plantaRouter.delete('/:id', plantaController.delete);
 

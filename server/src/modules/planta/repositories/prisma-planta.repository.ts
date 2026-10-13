@@ -168,6 +168,13 @@ export class PrismaPlantaRepository implements PlantaRepository {
     };
   }
 
+  async definirPublicas(usuarioId: string, plantaIds: string[]): Promise<void> {
+    await this.prisma.$transaction([
+      this.prisma.planta.updateMany({ where: { usuarioId, id: { in: plantaIds } }, data: { plantaPublica: true } }),
+      this.prisma.planta.updateMany({ where: { usuarioId, id: { notIn: plantaIds } }, data: { plantaPublica: false } }),
+    ]);
+  }
+
   async aplicarMudancasPre(mudancas: (PlantaPre & { grupoLido: GrupoPlanta | null })[]): Promise<void> {
     await this.prisma.$transaction(
       mudancas.map((m) =>
