@@ -12,8 +12,8 @@ export const ICONES = [
 
 export type NomeIcone = (typeof ICONES)[number];
 
-/** Só os ícones da barra de baixo têm desenho próprio para o estado ativo. */
-const COM_ATIVO: readonly NomeIcone[] = ['bancada', 'colecao', 'comunidade', 'perfil'];
+/** Ícones com desenho próprio para o estado ativo (versão cheia): barra de baixo e ações da Comunidade. */
+const COM_ATIVO: readonly NomeIcone[] = ['bancada', 'colecao', 'comunidade', 'perfil', 'curtir', 'comentar', 'salvar', 'notificacoes', 'seguir'];
 
 export const urlIcone = (nome: NomeIcone, ativo = false) =>
   `/icones/${nome}${ativo && COM_ATIVO.includes(nome) ? '-ativo' : ''}.svg`;

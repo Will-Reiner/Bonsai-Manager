@@ -35,9 +35,12 @@ describe('urlIcone', () => {
     expect(urlIcone('rega')).toBe('/icones/rega.svg');
   });
 
-  it('só a navegação tem desenho ativo; os demais ignoram o pedido', () => {
+  it('navegação e ações da Comunidade têm desenho ativo; os demais ignoram o pedido', () => {
     expect(urlIcone('bancada', true)).toBe('/icones/bancada-ativo.svg');
     expect(urlIcone('perfil', true)).toBe('/icones/perfil-ativo.svg');
+    expect(urlIcone('comunidade', true)).toBe('/icones/comunidade-ativo.svg');
+    expect(urlIcone('curtir', true)).toBe('/icones/curtir-ativo.svg');
+    expect(urlIcone('curtir')).toBe('/icones/curtir.svg');
     expect(urlIcone('rega', true)).toBe('/icones/rega.svg');
     expect(urlIcone('mais', true)).toBe('/icones/mais.svg');
   });
