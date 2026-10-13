@@ -66,3 +66,9 @@ export function filtrosDaJanela({ de, ate }: Janela): { fotos: Prisma.FotoWhereI
     cuidados: peloCuidado,
   };
 }
+
+
+/** Busca de pessoas: só perfis públicos e só pelo nome público (o nome cadastrado não liga um pseudônimo ao nome real). */
+export function filtroDaBusca(q: string): Prisma.UsuarioWhereInput {
+  return { perfilPublico: true, nomePublico: { contains: q, mode: 'insensitive' } };
+}

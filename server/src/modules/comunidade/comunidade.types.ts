@@ -58,7 +58,7 @@ export interface LeituraComunidadeRepository {
   perfil(usuarioId: string, viewerId: string): Promise<PerfilLido | null>;
   plantasPublicas(usuarioId: string): Promise<PlantaLidaBase[]>;
   planta(id: string): Promise<PlantaLida | null>;
-  /** Perfis públicos por nome ou nome público (sem diferenciar maiúsculas). */
+  /** Perfis públicos pelo nome público (sem diferenciar maiúsculas). */
   buscar(q: string, limite: number): Promise<UsuarioLido[]>;
 }
 

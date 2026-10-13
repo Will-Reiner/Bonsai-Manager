@@ -1,4 +1,4 @@
-import { codificarCursor, filtroDoFeed, filtroDosPostsDoUsuario, filtrosDaJanela, janelaDosPosts, lerCursor } from './filtros';
+import { codificarCursor, filtroDaBusca, filtroDoFeed, filtroDosPostsDoUsuario, filtrosDaJanela, janelaDosPosts, lerCursor } from './filtros';
 
 const visivel = { OR: [{ usuarioId: 'eu' }, { usuario: { perfilPublico: true }, planta: { plantaPublica: true } }] };
 
@@ -58,5 +58,11 @@ describe('janela de leitura do conteúdo (só os dias da página)', () => {
       fotos: { OR: [{ dataCaptura: dentro }, { dataCaptura: null, createdAt: dentro }, { agenda: { status: 'CONCLUIDO', ...peloCuidado } }] },
       cuidados: peloCuidado,
     });
+  });
+});
+
+describe('filtroDaBusca', () => {
+  it('só perfis públicos e só pelo nome público (o nome cadastrado não liga um pseudônimo ao nome real)', () => {
+    expect(filtroDaBusca('an')).toEqual({ perfilPublico: true, nomePublico: { contains: 'an', mode: 'insensitive' } });
   });
 });

@@ -1,5 +1,5 @@
 import { prisma } from '../../../lib/prisma';
-import { filtroDoFeed, filtroDosPostsDoUsuario, filtrosDaJanela } from './filtros';
+import { filtroDaBusca, filtroDoFeed, filtroDosPostsDoUsuario, filtrosDaJanela } from './filtros';
 import type { AbaFeed, Janela, LeituraComunidadeRepository } from '../comunidade.types';
 
 const usuarioLido = { id: true, nome: true, nomePublico: true, fotoPerfilUrl: true, perfilPublico: true, historicoPublico: true } as const;
@@ -103,10 +103,7 @@ export class PrismaLeituraComunidadeRepository implements LeituraComunidadeRepos
 
   buscar(q: string, limite: number) {
     return prisma.usuario.findMany({
-      where: {
-        perfilPublico: true,
-        OR: [{ nomePublico: { contains: q, mode: 'insensitive' } }, { nome: { contains: q, mode: 'insensitive' } }],
-      },
+      where: filtroDaBusca(q),
       orderBy: { nomePublico: 'asc' },
       take: limite,
       select: usuarioLido,

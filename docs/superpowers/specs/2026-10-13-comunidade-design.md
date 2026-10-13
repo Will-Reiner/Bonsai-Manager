@@ -133,7 +133,7 @@ Visual "Caderno de sumi". Ícones novos (comunidade, curtir, comentar, salvar, s
    (grade de todos os posts visíveis, inclusive `noFeed`, por `dia` desc).
 5. **`/comunidade/planta/:id`:** capa, nome, espécie; linha do tempo por dia com os posts e, se o histórico é
    público, os dias só de cuidado.
-6. **`/comunidade/buscar`:** por `nome`/`nomePublico`, só perfis públicos.
+6. **`/comunidade/buscar`:** só pelo `nomePublico`, só perfis públicos (decidido em 2026-10-13: buscar pelo nome cadastrado ligaria um pseudônimo ao nome real).
 7. **`/comunidade/notificacoes`:** lista com link para o post/perfil; abrir marca tudo como lido. O contador
    atualiza ao voltar o foco do app (refetch on focus).
 8. **Perfil (aba):** novos itens "Ver meu perfil público" e "**Salvos**" (`/comunidade/salvos`, grade).
