@@ -98,7 +98,7 @@ export function PendentesDaPlanta({ agenda, agendas }: { agenda: Agenda; agendas
 
       <div className="mx-auto max-w-2xl px-4">
         <Link to={`/plantas/${agenda.plantaId}`} className="relative mt-4 block overflow-hidden rounded-3xl">
-          <PlantThumb url={agenda.planta?.fotoCapaUrl} className="aspect-[4/3] w-full" />
+          <PlantThumb url={agenda.planta?.fotoCapaUrl} id={agenda.planta?.id} className="aspect-[4/3] w-full" />
           <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent p-4 pt-12 text-white">
             <p className="text-3xl font-bold tracking-tight">{plantaRotulo(agenda.planta)}</p>
             {plantaNome(agenda.planta) && <p className="text-sm opacity-90">{plantaNome(agenda.planta)}</p>}

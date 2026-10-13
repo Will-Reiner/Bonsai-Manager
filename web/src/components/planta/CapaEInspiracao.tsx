@@ -65,7 +65,7 @@ export function CapaEInspiracao({ planta: p, onAbrirCapa }: { planta: Planta; on
         className="flex snap-x snap-mandatory overflow-x-auto overscroll-x-contain [scrollbar-width:none] sm:rounded-3xl"
       >
         <button onClick={onAbrirCapa} className="block w-full shrink-0 snap-center" aria-label="Abrir fotos">
-          <PlantThumb url={p.fotoCapaUrl} className={ALTURA} />
+          <PlantThumb url={p.fotoCapaUrl} id={p.id} className={ALTURA} />
         </button>
 
         <div className="relative w-full shrink-0 snap-center">

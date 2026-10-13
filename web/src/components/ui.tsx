@@ -1,6 +1,7 @@
 import type { ButtonHTMLAttributes, ReactNode } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { ArrowLeft, Loader2, Sprout } from 'lucide-react';
+import { vasoDaPlanta } from '@/lib/arte';
 
 type Variant = 'primary' | 'secondary' | 'ghost' | 'danger';
 
@@ -147,12 +148,16 @@ export function Avatar({ url, nome, size = 48 }: { url?: string | null; nome?: s
 }
 
 /** Foto de capa da planta, com placeholder quando não houver. */
-export function PlantThumb({ url, className = '' }: { url?: string | null; className?: string }) {
-  return url ? (
-    <img src={url} alt="" loading="lazy" className={`bg-primary-light object-cover ${className}`} />
-  ) : (
-    <div className={`flex items-center justify-center bg-primary-light text-primary/60 ${className}`}>
-      <Sprout size={28} />
+/** Foto da planta; sem foto, o vaso ilustrado dela (estável pelo id) ou, sem id, o broto. */
+export function PlantThumb({ url, id, className = '' }: { url?: string | null; id?: string; className?: string }) {
+  if (url) return <img src={url} alt="" loading="lazy" className={`bg-primary-light object-cover ${className}`} />;
+  return (
+    <div className={`flex items-end justify-center overflow-hidden bg-vazio text-primary/60 ${className}`}>
+      {id ? (
+        <img src={vasoDaPlanta(id)} alt="" loading="lazy" className="mb-[9%] max-h-[72%] w-[84%] object-contain" />
+      ) : (
+        <Sprout size={28} className="mb-auto mt-auto" />
+      )}
     </div>
   );
 }

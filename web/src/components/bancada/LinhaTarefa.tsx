@@ -23,7 +23,7 @@ export function LinhaTarefa({ agenda }: { agenda: Agenda }) {
     >
       {atrasada && <span className="absolute bottom-3 left-9 top-3 w-[3px] rounded-full bg-late" aria-hidden />}
       <button type="button" onClick={() => abrirTarefa(agenda)} className="flex min-w-0 flex-1 items-center gap-3 text-left">
-        <PlantThumb url={p?.fotoCapaUrl} className="size-11 shrink-0 rounded-[14px]" />
+        <PlantThumb url={p?.fotoCapaUrl} id={p?.id} className="size-11 shrink-0 rounded-[14px]" />
         <span className="min-w-0">
           <span className="block truncate text-sm font-semibold">
             {plantaRotulo(p)}

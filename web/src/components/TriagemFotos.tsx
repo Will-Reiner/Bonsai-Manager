@@ -101,7 +101,7 @@ export function TriagemFotos({
             </span>
             {match ? (
               <>
-                <PlantThumb url={match.fotoCapaUrl} className="size-10 shrink-0 rounded-lg" />
+                <PlantThumb url={match.fotoCapaUrl} id={match.id} className="size-10 shrink-0 rounded-lg" />
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-semibold">{match.nova ? `Planta nova #${match.identificador}` : plantaTitulo(match)}</p>
                   <p className="truncate text-xs text-muted">{match.nova ? 'Será criada ao salvar' : especieNome(match.especie)}</p>

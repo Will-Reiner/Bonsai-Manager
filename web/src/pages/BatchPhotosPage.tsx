@@ -200,7 +200,7 @@ export function BatchPhotosPage() {
             return (
               <div key={pid} className="card p-3">
                 <div className="mb-2 flex items-center gap-3">
-                  <PlantThumb url={p?.fotoCapaUrl} className="size-10 shrink-0 rounded-lg" />
+                  <PlantThumb url={p?.fotoCapaUrl} id={p?.id} className="size-10 shrink-0 rounded-lg" />
                   <div className="min-w-0 flex-1">
                     <p className="flex items-center gap-2 truncate font-semibold">
                       {plantaCodigoNome(p)}

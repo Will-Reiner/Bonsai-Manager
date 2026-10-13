@@ -17,7 +17,7 @@ export function FotoTarefa({ agenda }: { agenda: Agenda }) {
     <div className="w-28 shrink-0 snap-start">
       <div className={`relative rounded-[20px_20px_20px_6px] ${atrasada ? 'ring-2 ring-late ring-offset-2 ring-offset-bg' : ''}`}>
         <button type="button" onClick={() => abrirTarefa(agenda)} className="block w-full" aria-label={`Abrir tarefa de ${plantaRotulo(p)}`}>
-          <PlantThumb url={p?.fotoCapaUrl} className="h-32 w-28 rounded-[20px_20px_20px_6px]" />
+          <PlantThumb url={p?.fotoCapaUrl} id={p?.id} className="h-32 w-28 rounded-[20px_20px_20px_6px]" />
         </button>
         <span className="pointer-events-none absolute left-2 top-2 max-w-[80%] truncate rounded-full bg-bg/90 px-2 py-0.5 text-[11px] font-bold">
           {plantaRotulo(p)}

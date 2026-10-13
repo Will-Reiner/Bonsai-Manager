@@ -114,7 +114,7 @@ export function GradePlantas({
             aria-pressed={sim}
           >
             <span className={`relative block overflow-hidden rounded-xl ring-offset-2 ring-offset-bg ${sim ? 'ring-[3px] ring-primary' : ''}`}>
-              <PlantThumb url={p.fotoCapaUrl} className="aspect-square w-full" />
+              <PlantThumb url={p.fotoCapaUrl} id={p.id} className="aspect-square w-full" />
               <span
                 className={`absolute left-1.5 top-1.5 flex size-6 items-center justify-center rounded-full border-2 shadow-sm ${
                   sim ? 'border-primary bg-primary text-white' : 'border-white bg-white/70'

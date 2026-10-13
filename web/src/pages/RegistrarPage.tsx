@@ -121,7 +121,7 @@ export function RegistrarPage() {
     return foto ? (
       <FilePreview file={foto.item.file} alt="" className="size-14 shrink-0 rounded-xl object-cover" />
     ) : (
-      <PlantThumb url={lote.porId.get(pid)?.fotoCapaUrl} className="size-14 shrink-0 rounded-xl" />
+      <PlantThumb url={lote.porId.get(pid)?.fotoCapaUrl} id={lote.porId.get(pid)?.id} className="size-14 shrink-0 rounded-xl" />
     );
   };
 
@@ -394,7 +394,7 @@ export function RegistrarPage() {
                     checked={marcada}
                     onChange={() => setDesmarcadas((d) => (marcada ? [...d, a.id] : d.filter((x) => x !== a.id)))}
                   />
-                  <PlantThumb url={a.planta?.fotoCapaUrl} className="size-12 shrink-0 rounded-xl" />
+                  <PlantThumb url={a.planta?.fotoCapaUrl} id={a.planta?.id} className="size-12 shrink-0 rounded-xl" />
                   <span className="min-w-0 flex-1">
                     <span className="block truncate font-semibold">
                       {a.atividade?.nome ?? 'Cuidado'} · {plantaRotulo(a.planta)}

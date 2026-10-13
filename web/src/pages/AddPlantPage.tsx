@@ -136,7 +136,7 @@ export function AddPlantPage() {
     return (
       <div className="flex min-h-dvh flex-col items-center justify-center px-6 text-center">
         {criada.fotoCapaUrl ? (
-          <PlantThumb url={criada.fotoCapaUrl} className="size-28 rounded-3xl" />
+          <PlantThumb url={criada.fotoCapaUrl} id={criada.id} className="size-28 rounded-3xl" />
         ) : (
           <CheckCircle2 size={56} className="text-primary" />
         )}

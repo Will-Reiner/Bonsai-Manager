@@ -15,7 +15,7 @@ export function TaskCard({ agenda, showPlanta = true }: { agenda: Agenda; showPl
   return (
     <div className="card flex items-center gap-3 p-2.5 pr-3">
       <button onClick={() => abrirTarefa(agenda)} className="flex min-w-0 flex-1 items-center gap-3 text-left">
-        {showPlanta && <PlantThumb url={agenda.planta?.fotoCapaUrl} className="size-12 shrink-0 rounded-xl" />}
+        {showPlanta && <PlantThumb url={agenda.planta?.fotoCapaUrl} id={agenda.planta?.id} className="size-12 shrink-0 rounded-xl" />}
         <div className="min-w-0">
           <p className="flex items-center gap-1 truncate font-semibold">
             <span className="truncate">{agenda.atividade?.nome ?? 'Cuidado'}</span>

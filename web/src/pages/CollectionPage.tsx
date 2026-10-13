@@ -177,7 +177,7 @@ export function CollectionPage() {
                 <div key={p.id} className="relative">
                   <Link to={`/plantas/${p.id}`} className="card block overflow-hidden transition active:scale-[0.98]">
                     <div className="relative">
-                      <PlantThumb url={p.fotoCapaUrl} className="aspect-square w-full" />
+                      <PlantThumb url={p.fotoCapaUrl} id={p.id} className="aspect-square w-full" />
                       {!p.especieId && (
                         <span className="absolute left-2 top-2 flex size-6 items-center justify-center rounded-full bg-danger text-sm font-bold text-white ring-2 ring-white" aria-label="Sem espécie">
                           !
@@ -203,7 +203,7 @@ export function CollectionPage() {
               {lista.map((p) => (
                 <div key={p.id} className="relative">
                   <Link to={`/plantas/${p.id}`} className={`card flex items-center gap-3 p-2.5 ${p.observacoes?.trim() ? 'pr-12' : ''}`}>
-                    <PlantThumb url={p.fotoCapaUrl} className="size-14 shrink-0 rounded-xl" />
+                    <PlantThumb url={p.fotoCapaUrl} id={p.id} className="size-14 shrink-0 rounded-xl" />
                     <div className="min-w-0 flex-1">
                       <p className="truncate font-semibold">{plantaTitulo(p)}</p>
                       <p className="truncate text-sm text-muted">

@@ -166,7 +166,7 @@ export function ConcluirPage() {
         <AjustarPlantas
           itens={marcadas.map((t) => ({
             id: t.id,
-            thumb: <PlantThumb url={t.planta?.fotoCapaUrl} className="size-14 shrink-0 rounded-xl" />,
+            thumb: <PlantThumb url={t.planta?.fotoCapaUrl} id={t.planta?.id} className="size-14 shrink-0 rounded-xl" />,
             titulo: plantaRotulo(t.planta),
             subtitulo:
               [plantaNome(t.planta), t.atividade?.nome].filter(Boolean).join(' · ') ||
@@ -272,7 +272,7 @@ export function ConcluirPage() {
                     {marcada && <Check size={16} strokeWidth={3} />}
                   </button>
                 )}
-                <PlantThumb url={t.planta?.fotoCapaUrl} className="size-14 shrink-0 rounded-xl" />
+                <PlantThumb url={t.planta?.fotoCapaUrl} id={t.planta?.id} className="size-14 shrink-0 rounded-xl" />
                 <div className="min-w-0 flex-1">
                   <p className="truncate font-semibold">{plantaRotulo(t.planta)}</p>
                   {plantaNome(t.planta) && <p className="truncate text-sm text-muted">{plantaNome(t.planta)}</p>}
