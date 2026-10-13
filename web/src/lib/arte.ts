@@ -1,3 +1,5 @@
+import type { Estacao } from '@/types';
+
 /** Vasos ilustrados (placeholder de planta sem foto) em web/public/arte/vasos. */
 export const TOTAL_VASOS = 7;
 
@@ -7,6 +9,11 @@ export function vasoDaPlanta(id: string): string {
   for (let i = 0; i < id.length; i++) h = ((h * 33) ^ id.charCodeAt(i)) >>> 0;
   return `/arte/vasos/vaso-${(h % TOTAL_VASOS) + 1}.webp`;
 }
+
+const ARQUIVO_ESTACAO: Record<Estacao, string> = { PRIMAVERA: 'primavera', VERAO: 'verao', OUTONO: 'outono', INVERNO: 'inverno' };
+
+/** Ilustração grande da estação (tela da estação). */
+export const ilustracaoDaEstacao = (e: Estacao) => `/arte/estacao-${ARQUIVO_ESTACAO[e]}.webp`;
 
 /** Camadas da árvore do erro de conexão. */
 export const ARTE_ERRO = ['/arte/erro-inteira.webp', '/arte/erro-tronco.webp', '/arte/erro-galho.webp'] as const;

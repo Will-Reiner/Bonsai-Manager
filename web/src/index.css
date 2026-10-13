@@ -148,6 +148,19 @@
   .aba-ativa .aba-pincel {
     clip-path: inset(0 0 0 0);
   }
+  /* Estação atual na tela da estação: pincelada vermelhão que se pinta sob o nome */
+  .estacao-pincel {
+    position: absolute;
+    left: 50%;
+    bottom: 0;
+    width: 40px;
+    height: 6px;
+    transform: translateX(-50%);
+    background-color: var(--color-hanko);
+    -webkit-mask: url('/arte/pincel-longo.webp') no-repeat center / 100% 100%;
+    mask: url('/arte/pincel-longo.webp') no-repeat center / 100% 100%;
+    animation: pincel-pinta 0.38s cubic-bezier(0.3, 0.7, 0.2, 1) 0.2s both;
+  }
   /* Alvo de ícone selecionável: marcado = mancha de tinta com o ícone claro */
   .mancha {
     position: relative;
@@ -281,6 +294,15 @@
     transform: translateY(0);
   }
 }
+@keyframes pincel-pinta {
+  from {
+    clip-path: inset(0 100% 0 0);
+  }
+  to {
+    clip-path: inset(0 0 0 0);
+  }
+}
+
 @keyframes fade-in {
   from {
     opacity: 0;
@@ -360,6 +382,9 @@
   animation: enso-icone-aparece 0.4s 0.8s forwards;
 }
 @media (prefers-reduced-motion: reduce) {
+  .estacao-pincel {
+    animation: none;
+  }
   .animate-sheet-up,
   .animate-fade-in {
     animation: none;

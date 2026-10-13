@@ -1,3 +1,5 @@
+import type { Estacao } from '@/types';
+
 /** Ícones próprios (traço sumi) servidos de web/public/icones — ver a skill criando-assets-sumi. */
 export const ICONES = [
   'bancada', 'colecao', 'perfil', 'mais',
@@ -38,3 +40,5 @@ export function iconeDaAtividade(nome: string): NomeIcone {
   const n = normalizar(nome);
   return POR_TRECHO.find(([trecho]) => n.includes(trecho))?.[1] ?? 'generico';
 }
+
+export const ICONE_DA_ESTACAO: Record<Estacao, NomeIcone> = { PRIMAVERA: 'primavera', VERAO: 'verao', OUTONO: 'outono', INVERNO: 'inverno' };

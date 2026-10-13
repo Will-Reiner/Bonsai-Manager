@@ -85,3 +85,19 @@ export function estacaoAtual(hoje = new Date()): EstacaoAtual {
     progresso: dias(inicios[i], base) / dias(inicios[i], fim),
   };
 }
+
+const MESES = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
+const porExtenso = ([mes, dia]: readonly [number, number]) => `${dia} de ${MESES[mes - 1]}`;
+
+/** "22 de setembro a 20 de dezembro". */
+export function periodoDaEstacao(e: Estacao): string {
+  const { comeco, final } = ESTACOES.find((x) => x.estacao === e)!;
+  return `${porExtenso(comeco)} a ${porExtenso(final)}`;
+}
+
+const COM_ARTIGO: Record<Estacao, string> = { PRIMAVERA: 'a primavera', VERAO: 'o verão', OUTONO: 'o outono', INVERNO: 'o inverno' };
+
+/** "70 dias para o verão" / "amanhã começa o verão". */
+export function faltaParaProxima({ proxima, diasParaProxima }: Pick<EstacaoAtual, 'proxima' | 'diasParaProxima'>): string {
+  return diasParaProxima === 1 ? `amanhã começa ${COM_ARTIGO[proxima]}` : `${diasParaProxima} dias para ${COM_ARTIGO[proxima]}`;
+}
