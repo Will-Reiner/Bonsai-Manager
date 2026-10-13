@@ -47,3 +47,16 @@ export class NaoEncontrado extends Error {
     this.name = 'NaoEncontrado';
   }
 }
+
+export interface LeituraComunidadeRepository {
+  feed(viewerId: string, aba: AbaFeed, cursor: string | undefined, limite: number): Promise<PostLido[]>;
+  post(id: string): Promise<PostLido | null>;
+  /** Posts das plantas públicas do usuário (inclui os fora do feed), por dia desc. */
+  postsDoUsuario(usuarioId: string, cursor: string | undefined, limite: number): Promise<PostLido[]>;
+  conteudo(plantaIds: string[]): Promise<{ fotos: FotoLida[]; cuidados: CuidadoLido[] }>;
+  perfil(usuarioId: string, viewerId: string): Promise<PerfilLido | null>;
+  plantasPublicas(usuarioId: string): Promise<PlantaLidaBase[]>;
+  planta(id: string): Promise<PlantaLida | null>;
+  /** Perfis públicos por nome ou nome público (sem diferenciar maiúsculas). */
+  buscar(q: string, limite: number): Promise<UsuarioLido[]>;
+}
