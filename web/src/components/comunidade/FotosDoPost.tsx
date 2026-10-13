@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useRef, useState, type MouseEvent } from 'react';
 import { Icone } from '@/components/Icone';
 import type { FotoDoPost } from '@/types';
 
@@ -8,8 +8,9 @@ export function FotosDoPost({ fotos, onToqueDuplo }: { fotos: FotoDoPost[]; onTo
   const ultimoToque = useRef(0);
   const [coracao, setCoracao] = useState(0);
 
-  // Dois toques em até 300 ms curtem (como no Instagram); um toque só não faz nada
-  function tocar() {
+  // Dois toques em até 300 ms curtem (como no Instagram); um toque só não faz nada. Toques no vídeo (play/pausa) não contam.
+  function tocar(e: MouseEvent) {
+    if ((e.target as HTMLElement).closest('video')) return;
     const agora = Date.now();
     if (agora - ultimoToque.current < 300) {
       ultimoToque.current = 0;
@@ -21,7 +22,8 @@ export function FotosDoPost({ fotos, onToqueDuplo }: { fotos: FotoDoPost[]; onTo
   }
 
   return (
-    <div className="relative" onClick={onToqueDuplo ? tocar : undefined}>
+    // touch-manipulation: o toque duplo não dá zoom na página do celular
+    <div className="relative touch-manipulation" onClick={onToqueDuplo ? tocar : undefined}>
       <div
         className="flex snap-x snap-mandatory overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         onScroll={(e) => setAtual(Math.round(e.currentTarget.scrollLeft / e.currentTarget.clientWidth))}
