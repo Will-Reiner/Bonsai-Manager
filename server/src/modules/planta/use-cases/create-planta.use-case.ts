@@ -19,6 +19,8 @@ export class CreatePlantaUseCase {
     const base = {
       ...data,
       dataAquisicao: data.dataAquisicao ? new Date(data.dataAquisicao) : undefined,
+      // Sem escolha explícita (ex.: planta criada na triagem de fotos), segue o perfil público do dono
+      plantaPublica: data.plantaPublica ?? (await this.plantaRepository.perfilPublicoDoUsuario(data.usuarioId)),
     };
 
     // ID informado pelo usuário: conflito vira 409 no controller, sem nova tentativa

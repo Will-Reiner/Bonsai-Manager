@@ -103,6 +103,8 @@ export interface PlantaRepository {
   aplicarMudancasPre(mudancas: (PlantaPre & { grupoLido: GrupoPlanta | null })[]): Promise<void>;
   /** As plantas informadas (do usuário) ficam públicas; as demais dele, privadas. Ids de outros usuários são ignorados. */
   definirPublicas(usuarioId: string, plantaIds: string[]): Promise<void>;
+  /** Perfil público do dono — padrão de `plantaPublica` de planta nova sem a escolha explícita. */
+  perfilPublicoDoUsuario(usuarioId: string): Promise<boolean>;
 }
 
 export interface EspecieRepository {

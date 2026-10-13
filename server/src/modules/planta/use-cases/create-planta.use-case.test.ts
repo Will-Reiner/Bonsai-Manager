@@ -21,6 +21,7 @@ describe('CreatePlantaUseCase', () => {
       estadoPreTransplante: jest.fn().mockResolvedValue({ dias: 30, plantas: [], pendentes: [] }),
       aplicarMudancasPre: jest.fn().mockResolvedValue(undefined),
       definirPublicas: jest.fn(),
+      perfilPublicoDoUsuario: jest.fn().mockResolvedValue(false),
     };
 
     mockEspecieRepository = {
@@ -97,7 +98,7 @@ describe('CreatePlantaUseCase', () => {
 
       // Assert
       expect(mockEspecieRepository.existsById).not.toHaveBeenCalled();
-      expect(mockPlantaRepository.create).toHaveBeenCalledWith(dto);
+      expect(mockPlantaRepository.create).toHaveBeenCalledWith({ ...dto, dataAquisicao: undefined, plantaPublica: false });
       expect(result.especie).toBeNull();
     });
 
@@ -140,7 +141,7 @@ describe('CreatePlantaUseCase', () => {
 
       // Assert
       expect(mockEspecieRepository.existsById).toHaveBeenCalledWith('especie-123');
-      expect(mockPlantaRepository.create).toHaveBeenCalledWith({ ...minimalCreateDTO, identificador: 1 });
+      expect(mockPlantaRepository.create).toHaveBeenCalledWith({ ...minimalCreateDTO, identificador: 1, plantaPublica: false });
       expect(result).toEqual(minimalCreatedPlanta);
     });
 
@@ -243,6 +244,28 @@ describe('CreatePlantaUseCase', () => {
         dataAquisicao: new Date('2024-01-01T00:00:00.000Z'),
         identificador: 1,
       });
+    });
+  });
+
+  describe('planta pública por padrão', () => {
+    const semFlag: CreatePlantaRequestDTO = { usuarioId: 'user-123', especieId: undefined, identificador: 7 } as CreatePlantaRequestDTO;
+
+    it('sem plantaPublica, segue o perfil público do dono', async () => {
+      mockPlantaRepository.perfilPublicoDoUsuario.mockResolvedValue(true);
+      await createPlantaUseCase.execute(semFlag);
+      expect(mockPlantaRepository.create).toHaveBeenCalledWith(expect.objectContaining({ plantaPublica: true }));
+    });
+
+    it('sem plantaPublica e perfil privado, nasce privada', async () => {
+      mockPlantaRepository.perfilPublicoDoUsuario.mockResolvedValue(false);
+      await createPlantaUseCase.execute(semFlag);
+      expect(mockPlantaRepository.create).toHaveBeenCalledWith(expect.objectContaining({ plantaPublica: false }));
+    });
+
+    it('plantaPublica informada vale, sem consultar o perfil', async () => {
+      await createPlantaUseCase.execute({ ...semFlag, plantaPublica: false });
+      expect(mockPlantaRepository.perfilPublicoDoUsuario).not.toHaveBeenCalled();
+      expect(mockPlantaRepository.create).toHaveBeenCalledWith(expect.objectContaining({ plantaPublica: false }));
     });
   });
 });

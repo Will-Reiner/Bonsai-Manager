@@ -175,6 +175,11 @@ export class PrismaPlantaRepository implements PlantaRepository {
     ]);
   }
 
+  async perfilPublicoDoUsuario(usuarioId: string): Promise<boolean> {
+    const usuario = await this.prisma.usuario.findUnique({ where: { id: usuarioId }, select: { perfilPublico: true } });
+    return usuario?.perfilPublico ?? false;
+  }
+
   async aplicarMudancasPre(mudancas: (PlantaPre & { grupoLido: GrupoPlanta | null })[]): Promise<void> {
     await this.prisma.$transaction(
       mudancas.map((m) =>
