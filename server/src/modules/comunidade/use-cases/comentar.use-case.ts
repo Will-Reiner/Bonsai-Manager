@@ -12,10 +12,9 @@ export class ComentarUseCase {
   /** O texto já vem validado (1–1000, sem espaços nas pontas) pelo schema. */
   async execute(viewerId: string, postId: string, texto: string): Promise<ComentarioDTO> {
     const post = await postVisivel(this.leitura, viewerId, postId);
-    const comentario = await this.repo.comentar(viewerId, postId, texto);
-    if (deveNotificar(viewerId, post.usuario.id)) {
-      await this.repo.notificar({ usuarioId: post.usuario.id, atorId: viewerId, tipo: 'COMENTARIO', postId, comentarioId: comentario.id });
-    }
-    return comentarioDe(comentario, viewerId);
+    const aviso = deveNotificar(viewerId, post.usuario.id)
+      ? { usuarioId: post.usuario.id, atorId: viewerId, tipo: 'COMENTARIO' as const, postId }
+      : null;
+    return comentarioDe(await this.repo.comentar(viewerId, postId, texto, aviso), viewerId);
   }
 }

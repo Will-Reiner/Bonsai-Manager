@@ -4,14 +4,21 @@ import type { InteracoesRepository, NovaNotificacao } from '../comunidade.types'
 const usuarioLido = { id: true, nome: true, nomePublico: true, fotoPerfilUrl: true, perfilPublico: true, historicoPublico: true } as const;
 
 export class PrismaInteracoesRepository implements InteracoesRepository {
-  async curtir(usuarioId: string, postId: string) {
-    const { count } = await prisma.curtida.createMany({ data: [{ usuarioId, postId }], skipDuplicates: true });
-    return count > 0;
+  // Curtida e aviso juntos: uma descurtida concorrente nunca deixa aviso sem curtida (nem o contrário)
+  curtir(usuarioId: string, postId: string, aviso: NovaNotificacao | null) {
+    return prisma.$transaction(async (tx) => {
+      const { count } = await tx.curtida.createMany({ data: [{ usuarioId, postId }], skipDuplicates: true });
+      if (count > 0 && aviso) await tx.notificacao.create({ data: aviso });
+      return count > 0;
+    });
   }
 
-  async descurtir(usuarioId: string, postId: string) {
-    const { count } = await prisma.curtida.deleteMany({ where: { usuarioId, postId } });
-    return count > 0;
+  descurtir(usuarioId: string, postId: string, aviso: Omit<NovaNotificacao, 'comentarioId'>) {
+    return prisma.$transaction(async (tx) => {
+      const { count } = await tx.curtida.deleteMany({ where: { usuarioId, postId } });
+      if (count > 0) await tx.notificacao.deleteMany({ where: aviso });
+      return count > 0;
+    });
   }
 
   totalCurtidas(postId: string) {
@@ -26,10 +33,14 @@ export class PrismaInteracoesRepository implements InteracoesRepository {
     await prisma.salvo.deleteMany({ where: { usuarioId, postId } });
   }
 
-  comentar(usuarioId: string, postId: string, texto: string) {
-    return prisma.comentario.create({
-      data: { usuarioId, postId, texto },
-      select: { id: true, texto: true, createdAt: true, usuario: { select: usuarioLido }, post: { select: { usuarioId: true } } },
+  comentar(usuarioId: string, postId: string, texto: string, aviso: Omit<NovaNotificacao, 'comentarioId'> | null) {
+    return prisma.$transaction(async (tx) => {
+      const comentario = await tx.comentario.create({
+        data: { usuarioId, postId, texto },
+        select: { id: true, texto: true, createdAt: true, usuario: { select: usuarioLido }, post: { select: { usuarioId: true } } },
+      });
+      if (aviso) await tx.notificacao.create({ data: { ...aviso, comentarioId: comentario.id } });
+      return comentario;
     });
   }
 

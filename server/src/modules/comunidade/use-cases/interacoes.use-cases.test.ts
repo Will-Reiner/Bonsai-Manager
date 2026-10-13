@@ -61,25 +61,23 @@ beforeEach(() => {
 });
 
 describe('CurtirPostUseCase', () => {
-  it('curtida nova avisa o dono e devolve a contagem do servidor', async () => {
+  const aviso = { usuarioId: 'dono', atorId: 'b', tipo: 'CURTIDA', postId: 'post1' };
+
+  it('curtida e aviso ao dono vão juntos para o repositório (mesma transação) e volta a contagem do servidor', async () => {
     const r = await new CurtirPostUseCase(leitura, repo).execute('b', 'post1', true);
-    expect(repo.curtir).toHaveBeenCalledWith('b', 'post1');
-    expect(repo.notificar).toHaveBeenCalledWith({ usuarioId: 'dono', atorId: 'b', tipo: 'CURTIDA', postId: 'post1' });
+    expect(repo.curtir).toHaveBeenCalledWith('b', 'post1', aviso);
+    expect(repo.notificar).not.toHaveBeenCalled();
     expect(r).toEqual({ curtiu: true, curtidas: 1 });
   });
-  it('curtir de novo (toque duplo) não avisa outra vez', async () => {
-    repo.curtir.mockResolvedValue(false);
-    await new CurtirPostUseCase(leitura, repo).execute('b', 'post1', true);
-    expect(repo.notificar).not.toHaveBeenCalled();
-  });
-  it('curtir o próprio post não avisa', async () => {
+  it('curtir o próprio post: sem aviso', async () => {
     await new CurtirPostUseCase(leitura, repo).execute('dono', 'post1', true);
-    expect(repo.notificar).not.toHaveBeenCalled();
+    expect(repo.curtir).toHaveBeenCalledWith('dono', 'post1', null);
   });
-  it('descurtir remove o aviso', async () => {
+  it('descurtir leva junto a remoção do aviso', async () => {
     repo.totalCurtidas.mockResolvedValue(0);
     const r = await new CurtirPostUseCase(leitura, repo).execute('b', 'post1', false);
-    expect(repo.removerNotificacoes).toHaveBeenCalledWith({ usuarioId: 'dono', atorId: 'b', tipo: 'CURTIDA', postId: 'post1' });
+    expect(repo.descurtir).toHaveBeenCalledWith('b', 'post1', aviso);
+    expect(repo.removerNotificacoes).not.toHaveBeenCalled();
     expect(r).toEqual({ curtiu: false, curtidas: 0 });
   });
   it('post invisível: 404 sem gravar', async () => {
@@ -103,16 +101,16 @@ describe('SalvarPostUseCase', () => {
 });
 
 describe('ComentarUseCase', () => {
-  it('grava, avisa o dono com o comentário e devolve o DTO', async () => {
+  it('comentário e aviso ao dono vão juntos para o repositório (mesma transação)', async () => {
     const c = await new ComentarUseCase(leitura, repo).execute('b', 'post1', 'Lindo!');
-    expect(repo.comentar).toHaveBeenCalledWith('b', 'post1', 'Lindo!');
-    expect(repo.notificar).toHaveBeenCalledWith({ usuarioId: 'dono', atorId: 'b', tipo: 'COMENTARIO', postId: 'post1', comentarioId: 'c1' });
+    expect(repo.comentar).toHaveBeenCalledWith('b', 'post1', 'Lindo!', { usuarioId: 'dono', atorId: 'b', tipo: 'COMENTARIO', postId: 'post1' });
+    expect(repo.notificar).not.toHaveBeenCalled();
     expect(c).toMatchObject({ id: 'c1', texto: 'Lindo!', podeApagar: true });
   });
-  it('comentar no próprio post não avisa', async () => {
+  it('comentar no próprio post: sem aviso', async () => {
     repo.comentar.mockResolvedValue({ ...comentarioLido, usuario: dono });
     await new ComentarUseCase(leitura, repo).execute('dono', 'post1', 'Obrigada');
-    expect(repo.notificar).not.toHaveBeenCalled();
+    expect(repo.comentar).toHaveBeenCalledWith('dono', 'post1', 'Obrigada', null);
   });
   it('post invisível: 404', async () => {
     leitura.post.mockResolvedValue(post({ planta: { ...planta, plantaPublica: false } }));

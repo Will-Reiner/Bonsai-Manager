@@ -112,14 +112,15 @@ export interface NovaNotificacao {
 }
 
 export interface InteracoesRepository {
-  /** true = curtida nova (não existia). */
-  curtir(usuarioId: string, postId: string): Promise<boolean>;
-  /** true = havia curtida e foi removida. */
-  descurtir(usuarioId: string, postId: string): Promise<boolean>;
+  /** true = curtida nova (não existia). O aviso (se houver) é gravado na mesma transação, só se a curtida for nova. */
+  curtir(usuarioId: string, postId: string, aviso: NovaNotificacao | null): Promise<boolean>;
+  /** true = havia curtida e foi removida; o aviso sai na mesma transação. */
+  descurtir(usuarioId: string, postId: string, aviso: Omit<NovaNotificacao, 'comentarioId'>): Promise<boolean>;
   totalCurtidas(postId: string): Promise<number>;
   salvar(usuarioId: string, postId: string): Promise<void>;
   dessalvar(usuarioId: string, postId: string): Promise<void>;
-  comentar(usuarioId: string, postId: string, texto: string): Promise<ComentarioLido>;
+  /** Comentário e aviso ao dono (com o comentarioId) na mesma transação. */
+  comentar(usuarioId: string, postId: string, texto: string, aviso: Omit<NovaNotificacao, 'comentarioId'> | null): Promise<ComentarioLido>;
   comentario(id: string): Promise<{ id: string; usuarioId: string; post: { usuarioId: string } } | null>;
   apagarComentario(id: string): Promise<void>;
   notificar(n: NovaNotificacao): Promise<void>;
