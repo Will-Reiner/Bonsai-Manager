@@ -1,5 +1,6 @@
 import { useEffect, type ReactNode } from 'react';
 import { BrowserRouter, Navigate, Route, Routes, useLocation, useNavigationType } from 'react-router';
+import { Abertura } from '@/components/Abertura';
 import { FiltrosTinta } from '@/components/FiltrosTinta';
 import { Layout } from '@/components/Layout';
 import { useAuth } from '@/context/AuthContext';
@@ -51,6 +52,7 @@ export default function App() {
   return (
     <BrowserRouter>
       <FiltrosTinta />
+      <Abertura />
       <RolarParaTopo />
       <Routes>
         <Route path="/login" element={<Publica><LoginPage /></Publica>} />
