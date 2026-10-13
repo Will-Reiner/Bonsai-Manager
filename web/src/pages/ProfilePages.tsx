@@ -2,7 +2,8 @@ import { useRef, useState, type FormEvent, type ReactNode } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { ChevronRight, LogOut, MapPin, Pencil, ShieldCheck, SlidersHorizontal } from 'lucide-react';
-import { Avatar, Button, Field, PageHeader } from '@/components/ui';
+import { Avatar, Button, Field, Opcao, PageHeader } from '@/components/ui';
+import { ComunidadePreferencias } from '@/components/comunidade/ComunidadePreferencias';
 import { PhotoInput } from '@/components/PhotoInput';
 import { MoverTransplanteCampo } from '@/components/fluxo/MoverTransplanteCampo';
 import { useAuth } from '@/context/AuthContext';
@@ -205,22 +206,16 @@ function AnimacoesSazonaisPreferencia() {
 
   return (
     <section className="card mt-4 p-4">
-      <label className="flex cursor-pointer items-center gap-3">
-        <input
-          type="checkbox"
-          className="size-5 shrink-0 accent-primary"
-          checked={valor === 'sim'}
-          onChange={(e) => setValor(e.target.checked ? 'sim' : 'nao')}
-        />
-        <span className="min-w-0 flex-1">
-          <span className="block font-semibold">Animações sazonais</span>
-          <span className="block text-xs text-muted">
-            {menosMovimento
-              ? 'O aparelho pediu menos movimento, então as animações ficam paradas.'
-              : 'Pétalas, folhas ou neve caindo ao fundo, conforme a estação.'}
-          </span>
-        </span>
-      </label>
+      <Opcao
+        titulo="Animações sazonais"
+        descricao={
+          menosMovimento
+            ? 'O aparelho pediu menos movimento, então as animações ficam paradas.'
+            : 'Pétalas, folhas ou neve caindo ao fundo, conforme a estação.'
+        }
+        checked={valor === 'sim'}
+        onChange={(v) => setValor(v ? 'sim' : 'nao')}
+      />
     </section>
   );
 }
@@ -235,6 +230,8 @@ export function PreferenciasPage() {
         <TempoPreTransplante />
         <TempoTransplante />
         <MoverTransplantePreferencia />
+        <h2 className="mt-8 text-xs font-semibold uppercase tracking-wider text-muted">Comunidade</h2>
+        <ComunidadePreferencias />
         <h2 className="mt-8 text-xs font-semibold uppercase tracking-wider text-muted">Neste aparelho</h2>
         <AnimacoesSazonaisPreferencia />
       </div>

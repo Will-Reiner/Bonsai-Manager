@@ -203,3 +203,35 @@ export function SectionTitle({ children, tone }: { children: ReactNode; tone?: '
     </h2>
   );
 }
+
+
+/** Caixa de marcar com título e explicação (preferências, formulários). */
+export function Opcao({
+  titulo,
+  descricao,
+  checked,
+  onChange,
+  disabled,
+}: {
+  titulo: string;
+  descricao?: ReactNode;
+  checked: boolean;
+  onChange: (v: boolean) => void;
+  disabled?: boolean;
+}) {
+  return (
+    <label className={`flex items-center gap-3 ${disabled ? 'opacity-60' : 'cursor-pointer'}`}>
+      <input
+        type="checkbox"
+        className="size-5 shrink-0 accent-primary"
+        checked={checked}
+        disabled={disabled}
+        onChange={(e) => onChange(e.target.checked)}
+      />
+      <span className="min-w-0 flex-1">
+        <span className="block font-semibold">{titulo}</span>
+        {descricao && <span className="block text-xs text-muted">{descricao}</span>}
+      </span>
+    </label>
+  );
+}
