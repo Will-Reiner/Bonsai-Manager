@@ -35,7 +35,7 @@ export function PlantDetailPage() {
 
   if (planta.isLoading) return <><PageHeader title="Planta" back /><Spinner /></>;
   if (planta.isError || !planta.data)
-    return <><PageHeader title="Planta" back /><ErrorState text={errorMessage(planta.error, 'Planta não encontrada.')} /></>;
+    return <><PageHeader title="Planta" back /><ErrorState text={errorMessage(planta.error, 'Planta não encontrada.')} erro={planta.error} /></>;
 
   const p = planta.data;
   const idade = tempoDesde(p.dataAquisicao);

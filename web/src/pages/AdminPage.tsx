@@ -101,7 +101,7 @@ function EspeciesAdmin() {
       {query.isLoading ? (
         <Spinner />
       ) : query.isError ? (
-        <ErrorState text={errorMessage(query.error)} onRetry={() => query.refetch()} />
+        <ErrorState text={errorMessage(query.error)} erro={query.error} onRetry={() => query.refetch()} />
       ) : query.data?.length === 0 ? (
         <EmptyState title={filtro === 'sugeridas' ? 'Nenhuma sugestão pendente' : 'Nenhuma espécie'} />
       ) : (

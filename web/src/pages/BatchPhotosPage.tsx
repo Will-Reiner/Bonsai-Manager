@@ -118,7 +118,7 @@ export function BatchPhotosPage() {
     return (
       <div className="flex min-h-dvh flex-col">
         <PageHeader title="Fotos em lote" back />
-        <ErrorState text={errorMessage(plantas.error)} onRetry={() => plantas.refetch()} />
+        <ErrorState text={errorMessage(plantas.error)} erro={plantas.error} onRetry={() => plantas.refetch()} />
       </div>
     );
   }

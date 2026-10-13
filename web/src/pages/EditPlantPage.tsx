@@ -21,7 +21,7 @@ export function EditPlantPage() {
 
   if (planta.isLoading) return <><PageHeader title="Editar planta" back /><Spinner /></>;
   if (planta.isError || !planta.data)
-    return <><PageHeader title="Editar planta" back /><ErrorState text={errorMessage(planta.error, 'Planta não encontrada.')} /></>;
+    return <><PageHeader title="Editar planta" back /><ErrorState text={errorMessage(planta.error, 'Planta não encontrada.')} erro={planta.error} /></>;
   return <EditPlantForm planta={planta.data} />;
 }
 

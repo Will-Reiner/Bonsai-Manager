@@ -39,6 +39,11 @@ interface ApiErrorBody {
   error?: string | { issues?: { message: string }[] };
 }
 
+/** Erro sem resposta do servidor (internet caiu, servidor fora do ar): a tela mostra a árvore com o galho quebrando. */
+export function ehErroDeRede(error: unknown): boolean {
+  return axios.isAxiosError(error) && !error.response;
+}
+
 /** Extrai uma mensagem legível dos vários formatos de erro que a API devolve. */
 export function errorMessage(error: unknown, fallback = 'Algo deu errado. Tente novamente.'): string {
   if (axios.isAxiosError<ApiErrorBody>(error)) {

@@ -190,6 +190,35 @@
     background-color: var(--color-accent);
     clip-path: inset(0 calc(100% - var(--pct)) 0 0);
   }
+  /* Erro de conexão: tronco e galho por baixo, árvore inteira por cima; aos 0,9s a inteira some e o galho cai */
+  .arvore-erro {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 1744 / 1123;
+    overflow-x: clip; /* o galho caindo não pode criar rolagem lateral */
+  }
+  .arvore-erro img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+  .arvore-erro .erro-inteira {
+    animation: erro-some 0s 0.9s forwards;
+  }
+  .arvore-erro .erro-galho {
+    transform-origin: 57.8% 72.1%;
+    animation: erro-cai 2.2s cubic-bezier(0.5, 0, 0.75, 0.4) 0.9s forwards;
+  }
+  .arvore-erro .ponta {
+    position: absolute;
+    width: 9px;
+    height: 6px;
+    border-radius: 50%;
+    background-color: rgb(43 31 23 / 0.5);
+    opacity: 0;
+    animation: erro-folhinha 2.6s ease-in forwards;
+  }
   /* Divisória em pincelada fina, tingida pela tinta */
   .divisoria {
     display: block;
@@ -267,6 +296,35 @@
     --enso: 360deg;
   }
 }
+@keyframes erro-some {
+  to {
+    opacity: 0;
+  }
+}
+@keyframes erro-cai {
+  0% {
+    transform: rotate(0);
+  }
+  12% {
+    transform: rotate(6deg);
+  }
+  22% {
+    transform: rotate(4deg);
+  }
+  100% {
+    transform: translate(-4%, 120%) rotate(62deg);
+    opacity: 0;
+  }
+}
+@keyframes erro-folhinha {
+  15% {
+    opacity: 0.9;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(var(--dx), 260px) rotate(var(--r));
+  }
+}
 @keyframes enso-icone-aparece {
   to {
     opacity: 1;
@@ -306,5 +364,10 @@
   .enso-icone {
     animation: none;
     opacity: 1;
+  }
+  .arvore-erro .erro-inteira,
+  .arvore-erro .erro-galho,
+  .arvore-erro .ponta {
+    animation: none;
   }
 }

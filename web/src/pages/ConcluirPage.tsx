@@ -146,7 +146,7 @@ export function ConcluirPage() {
     return (
       <>
         <PageHeader title="Concluir" back />
-        <ErrorState text={errorMessage(agendas.error)} onRetry={() => agendas.refetch()} />
+        <ErrorState text={errorMessage(agendas.error)} erro={agendas.error} onRetry={() => agendas.refetch()} />
       </>
     );
   }

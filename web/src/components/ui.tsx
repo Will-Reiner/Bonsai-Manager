@@ -1,6 +1,8 @@
-import type { ButtonHTMLAttributes, ReactNode } from 'react';
+import { useState, type ButtonHTMLAttributes, type ReactNode } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { ArrowLeft, Loader2, Sprout } from 'lucide-react';
+import { ErroDeRede } from '@/components/ErroDeRede';
+import { ehErroDeRede } from '@/lib/api';
 import { vasoDaPlanta } from '@/lib/arte';
 
 type Variant = 'primary' | 'secondary' | 'ghost' | 'danger';
@@ -62,7 +64,28 @@ export function Spinner({ label = 'Carregando…' }: { label?: string }) {
   );
 }
 
-export function ErrorState({ text, onRetry }: { text: string; onRetry?: () => void }) {
+export function ErrorState({ text, onRetry, erro }: { text: string; onRetry?: () => void; erro?: unknown }) {
+  const [vez, setVez] = useState(0);
+  if (ehErroDeRede(erro)) {
+    return (
+      <div className="mx-auto max-w-sm px-4 py-8 text-center">
+        <ErroDeRede key={vez} />
+        <h2 className="mt-4 font-display text-2xl font-semibold italic">Sem conexão</h2>
+        <p className="mt-1 text-sm text-muted">Não foi possível falar com o servidor. Verifique a internet e tente de novo.</p>
+        {onRetry && (
+          <Button
+            className="mt-4"
+            onClick={() => {
+              setVez((v) => v + 1);
+              onRetry();
+            }}
+          >
+            Tentar de novo
+          </Button>
+        )}
+      </div>
+    );
+  }
   return (
     <div className="mx-auto max-w-sm py-12 text-center">
       <p className="text-sm text-danger">{text}</p>

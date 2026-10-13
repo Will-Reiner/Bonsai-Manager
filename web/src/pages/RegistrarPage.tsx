@@ -238,7 +238,7 @@ export function RegistrarPage() {
     return (
       <div className="flex min-h-dvh flex-col">
         <PageHeader title="Registrar cuidado" back />
-        <ErrorState text={errorMessage(plantas.error)} onRetry={() => plantas.refetch()} />
+        <ErrorState text={errorMessage(plantas.error)} erro={plantas.error} onRetry={() => plantas.refetch()} />
       </div>
     );
   }

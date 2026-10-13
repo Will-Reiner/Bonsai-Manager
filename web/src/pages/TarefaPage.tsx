@@ -18,7 +18,7 @@ export function TarefaPage() {
     return (
       <>
         <PageHeader title="Tarefa" back />
-        <ErrorState text={errorMessage(agendas.error)} onRetry={() => agendas.refetch()} />
+        <ErrorState text={errorMessage(agendas.error)} erro={agendas.error} onRetry={() => agendas.refetch()} />
       </>
     );
   }

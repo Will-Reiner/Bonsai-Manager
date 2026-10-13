@@ -133,7 +133,7 @@ export function CollectionPage() {
       {plantas.isLoading ? (
         <Spinner />
       ) : plantas.isError ? (
-        <ErrorState text={errorMessage(plantas.error)} onRetry={() => plantas.refetch()} />
+        <ErrorState text={errorMessage(plantas.error)} erro={plantas.error} onRetry={() => plantas.refetch()} />
       ) : plantas.data?.length === 0 ? (
         <EmptyState
           ilustracao="/arte/colecao-vazia.webp"
