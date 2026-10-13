@@ -6,6 +6,6 @@ export class ObterFeedUseCase {
 
   async execute(viewerId: string, aba: AbaFeed, cursor?: string): Promise<PaginaDTO<PostDTO>> {
     const lidos = await this.repo.feed(viewerId, aba, cursor, LIMITE_PAGINA);
-    return pagina(await carregarPosts(this.repo, lidos, viewerId), lidos);
+    return pagina(await carregarPosts(this.repo, lidos, viewerId), lidos, 'publicadoEm');
   }
 }

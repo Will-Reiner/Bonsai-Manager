@@ -9,6 +9,6 @@ export class ListarPostsDoPerfilUseCase {
     const p = await this.repo.perfil(usuarioId, viewerId);
     if (!p || !podeVerPerfil(p, viewerId)) throw new NaoEncontrado('Perfil não encontrado.');
     const lidos = await this.repo.postsDoUsuario(usuarioId, cursor, LIMITE_PAGINA);
-    return pagina(await carregarPosts(this.repo, lidos, viewerId), lidos);
+    return pagina(await carregarPosts(this.repo, lidos, viewerId), lidos, 'dia');
   }
 }

@@ -4,6 +4,7 @@ import { ObterFeedUseCase } from './obter-feed.use-case';
 import { ObterPerfilUseCase } from './obter-perfil.use-case';
 import { ObterPlantaPublicaUseCase } from './obter-planta-publica.use-case';
 import { ObterPostUseCase } from './obter-post.use-case';
+import { codificarCursor } from '../repositories/filtros';
 import { LeituraComunidadeRepository, PerfilLido, PostLido } from '../comunidade.types';
 
 const usuario = { id: 'a', nome: 'Ana', nomePublico: null, fotoPerfilUrl: null, perfilPublico: true, historicoPublico: true };
@@ -59,7 +60,7 @@ describe('ObterFeedUseCase', () => {
     repo.feed.mockResolvedValue(Array.from({ length: 20 }, (_, i) => post({ id: `post${i}` })));
     const r = await new ObterFeedUseCase(repo).execute('b', 'seguindo', 'x');
     expect(repo.feed).toHaveBeenCalledWith('b', 'seguindo', 'x', 20);
-    expect(r.proximoCursor).toBe('post19');
+    expect(r.proximoCursor).toBe(codificarCursor(new Date('2026-10-10T18:00:00Z'), 'post19'));
   });
   it('página vazia não consulta conteúdo', async () => {
     const r = await new ObterFeedUseCase(repo).execute('b', 'explorar');
@@ -124,6 +125,12 @@ describe('ListarPostsDoPerfilUseCase', () => {
     const r = await new ListarPostsDoPerfilUseCase(repo).execute('b', 'a');
     expect(repo.postsDoUsuario).toHaveBeenCalledWith('a', undefined, 20);
     expect(r.itens).toHaveLength(1);
+  });
+  it('página cheia do perfil: cursor pelo dia do último', async () => {
+    repo.perfil.mockResolvedValue(perfil());
+    repo.postsDoUsuario.mockResolvedValue(Array.from({ length: 20 }, (_, i) => post({ id: `post${i}` })));
+    const r = await new ListarPostsDoPerfilUseCase(repo).execute('b', 'a');
+    expect(r.proximoCursor).toBe(codificarCursor(new Date('2026-10-10T00:00:00Z'), 'post19'));
   });
   it('perfil privado: 404 sem listar', async () => {
     repo.perfil.mockResolvedValue(perfil({ perfilPublico: false }));

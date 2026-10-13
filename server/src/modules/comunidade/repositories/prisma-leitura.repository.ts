@@ -1,5 +1,5 @@
 import { prisma } from '../../../lib/prisma';
-import { filtroDoFeed } from './filtros';
+import { filtroDoFeed, filtroDosPostsDoUsuario } from './filtros';
 import type { AbaFeed, LeituraComunidadeRepository } from '../comunidade.types';
 
 const usuarioLido = { id: true, nome: true, nomePublico: true, fotoPerfilUrl: true, perfilPublico: true, historicoPublico: true } as const;
@@ -13,16 +13,14 @@ const plantaLida = {
 } as const;
 const postLido = { id: true, dia: true, publicadoEm: true, plantaId: true, usuario: { select: usuarioLido }, planta: { select: plantaLida } } as const;
 
-/** Página por cursor (id do último item da página anterior); a ordem tem `id` no fim para ser estável. */
-const paginar = (cursor: string | undefined, limite: number) => ({ take: limite, ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}) });
-
 export class PrismaLeituraComunidadeRepository implements LeituraComunidadeRepository {
   feed(viewerId: string, aba: AbaFeed, cursor: string | undefined, limite: number) {
     return prisma.post.findMany({
-      where: filtroDoFeed(viewerId, aba),
+      // Página pela posição do cursor (data + id), não pelo item: não pula nada se ele sumir ou ficar invisível
+      where: filtroDoFeed(viewerId, aba, cursor),
       orderBy: [{ publicadoEm: 'desc' }, { id: 'desc' }],
       select: postLido,
-      ...paginar(cursor, limite),
+      take: limite,
     });
   }
 
@@ -32,10 +30,10 @@ export class PrismaLeituraComunidadeRepository implements LeituraComunidadeRepos
 
   postsDoUsuario(usuarioId: string, cursor: string | undefined, limite: number) {
     return prisma.post.findMany({
-      where: { usuarioId, planta: { plantaPublica: true } },
+      where: filtroDosPostsDoUsuario(usuarioId, cursor),
       orderBy: [{ dia: 'desc' }, { id: 'desc' }],
       select: postLido,
-      ...paginar(cursor, limite),
+      take: limite,
     });
   }
 
