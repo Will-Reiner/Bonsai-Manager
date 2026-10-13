@@ -103,7 +103,11 @@ model Usuario {
   localidade         String?
   fotoPerfilUrl      String?
   bio                String?   @db.Text
-  perfilPublico      Boolean   @default(true)
+  perfilPublico      Boolean   @default(false)
+  /// Cuidados aparecem nos posts e na página pública da planta.
+  historicoPublico   Boolean   @default(false)
+  /// Posts novos entram no feed (só com perfil público).
+  postarAutomatico   Boolean   @default(true)
   recursosHabilitado Boolean   @default(true)
   createdAt          DateTime  @default(now())
   updatedAt          DateTime  @updatedAt
@@ -117,6 +121,7 @@ model Usuario {
   seguidores         Amizade[] @relation("Seguido")
   especiesSugeridas  Especie[]
   preferencias       PreferenciaUsuario[]
+  posts              Post[]
 }
 
 model Especie {
@@ -186,6 +191,7 @@ model Planta {
   agendas     Agenda[]
   inspiracoes Inspiracao[]
   rotinas     Rotina[]
+  posts       Post[]
 
   @@unique([usuarioId, identificador])
 }
@@ -233,6 +239,28 @@ model Foto {
 
   // Relacionamentos
   inspiracoes Inspiracao[]
+}
+
+/// Uma planta num dia com foto (Comunidade). Conteúdo lido na hora de Foto/Agenda; nada copiado.
+model Post {
+  id          String   @id @default(uuid())
+  /// Dia local (America/Sao_Paulo).
+  dia         DateTime @db.Date
+  /// Quando o post nasceu; ordena o feed.
+  publicadoEm DateTime @default(now())
+  /// true = só na página da planta/perfil, fora do feed.
+  noFeed      Boolean
+  createdAt   DateTime @default(now())
+
+  usuarioId   String
+  usuario     Usuario  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  plantaId    String
+  planta      Planta   @relation(fields: [plantaId], references: [id], onDelete: Cascade)
+
+  @@unique([plantaId, dia])
+  @@index([noFeed, publicadoEm])
+  @@index([usuarioId, publicadoEm])
 }
 
 model Agenda {
