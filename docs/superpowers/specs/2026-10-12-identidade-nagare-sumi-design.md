@@ -5,7 +5,7 @@ Aprovado em 2026-10-12 (brainstorming com mockups no navegador; prévia geral ap
 ## 1. Direção
 
 - **Wabi-sabi dominante + cerâmica**: papel washi, traço de pincel sumi, muito espaço vazio. A cor das ilustrações vem só da cerâmica (vasos) e das folhas de outono; vermelhão só no carimbo 流 e em destaques.
-- **Nome Nagare** (流れ, "fluxo"): marca = carimbo hanko 流 + bonsai *fukinagashi* (varrido pelo vento).
+- **Nome Nagare Bonsai · Caderno** (流れ, "fluxo"; decidido em 2026-10-13): marca **Nagare Bonsai** + produto **Caderno** (o que o app é: o caderno de cuidados). Na tela inicial do celular, só "Nagare". Marca visual = carimbo hanko 流 + bonsai *fukinagashi* (varrido pelo vento).
 - Peças desenhadas são geradas no Gemini (Nano Banana) e processadas pela skill de projeto `criando-assets-sumi` (`.claude/skills/criando-assets-sumi/`). O movimento é feito em código; vídeo só na abertura.
 - Originais do Gemini ficam em `test-assets/estilo/` e `test-assets/movimento/` (fora do git). Só as peças processadas entram no repositório.
 
@@ -100,11 +100,11 @@ Tocar no cartão `EstacaoDoAno` abre um sheet: título da estação, período e 
 
 ## 6. Abertura e marca
 
-- **Abertura**: na primeira abertura do app em cada sessão (`sessionStorage`), uma tela cheia com o vídeo (`public/abertura.mp4`, `muted playsinline`, `object-fit: cover`). No fim (ou ao tocar) aparece "Nagare 流 · BONSAI" e a abertura some em fade.
+- **Abertura** (`components/Abertura.tsx`, fases puras em `src/lib/abertura.ts`): na primeira abertura do app em cada sessão (`sessionStorage` `nagare_abertura_vista`), uma tela cheia sobre o papel com o vídeo (`public/abertura.mp4`, `muted playsinline`). O vídeo é horizontal e aparece **inteiro** (largura da tela, bordas sumindo no papel por máscara), para não cortar as folhas que voam. Aos 5,5s do vídeo (árvore pronta) ou ao tocar, aparece embaixo a marca: carimbo 流 + "Nagare" + "BONSAI · CADERNO". Ela fica 2,4s (ou até um toque) e a abertura some em fade de 0,6s.
   - Com movimento reduzido: só a marca, sem vídeo.
-  - Se o vídeo não carregar em 1,5s: só a marca.
-  - O vídeo atual (1280×720, horizontal, mostra o pincel) é **provisório**. O definitivo será 9:16, sem pincel, e entra trocando o arquivo, sem mudar código.
-- **Nome**: `index.html` `<title>`, `manifest.webmanifest` (`name` "Nagare Bonsai", `short_name` "Nagare", `background_color`/`theme_color` `#F4F0E8`) e o ícone do app (`public/icon.svg` → fukinagashi + 流; PNGs 192/512 para o manifesto). Domínios, repositório e API não mudam.
+  - Se o vídeo não começar a tocar em 1,5s (ou o autoplay for recusado, ou travar por 11s): ele some e fica só a marca.
+  - Vídeo atual: v2 do Veo (gota de tinta → árvore → vaso → folhas ao vento), 1280×720, recodificado sem áudio e cortado em 8,5s (~450 KB). Original em `test-assets/estilo/video_entrada-v2.mp4`. Trocar o vídeo é só trocar o arquivo; um vídeo 9:16 também funciona (a caixa é 16:9 com `object-fit: cover`, então ajustar a proporção em `.abertura-video` se mudar).
+- **Nome**: `index.html` `<title>` "Nagare Bonsai · Caderno" (+ `apple-mobile-web-app-title` "Nagare"), `manifest.webmanifest` (`name` "Nagare Bonsai · Caderno", `short_name` "Nagare", `background_color`/`theme_color` `#F4F0E8`) e a tela de login ("Nagare Bonsai" com o `Hanko`). Ícones: `public/icon.svg` (favicon) é **só o carimbo 流** vetorial (a árvore vira borrão em 16–32px; 流 convertido em caminho da Noto Serif JP); `icon-192.png`/`icon-512.png`/`apple-touch-icon.png` = fukinagashi em tinta sobre o papel + carimbo; `icon-maskable-512.png` com o desenho a 78% (zona segura). Domínios, repositório e API não mudam.
 
 ## 7. Implementação em fases
 
@@ -131,7 +131,7 @@ Cada fase entra na `main` funcionando sozinha (push = deploy).
 4. **Movimento sazonal**:
    - `ParticulasEstacao` + preferência "Animações sazonais";
    - tela da estação.
-5. **Abertura e marca**: abertura com vídeo e renomear para Nagare (título, manifesto, ícone).
+5. **Abertura e marca**: abertura com vídeo e renomear para Nagare Bonsai · Caderno (título, manifesto, ícone, login).
 
 ## 8. Testes e verificação
 

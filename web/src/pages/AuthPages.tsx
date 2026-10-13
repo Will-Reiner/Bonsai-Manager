@@ -1,5 +1,6 @@
 import { useState, type FormEvent, type ReactNode } from 'react';
 import { Link, useNavigate } from 'react-router';
+import { Hanko } from '@/components/Hanko';
 import { Button, Field } from '@/components/ui';
 import { useAuth } from '@/context/AuthContext';
 import { errorMessage } from '@/lib/api';
@@ -8,7 +9,7 @@ function AuthShell({ title, subtitle, children }: { title: string; subtitle: str
   return (
     <div className="flex min-h-dvh flex-col justify-center px-6 py-10 pt-safe">
       <div className="mx-auto w-full max-w-sm">
-        <img src="/icon.svg" alt="" className="mb-6 size-14" />
+        <Hanko tamanho={48} className="mb-6" />
         <h1 className="text-3xl font-semibold">{title}</h1>
         <p className="mt-1.5 text-muted">{subtitle}</p>
         <div className="mt-8">{children}</div>
@@ -39,7 +40,7 @@ export function LoginPage() {
   }
 
   return (
-    <AuthShell title="Bonsai Manager" subtitle="Seu caderno de cuidados, sempre à mão.">
+    <AuthShell title="Nagare Bonsai" subtitle="Seu caderno de cuidados, sempre à mão.">
       <form onSubmit={submit} className="space-y-4">
         <Field label="E-mail">
           <input className="input" type="email" autoComplete="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
