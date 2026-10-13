@@ -104,6 +104,19 @@ export function distanciaRelativa(iso: string): string {
   return d > 0 ? `Daqui ${quanto}` : `${quanto} atrás`;
 }
 
+/** Para posts: "agora", "há 5 min", "há 3 h", "ontem", "há 3 dias"; passada uma semana, a data curta. */
+export function tempoRelativo(iso: string, agora = new Date()): string {
+  const min = Math.floor((agora.getTime() - new Date(iso).getTime()) / 60_000);
+  if (min < 1) return 'agora';
+  if (min < 60) return `há ${min} min`;
+  const horas = Math.floor(min / 60);
+  if (horas < 24) return `há ${horas} h`;
+  const dias = Math.floor(horas / 24);
+  if (dias === 1) return 'ontem';
+  if (dias < 7) return `há ${dias} dias`;
+  return dataCurta(iso);
+}
+
 /** Idade aproximada a partir da data de aquisição: "2 anos e 3 meses", "5 meses". */
 export function tempoDesde(iso?: string | null): string | null {
   if (!iso) return null;

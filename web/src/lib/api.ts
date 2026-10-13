@@ -44,6 +44,11 @@ export function ehErroDeRede(error: unknown): boolean {
   return axios.isAxiosError(error) && !error.response;
 }
 
+/** O servidor respondeu 404 (na Comunidade: não existe ou não é visível para você). */
+export function ehNaoEncontrado(error: unknown): boolean {
+  return axios.isAxiosError(error) && error.response?.status === 404;
+}
+
 /** Extrai uma mensagem legível dos vários formatos de erro que a API devolve. */
 export function errorMessage(error: unknown, fallback = 'Algo deu errado. Tente novamente.'): string {
   if (axios.isAxiosError<ApiErrorBody>(error)) {

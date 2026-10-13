@@ -197,3 +197,40 @@ export const GRUPOS_MANUAIS = GRUPOS_PLANTA.filter((g) => g.value !== 'PRE_TRANS
 
 /** Nome da atividade (seed) que move a planta para Recém transplantada. */
 export const ATIVIDADE_TRANSPLANTE = 'Transplante';
+
+
+// ---- Comunidade ----
+
+export type AbaFeed = 'seguindo' | 'explorar';
+export interface AutorComunidade { id: string; nome: string; fotoPerfilUrl: string | null }
+export interface PlantaComunidade {
+  id: string;
+  identificador: number;
+  nome: string | null;
+  fotoCapaUrl: string | null;
+  especie: { nomeComum: string | null; nomeCientifico: string | null } | null;
+}
+export interface FotoDoPost { id: string; url: string; tipo: TipoMidia; thumbnailUrl: string | null }
+export interface CuidadoDoPost { atividade: string; detalhes: string | null; observacao: string | null }
+export interface PostComunidade {
+  id: string;
+  /** Dia local do post ("AAAA-MM-DD"). */
+  dia: string;
+  publicadoEm: string;
+  autor: AutorComunidade;
+  planta: PlantaComunidade;
+  fotos: FotoDoPost[];
+  /** null quando o histórico do dono não é público. */
+  cuidados: CuidadoDoPost[] | null;
+}
+export interface Pagina<T> { itens: T[]; proximoCursor: string | null }
+export interface PerfilPublico extends AutorComunidade {
+  bio: string | null;
+  localidade: string | null;
+  eu: boolean;
+  sigo: boolean;
+  contagem: { plantas: number; seguidores: number; seguindo: number };
+  plantas: PlantaComunidade[];
+}
+export interface DiaPublico { dia: string; postId: string | null; fotos: FotoDoPost[]; cuidados: CuidadoDoPost[] | null }
+export interface PlantaPublica { planta: PlantaComunidade; dono: AutorComunidade; dias: DiaPublico[] }

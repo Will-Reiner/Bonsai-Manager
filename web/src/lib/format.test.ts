@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { distanciaRelativa, plantaCodigoNome, plantaNome, plantaRotulo, plantaTitulo, subtituloDaColecao, termoDeBusca } from './format';
+import { dataCurta, distanciaRelativa, plantaCodigoNome, tempoRelativo, plantaNome, plantaRotulo, plantaTitulo, subtituloDaColecao, termoDeBusca } from './format';
 
 const ficus = { nomeComum: 'Ficus', nomeCientifico: 'Ficus microcarpa' };
 
@@ -109,5 +109,22 @@ describe('distanciaRelativa', () => {
   it('anos a partir de 365 dias', () => {
     expect(distanciaRelativa(dia(12, 9, 2025))).toBe('1 ano atrás');
     expect(distanciaRelativa(dia(1, 0, 2024))).toBe('2 anos atrás');
+  });
+});
+
+
+describe('tempoRelativo', () => {
+  const agora = new Date('2026-10-13T15:00:00');
+  it.each([
+    ['2026-10-13T14:59:40', 'agora'],
+    ['2026-10-13T14:55:00', 'há 5 min'],
+    ['2026-10-13T12:00:00', 'há 3 h'],
+    ['2026-10-12T14:00:00', 'ontem'],
+    ['2026-10-10T15:00:00', 'há 3 dias'],
+  ])('%s → %s', (iso, esperado) => {
+    expect(tempoRelativo(iso, agora)).toBe(esperado);
+  });
+  it('depois de uma semana, a data curta', () => {
+    expect(tempoRelativo('2026-09-01T15:00:00', agora)).toBe(dataCurta('2026-09-01T15:00:00'));
   });
 });

@@ -1,7 +1,8 @@
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useInfiniteQuery, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   agendasApi,
   atividadesApi,
+  comunidadeApi,
   especiesApi,
   fotosApi,
   inspiracoesApi,
@@ -12,7 +13,7 @@ import {
 } from './endpoints';
 import { CHAVE_ATALHOS, lerAtalhos, nomesDeEspecies, temEspecieSemPlanta, type Atalho } from './atalhos';
 import { lerFavoritas } from './favoritas';
-import type { Preferencias } from '@/types';
+import type { AbaFeed, Pagina, Preferencias } from '@/types';
 
 export const keys = {
   plantas: ['plantas'] as const,
@@ -27,6 +28,13 @@ export const keys = {
   preferencias: ['preferencias'] as const,
   rotinas: ['rotinas'] as const,
   me: ['me'] as const,
+  comunidade: ['comunidade'] as const,
+  feed: (aba: AbaFeed) => ['comunidade', 'feed', aba] as const,
+  post: (id: string) => ['comunidade', 'post', id] as const,
+  perfilPublico: (id: string) => ['comunidade', 'perfil', id] as const,
+  postsDoPerfil: (id: string) => ['comunidade', 'perfil', id, 'posts'] as const,
+  plantaPublica: (id: string) => ['comunidade', 'planta', id] as const,
+  buscaPerfis: (q: string) => ['comunidade', 'busca', q] as const,
 };
 
 export const usePlantas = () => useQuery({ queryKey: keys.plantas, queryFn: plantasApi.list });
@@ -123,3 +131,36 @@ export function useAtividadesOrdenadas() {
   });
   return { ...atividades, data: lista };
 }
+
+
+// ---- Comunidade ----
+
+const proximaPagina = (p: Pagina<unknown>) => p.proximoCursor ?? undefined;
+
+export const useFeed = (aba: AbaFeed) =>
+  useInfiniteQuery({
+    queryKey: keys.feed(aba),
+    queryFn: ({ pageParam }) => comunidadeApi.feed(aba, pageParam),
+    initialPageParam: undefined as string | undefined,
+    getNextPageParam: proximaPagina,
+  });
+
+export const usePost = (id: string) => useQuery({ queryKey: keys.post(id), queryFn: () => comunidadeApi.post(id), enabled: !!id, retry: false });
+
+export const usePerfilPublico = (id: string) =>
+  useQuery({ queryKey: keys.perfilPublico(id), queryFn: () => comunidadeApi.perfil(id), enabled: !!id, retry: false });
+
+export const usePostsDoPerfil = (id: string, enabled = true) =>
+  useInfiniteQuery({
+    queryKey: keys.postsDoPerfil(id),
+    queryFn: ({ pageParam }) => comunidadeApi.postsDoPerfil(id, pageParam),
+    initialPageParam: undefined as string | undefined,
+    getNextPageParam: proximaPagina,
+    enabled: !!id && enabled,
+  });
+
+export const usePlantaPublica = (id: string) =>
+  useQuery({ queryKey: keys.plantaPublica(id), queryFn: () => comunidadeApi.planta(id), enabled: !!id, retry: false });
+
+export const useBuscaPerfis = (q: string) =>
+  useQuery({ queryKey: keys.buscaPerfis(q), queryFn: () => comunidadeApi.buscar(q), enabled: q.length >= 2, staleTime: 30_000 });

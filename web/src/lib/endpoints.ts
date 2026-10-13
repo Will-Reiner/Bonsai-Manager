@@ -1,7 +1,9 @@
 // Chamadas à API agrupadas por recurso (mesmas rotas usadas em mobile_app/src/services/*)
 import { api } from './api';
 import type {
+  AbaFeed,
   Agenda,
+  AutorComunidade,
   AgendaStatus,
   Atividade,
   Especie,
@@ -11,7 +13,11 @@ import type {
   GuiaSazonal,
   Inspiracao,
   ModoAquisicao,
+  Pagina,
+  PerfilPublico,
   Planta,
+  PlantaPublica,
+  PostComunidade,
   Preferencias,
   Rotina,
   TipoRecurso,
@@ -231,4 +237,17 @@ export const tiposRecursoApi = {
 export const preferenciasApi = {
   get: () => data<Preferencias>(api.get('/preferencias')),
   set: (chave: string, valor: string) => api.put(`/preferencias/${chave}`, { valor }),
+};
+
+
+export const comunidadeApi = {
+  feed: (aba: AbaFeed, cursor?: string) => data<Pagina<PostComunidade>>(api.get('/comunidade/feed', { params: { aba, cursor } })),
+  post: (id: string) => data<PostComunidade>(api.get(`/comunidade/posts/${id}`)),
+  perfil: (id: string) => data<PerfilPublico>(api.get(`/comunidade/usuarios/${id}`)),
+  postsDoPerfil: (id: string, cursor?: string) =>
+    data<Pagina<PostComunidade>>(api.get(`/comunidade/usuarios/${id}/posts`, { params: { cursor } })),
+  planta: (id: string) => data<PlantaPublica>(api.get(`/comunidade/plantas/${id}`)),
+  buscar: (q: string) => data<AutorComunidade[]>(api.get('/comunidade/buscar', { params: { q } })),
+  seguir: (id: string) => api.post(`/amizades/follow/${id}`),
+  deixarDeSeguir: (id: string) => api.delete(`/amizades/unfollow/${id}`),
 };
