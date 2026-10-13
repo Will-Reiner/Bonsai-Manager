@@ -71,7 +71,8 @@ model Notificacao { id, usuarioId (destinatário), atorId, tipo NotificacaoTipo 
 ### Conteúdo do post (lido na hora, nada copiado)
 - **Dia de uma foto** (mesma regra de `web/src/lib/linhaDoTempo.ts`): se a foto pertence a uma tarefa
   `CONCLUIDO`, é o dia da tarefa (`dataConcluida ?? dataAgendada`); senão `dataCaptura ?? createdAt`.
-  Sempre no fuso `America/Sao_Paulo`. Fotos sem planta (inspiração avulsa) não geram post.
+  Sempre no fuso `America/Sao_Paulo`. Fotos sem planta (inspiração avulsa) e de visão futura
+  (`tipo = VISAO_FUTURA`) não geram post.
 - **Fotos:** as fotos da planta naquele dia.
 - **Cuidados:** tarefas `CONCLUIDO` da planta naquele dia (atividade, descrição, observação), **só se
   `dono.historicoPublico`**; senão `null`.
@@ -88,10 +89,13 @@ model Notificacao { id, usuarioId (destinatário), atorId, tipo NotificacaoTipo 
 - Após apagar foto, mover foto de planta, mudar a data da foto ou a data do cuidado ao qual ela pertence:
   se o (planta, dia) antigo ficou sem fotos, o post é apagado (com curtidas, comentários, salvos e notificações);
   o (planta, dia) novo é "tocado".
-- **Pontos de escrita** (todos chamam `tocarPost(plantaId, dia)` na mesma transação):
-  - `server/src/modules/foto/repositories/prisma-foto.repository.ts` (criar, editar, apagar — inclui fotos em lote);
-  - `server/src/modules/agenda/repositories/prisma-conclusao.repository.ts` (registrar e concluir);
-  - edição/exclusão de cuidado (`PUT /api/agendas/cuidado`, `POST /api/agendas/cuidado/excluir`) toca os dias antigo e novo.
+- **Sincronização:** `sincronizarPosts(plantaIds)` recalcula, por planta, os dias com foto e cria/apaga os posts
+  que faltam/sobram (idempotente — cobre mover foto, mudar data e editar cuidado sem saber o "dia antigo").
+  Chamada:
+  - pelos casos de uso de foto (criar e apagar; fotos em lote passam por eles);
+  - por toda escrita de tarefa, junto da reavaliação de grupos (`reavaliar` em `agenda.controller.ts`):
+    registrar, concluir, editar/excluir cuidado, editar/apagar tarefa.
+  - Fora de transação, uma falha só é registrada no log (não derruba o envio da foto); dentro, desfaz junto.
 - Migração única cria os posts das fotos existentes, todos com `noFeed = true`.
 
 ### Quem vê o quê (função pura `podeVer`)
@@ -173,7 +177,7 @@ GET    /comunidade/notificacoes?cursor=   GET /comunidade/notificacoes/nao-lidas
 
 - Módulo `server/src/modules/comunidade/` no padrão do projeto (controllers, schemas, use-cases, repositories,
   `comunidade.types.ts`), com regras puras em `dominio/`: `diaDoPost`, `decidirNoFeed`, `podeVer`, `mostraCuidados`.
-- `tocarPost` fica em `comunidade/` e é chamado pelos repositórios de `foto` e `agenda` dentro da transação.
+- `SincronizarPostsUseCase` fica em `comunidade/` e entra nos casos de uso de `foto` e no `reavaliar` de `agenda`.
 - Regras puras do front: agrupamento do feed e estado "Todas/Selecionadas" em `web/src/lib/comunidade.ts`.
 
 ## Erros
@@ -187,7 +191,7 @@ GET    /comunidade/notificacoes?cursor=   GET /comunidade/notificacoes/nao-lidas
 
 - **Domínio (Jest):** `decidirNoFeed` (cada condição e o limite de 7 dias), `diaDoPost` (23h30 em São Paulo fica
   no mesmo dia; foto de cuidado usa o dia do cuidado), `podeVer`, `mostraCuidados`.
-- **Casos de uso com mocks:** `tocarPost` cria, mantém e apaga; curtir notifica, não notifica a si mesmo,
+- **Casos de uso com mocks:** `sincronizarPosts` cria, mantém e apaga; curtir notifica, não notifica a si mesmo,
   descurtir remove a notificação; comentar só em post visível e permissões de apagar; seguir perfil privado falha.
 - **Web (Vitest):** agrupamento do feed e estado derivado "Todas/Selecionadas".
 - **Navegador:** conta `testeclaude@bonsai.dev` + uma **segunda conta de teste** (pedir ao usuário) para seguir,
@@ -195,7 +199,9 @@ GET    /comunidade/notificacoes?cursor=   GET /comunidade/notificacoes/nao-lidas
 
 ## Entrega em 3 fases (cada uma vai para a `main` sozinha)
 
-1. **Dados + privacidade:** migrações, seção Comunidade nas Preferências, toggles na criação/edição de planta,
-   `PUT /plantas/publicas`, `tocarPost` nos pontos de escrita, posts das fotos existentes.
-2. **Ver a comunidade:** aba Comunidade, Seguindo/Explorar, post, perfil público, planta pública, busca, seguir.
-3. **Interagir:** curtir, comentar, salvar, tela Salvos, notificações e contador.
+1. **Dados + privacidade:** campos do `Usuario`, tabela `Post`, seção Comunidade nas Preferências, toggles na
+   criação/edição de planta, `PUT /plantas/publicas`, `sincronizarPosts` nos pontos de escrita, posts das fotos existentes.
+2. **Ver a comunidade:** `Amizade.createdAt`, aba Comunidade, Seguindo/Explorar, post, perfil público, planta
+   pública, busca, seguir.
+3. **Interagir:** tabelas `Curtida`, `Comentario`, `Salvo`, `Notificacao`; curtir, comentar, salvar, tela Salvos,
+   notificações e contador.
